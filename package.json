@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.0.0",
-    "@rollup/rollup-win32-x64-msvc": "^4.54.0",
     "astro": "^4.0.0"
   },
   "devDependencies": {
