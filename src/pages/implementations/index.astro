@@ -1,0 +1,221 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const pythonCode = `"""
+RCAN Protocol Reference Implementation (Python)
+"""
+import re
+import asyncio
+import websockets
+from dataclasses import dataclass
+from typing import Optional
+from enum import IntEnum
+
+# RURI Pattern
+RURI_PATTERN = re.compile(
+    r'^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/'
+    r'([a-z0-9][a-z0-9-]*[a-z0-9])/'
+    r'([a-z0-9][a-z0-9-]*[a-z0-9])/'
+    r'([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)'
+    r'(?::(\d{1,5}))?'
+    r'(/[a-z][a-z0-9/-]*)?$'
+)
+
+@dataclass
+class RURI:
+    """Robot Universal Resource Identifier"""
+    registry: str
+    manufacturer: str
+    model: str
+    device_id: str
+    port: int = 8080
+    capability: Optional[str] = None
+    
+    @classmethod
+    def parse(cls, ruri_string: str) -> 'RURI':
+        match = RURI_PATTERN.match(ruri_string)
+        if not match:
+            raise ValueError(f"Invalid RURI: {ruri_string}")
+        return cls(
+            registry=match.group(1),
+            manufacturer=match.group(2),
+            model=match.group(3),
+            device_id=match.group(4),
+            port=int(match.group(5)) if match.group(5) else 8080,
+            capability=match.group(6)
+        )
+    
+    @classmethod
+    def is_valid(cls, ruri_string: str) -> bool:
+        return RURI_PATTERN.match(ruri_string) is not None
+    
+    def __str__(self) -> str:
+        s = f"rcan://{self.registry}/{self.manufacturer}/{self.model}/{self.device_id}"
+        if self.port != 8080:
+            s += f":{self.port}"
+        if self.capability:
+            s += self.capability
+        return s
+
+class Role(IntEnum):
+    """RCAN Role Hierarchy"""
+    GUEST = 1
+    USER = 2
+    LEASEE = 3
+    OWNER = 4
+    CREATOR = 5
+    
+    def can_access(self, required_role: 'Role') -> bool:
+        return self.value >= required_role.value
+
+# Usage
+ruri = RURI.parse("rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6")
+print(f"Registry: {ruri.registry}")
+print(f"Model: {ruri.model}")
+print(f"Valid: {RURI.is_valid(str(ruri))}")`;
+
+const tsCode = `interface RURI {
+  registry: string;
+  manufacturer: string;
+  model: string;
+  deviceId: string;
+  port: number;
+  capability: string | null;
+}
+
+const RURI_REGEX = /^rcan:\\/\\/([a-z0-9][a-z0-9.-]*[a-z0-9])\\/([a-z0-9][a-z0-9-]*[a-z0-9])\\/([a-z0-9][a-z0-9-]*[a-z0-9])\\/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(\\/[a-z][a-z0-9\\/-]*)?$/;
+
+function parseRURI(ruri: string): RURI {
+  const match = ruri.match(RURI_REGEX);
+  if (!match) throw new Error(\`Invalid RURI: \${ruri}\`);
+  
+  return {
+    registry: match[1],
+    manufacturer: match[2],
+    model: match[3],
+    deviceId: match[4],
+    port: match[5] ? parseInt(match[5]) : 8080,
+    capability: match[6] || null,
+  };
+}
+
+function formatRURI(ruri: RURI): string {
+  let s = \`rcan://\${ruri.registry}/\${ruri.manufacturer}/\${ruri.model}/\${ruri.deviceId}\`;
+  if (ruri.port !== 8080) s += \`:\${ruri.port}\`;
+  if (ruri.capability) s += ruri.capability;
+  return s;
+}
+
+enum Role { GUEST = 1, USER = 2, LEASEE = 3, OWNER = 4, CREATOR = 5 }
+
+function canAccess(role: Role, required: Role): boolean {
+  return role >= required;
+}`;
+
+const dartCode = `enum Role { guest, user, leasee, owner, creator }
+
+class RURI {
+  final String registry;
+  final String manufacturer;
+  final String model;
+  final String deviceId;
+  final int port;
+  final String? capability;
+
+  RURI({
+    required this.registry,
+    required this.manufacturer,
+    required this.model,
+    required this.deviceId,
+    this.port = 8080,
+    this.capability,
+  });
+
+  static final _pattern = RegExp(
+    r'^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(/[a-z][a-z0-9/-]*)?$'
+  );
+
+  factory RURI.parse(String ruri) {
+    final match = _pattern.firstMatch(ruri);
+    if (match == null) throw FormatException('Invalid RURI: \$ruri');
+    
+    return RURI(
+      registry: match.group(1)!,
+      manufacturer: match.group(2)!,
+      model: match.group(3)!,
+      deviceId: match.group(4)!,
+      port: match.group(5) != null ? int.parse(match.group(5)!) : 8080,
+      capability: match.group(6),
+    );
+  }
+
+  static bool isValid(String ruri) => _pattern.hasMatch(ruri);
+
+  @override
+  String toString() {
+    var s = 'rcan://\$registry/\$manufacturer/\$model/\$deviceId';
+    if (port != 8080) s += ':\$port';
+    if (capability != null) s += capability;
+    return s;
+  }
+}`;
+---
+
+<BaseLayout title="Implementations" description="RCAN Protocol Reference Implementations in Python, TypeScript, and Dart.">
+  <h1>Reference Implementations</h1>
+  <p>Complete, runnable implementations of the RCAN protocol in multiple languages.</p>
+  
+  <hr />
+  
+  <section>
+    <h2>Python (ContinuonBrain)</h2>
+    <p>Full RURI parsing, role management, and RCAN client.</p>
+    <pre><code class="language-python" set:text={pythonCode}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>TypeScript (Node.js)</h2>
+    <pre><code class="language-typescript" set:text={tsCode}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>Dart (Flutter/ContinuonAI)</h2>
+    <pre><code class="language-dart" set:text={dartCode}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>Installation</h2>
+    
+    <h3>Python (pip)</h3>
+    <pre><code class="language-bash"># Coming soon
+pip install rcan</code></pre>
+    
+    <h3>Node.js (npm)</h3>
+    <pre><code class="language-bash"># Coming soon
+npm install @rcan/protocol</code></pre>
+    
+    <h3>Dart (pub)</h3>
+    <pre><code class="language-yaml"># Coming soon
+dependencies:
+  rcan: ^1.0.0</code></pre>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>Contributing</h2>
+    <p>Want to add an implementation in another language?</p>
+    <ul>
+      <li>Fork the <a href="https://github.com/continuonai/rcan-spec">rcan-spec repository</a></li>
+      <li>Add your implementation under <code>implementations/&lt;language&gt;/</code></li>
+      <li>Ensure it passes all <a href="/conformance/">conformance tests</a></li>
+      <li>Submit a pull request</li>
+    </ul>
+  </section>
+</BaseLayout>

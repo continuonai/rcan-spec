@@ -1,0 +1,224 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const protobufCode = `message RCANMessage {
+  string version = 1;           // "1.0.0"
+  string message_id = 2;        // UUID
+  string source_ruri = 3;       // Sender RURI
+  string target_ruri = 4;       // Recipient RURI (or "broadcast")
+  string auth_token = 5;        // JWT session token
+  MessageType type = 6;
+  bytes payload = 7;            // Type-specific payload
+  int64 timestamp_ms = 8;
+  int32 ttl_ms = 9;             // Time-to-live (0 = no expiry)
+  Priority priority = 10;
+  
+  enum MessageType {
+    DISCOVER = 1;
+    STATUS = 2;
+    COMMAND = 3;
+    STREAM = 4;
+    EVENT = 5;
+    HANDOFF = 6;
+    ACK = 7;
+    ERROR = 8;
+  }
+  
+  enum Priority {
+    LOW = 1;
+    NORMAL = 2;
+    HIGH = 3;
+    SAFETY = 4;  // Always processed first
+  }
+}`;
+
+const jwtExample = `{
+  "sub": "550e8400-e29b-41d4-a716-446655440000",
+  "iss": "continuon.cloud",
+  "aud": "rcan://continuon.cloud/continuon/companion-v1/*",
+  "role": "owner",
+  "scope": ["control", "config", "training"],
+  "fleet": ["d3a4b5c6", "a1b2c3d4"],
+  "exp": 1735689600,
+  "iat": 1735603200
+}`;
+
+const txtRecords = `ruri=rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
+model=companion-v1
+caps=arm,vision,chat,teleop
+roles=owner,user,guest
+version=1.0.0
+name=Living Room Companion
+status=idle`;
+
+const ruriExamples = `rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6-7890-1234-5678-abcdef012345
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6/arm
+rcan://local.rcan/discovered/192.168.1.42:8080
+rcan://my-server.lan/acme/bot-x1/a1b2c3d4:9000/teleop`;
+
+const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(/[a-z][a-z0-9/-]*)?$`;
+---
+
+<BaseLayout title="Specification" description="RCAN Protocol Specification v1.0.0 - Complete technical specification with JSON Schemas and Protocol Buffers.">
+  <h1>RCAN Protocol Specification</h1>
+  <p class="version-badge">Version 1.0.0 | Draft</p>
+  
+  <nav class="toc">
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#ruri">Robot URI (RURI)</a></li>
+      <li><a href="#roles">Role-Based Access Control</a></li>
+      <li><a href="#messages">Message Format</a></li>
+      <li><a href="#discovery">Discovery (mDNS)</a></li>
+      <li><a href="#auth">Authentication</a></li>
+      <li><a href="#safety">Safety Invariants</a></li>
+      <li><a href="#federation">Federation</a></li>
+    </ol>
+  </nav>
+  
+  <hr />
+  
+  <section id="ruri">
+    <h2>1. Robot URI (RURI)</h2>
+    <p>Every robot has a globally unique RURI:</p>
+    <pre><code>rcan://&lt;registry&gt;/&lt;manufacturer&gt;/&lt;model&gt;/&lt;device-id&gt;[:&lt;port&gt;][/&lt;capability&gt;]</code></pre>
+    
+    <h3>Examples</h3>
+    <pre><code set:text={ruriExamples}></code></pre>
+    
+    <h3>Components</h3>
+    <table>
+      <thead>
+        <tr><th>Component</th><th>Description</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>registry</code></td><td>Root registry domain (e.g., <code>continuon.cloud</code>, <code>local.rcan</code>)</td><td>Yes</td></tr>
+        <tr><td><code>manufacturer</code></td><td>Manufacturer namespace</td><td>Yes</td></tr>
+        <tr><td><code>model</code></td><td>Robot model identifier</td><td>Yes</td></tr>
+        <tr><td><code>device-id</code></td><td>UUID or short-form (8 hex chars)</td><td>Yes</td></tr>
+        <tr><td><code>port</code></td><td>Communication port (default: 8080)</td><td>No</td></tr>
+        <tr><td><code>capability</code></td><td>Specific endpoint (e.g., <code>/arm</code>, <code>/vision</code>)</td><td>No</td></tr>
+      </tbody>
+    </table>
+    
+    <h3>Validation Regex</h3>
+    <pre><code set:text={regexPattern}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section id="roles">
+    <h2>2. Role-Based Access Control</h2>
+    <p>RCAN defines a five-level role hierarchy:</p>
+    
+    <table>
+      <thead>
+        <tr><th>Role</th><th>Level</th><th>Key Permissions</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>CREATOR</strong></td><td>5</td><td>Full hardware/software control, OTA push, safety override</td></tr>
+        <tr><td><strong>OWNER</strong></td><td>4</td><td>Configuration, skill installation, user management</td></tr>
+        <tr><td><strong>LEASEE</strong></td><td>3</td><td>Time-bound operational control, cannot change ownership</td></tr>
+        <tr><td><strong>USER</strong></td><td>2</td><td>Operational control within allowed modes</td></tr>
+        <tr><td><strong>GUEST</strong></td><td>1</td><td>Limited interaction, chat, read-only status</td></tr>
+      </tbody>
+    </table>
+    
+    <p><strong>Rule:</strong> Higher roles inherit all permissions of lower roles.</p>
+  </section>
+  
+  <hr />
+  
+  <section id="messages">
+    <h2>3. Message Format</h2>
+    <p>All RCAN messages use a common envelope:</p>
+    
+    <pre><code class="language-protobuf" set:text={protobufCode}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section id="discovery">
+    <h2>4. Discovery (mDNS)</h2>
+    <p>For LAN discovery without cloud connectivity:</p>
+    <pre><code>_rcan._tcp.local.</code></pre>
+    
+    <h3>TXT Records</h3>
+    <pre><code set:text={txtRecords}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section id="auth">
+    <h2>5. Authentication</h2>
+    <p>RCAN uses JWT tokens for session management:</p>
+    
+    <pre><code class="language-json" set:text={jwtExample}></code></pre>
+  </section>
+  
+  <hr />
+  
+  <section id="safety">
+    <h2>6. Safety Invariants</h2>
+    <p>These are <strong>protocol requirements</strong>, not suggestions:</p>
+    
+    <ol>
+      <li><strong>Local safety always wins.</strong> No remote command can bypass on-device safety checks.</li>
+      <li><strong>Graceful degradation.</strong> Network loss triggers safe-stop, not undefined behavior.</li>
+      <li><strong>Audit trail.</strong> All commands logged with user, timestamp, and outcome.</li>
+      <li><strong>Rate limiting.</strong> Commands throttled per role (Guest: 10/min, User: 100/min, etc.).</li>
+      <li><strong>Timeout enforcement.</strong> Control sessions expire; explicit renewal required.</li>
+    </ol>
+  </section>
+  
+  <hr />
+  
+  <section id="federation">
+    <h2>7. Federation</h2>
+    <p>RCAN is <strong>federated like email</strong>, not centralized like a platform:</p>
+    
+    <ul>
+      <li><code>rcan://continuon.cloud/...</code> — Managed service</li>
+      <li><code>rcan://my-local-server.lan/...</code> — Self-hosted</li>
+      <li><code>rcan://robotics-co-op.org/...</code> — Community run</li>
+    </ul>
+    
+    <p><strong>The Right to Redirect:</strong> An Owner (Level 4) can always change the robot's upstream registry.</p>
+    <p><strong>Local Supremacy:</strong> Even if the cloud registry deletes your ID, local discovery (<code>_rcan._tcp.local</code>) always works.</p>
+  </section>
+  
+  <hr />
+  
+  <p><a href="/conformance/">→ Next: Conformance Tests</a></p>
+</BaseLayout>
+
+<style>
+  .version-badge {
+    display: inline-block;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+  
+  .toc {
+    background: var(--color-bg-alt);
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+  }
+  
+  .toc h2 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    border: none;
+    padding: 0;
+  }
+  
+  .toc ol {
+    margin-bottom: 0;
+  }
+</style>

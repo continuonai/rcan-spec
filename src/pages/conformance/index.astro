@@ -1,0 +1,157 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite - Validate your implementation against the specification.">
+  <h1>Conformance Test Suite</h1>
+  <p>A conforming RCAN implementation MUST pass all tests in this section.</p>
+  
+  <hr />
+  
+  <section>
+    <h2>1. RURI Validation Tests</h2>
+    
+    <table>
+      <thead>
+        <tr><th>Test ID</th><th>Input</th><th>Expected</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>RURI-001</td><td><code>rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6</code></td><td>✅ VALID</td><td>Standard RURI</td></tr>
+        <tr><td>RURI-002</td><td><code>rcan://local.rcan/unitree/go2/a1b2c3d4:9000/teleop</code></td><td>✅ VALID</td><td>With port and capability</td></tr>
+        <tr><td>RURI-003</td><td><code>rcan://my-server.lan/acme/bot-x1/12345678-1234-1234-1234-123456789abc</code></td><td>✅ VALID</td><td>Full UUID</td></tr>
+        <tr><td>RURI-004</td><td><code>https://example.com/robot</code></td><td>❌ INVALID</td><td>Wrong scheme</td></tr>
+        <tr><td>RURI-005</td><td><code>rcan://UPPERCASE/test/test/12345678</code></td><td>❌ INVALID</td><td>Uppercase not allowed</td></tr>
+        <tr><td>RURI-006</td><td><code>rcan://a/b/c/1234567</code></td><td>❌ INVALID</td><td>Device ID too short</td></tr>
+        <tr><td>RURI-007</td><td><code>rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6/Arm</code></td><td>❌ INVALID</td><td>Capability must be lowercase</td></tr>
+        <tr><td>RURI-008</td><td><code>rcan://</code></td><td>❌ INVALID</td><td>Empty components</td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>2. Role Hierarchy Tests</h2>
+    
+    <table>
+      <thead>
+        <tr><th>Test ID</th><th>Role</th><th>Required</th><th>Expected</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ROLE-001</td><td>OWNER</td><td>GUEST</td><td>✅ ALLOW</td><td>Higher role can access lower</td></tr>
+        <tr><td>ROLE-002</td><td>USER</td><td>OWNER</td><td>❌ DENY</td><td>Lower role cannot access higher</td></tr>
+        <tr><td>ROLE-003</td><td>LEASEE</td><td>LEASEE</td><td>✅ ALLOW</td><td>Same role can access</td></tr>
+        <tr><td>ROLE-004</td><td>CREATOR</td><td>OWNER</td><td>✅ ALLOW</td><td>Creator can access all</td></tr>
+        <tr><td>ROLE-005</td><td>GUEST</td><td>USER</td><td>❌ DENY</td><td>Guest has minimal access</td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>3. Authentication Tests</h2>
+    
+    <table>
+      <thead>
+        <tr><th>Test ID</th><th>Scenario</th><th>Expected</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>AUTH-001</td><td>Valid credential, available role</td><td>✅ GRANTED</td><td>Normal auth flow</td></tr>
+        <tr><td>AUTH-002</td><td>Invalid credential</td><td>❌ DENIED (INVALID_CREDENTIALS)</td><td>Bad password</td></tr>
+        <tr><td>AUTH-003</td><td>Valid credential, robot busy</td><td>❌ DENIED (ROBOT_BUSY)</td><td>Another controller active</td></tr>
+        <tr><td>AUTH-004</td><td>Request CREATOR, max role OWNER</td><td>✅ GRANTED as OWNER</td><td>Role downgrade</td></tr>
+        <tr><td>AUTH-005</td><td>Expired JWT</td><td>❌ DENIED (TOKEN_EXPIRED)</td><td>Token validation</td></tr>
+        <tr><td>AUTH-006</td><td>Offline mode, cached token valid</td><td>✅ GRANTED (OFFLINE)</td><td>Resilience test</td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>4. Safety Invariant Tests</h2>
+    
+    <table>
+      <thead>
+        <tr><th>Test ID</th><th>Scenario</th><th>Expected</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SAFE-001</td><td>SAFETY priority message</td><td>Response &lt; 100ms</td><td>Priority processing</td></tr>
+        <tr><td>SAFE-002</td><td>Network partition during command</td><td>Safe-stop triggered</td><td>Graceful degradation</td></tr>
+        <tr><td>SAFE-003</td><td>Remote command bypasses local limit</td><td>❌ REJECTED</td><td>Local safety wins</td></tr>
+        <tr><td>SAFE-004</td><td>Any command execution</td><td>Audit log entry created</td><td>Logging required</td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>5. Error Codes</h2>
+    
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Name</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1001</td><td><code>INVALID_RURI</code></td><td>Malformed RURI string</td></tr>
+        <tr><td>1002</td><td><code>UNKNOWN_ROBOT</code></td><td>Robot not found in registry</td></tr>
+        <tr><td>1003</td><td><code>ROBOT_OFFLINE</code></td><td>Robot unreachable</td></tr>
+        <tr><td>2001</td><td><code>INVALID_CREDENTIALS</code></td><td>Auth credentials rejected</td></tr>
+        <tr><td>2002</td><td><code>INSUFFICIENT_PRIVILEGES</code></td><td>Role too low for operation</td></tr>
+        <tr><td>2003</td><td><code>TOKEN_EXPIRED</code></td><td>JWT has expired</td></tr>
+        <tr><td>2004</td><td><code>TOKEN_REVOKED</code></td><td>JWT was revoked</td></tr>
+        <tr><td>2005</td><td><code>RATE_LIMITED</code></td><td>Too many requests</td></tr>
+        <tr><td>3001</td><td><code>ROBOT_BUSY</code></td><td>Robot controlled by another user</td></tr>
+        <tr><td>3002</td><td><code>COMMAND_TIMEOUT</code></td><td>Command execution timed out</td></tr>
+        <tr><td>3003</td><td><code>COMMAND_REJECTED</code></td><td>Command failed safety check</td></tr>
+        <tr><td>3004</td><td><code>CAPABILITY_UNAVAILABLE</code></td><td>Requested capability not present</td></tr>
+        <tr><td>4001</td><td><code>SAFETY_VIOLATION</code></td><td>Action would violate safety constraints</td></tr>
+        <tr><td>4002</td><td><code>EMERGENCY_STOP</code></td><td>Robot in emergency stop state</td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <hr />
+  
+  <section>
+    <h2>6. Python Test Runner</h2>
+    <p>Run the conformance tests with pytest:</p>
+    
+    <pre><code class="language-python">"""RCAN Conformance Test Suite"""
+import pytest
+from rcan import RURI, Role
+
+class TestRURIValidation:
+    @pytest.mark.parametrize("ruri,expected", [
+        ("rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6", True),
+        ("rcan://local.rcan/unitree/go2/a1b2c3d4:9000/teleop", True),
+        ("https://example.com/robot", False),
+        ("rcan://UPPERCASE/test/test/12345678", False),
+        ("rcan://a/b/c/1234567", False),
+    ])
+    def test_ruri_validation(self, ruri: str, expected: bool):
+        assert RURI.is_valid(ruri) == expected
+
+class TestRoleHierarchy:
+    @pytest.mark.parametrize("role,required,expected", [
+        (Role.OWNER, Role.GUEST, True),
+        (Role.USER, Role.OWNER, False),
+        (Role.CREATOR, Role.OWNER, True),
+    ])
+    def test_role_access(self, role: Role, required: Role, expected: bool):
+        assert role.can_access(required) == expected
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])</code></pre>
+    
+    <pre><code class="language-bash">pip install pytest
+python -m pytest test_rcan_conformance.py -v</code></pre>
+  </section>
+  
+  <hr />
+  
+  <p><a href="/implementations/">→ Next: Reference Implementations</a></p>
+</BaseLayout>
+
