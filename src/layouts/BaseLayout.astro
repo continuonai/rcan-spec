@@ -156,7 +156,7 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
           <li><a href="/spec/">Specification</a></li>
           <li><a href="/conformance/">Conformance</a></li>
           <li><a href="/implementations/">Implementations</a></li>
-          <li><a href="https://github.com/continuonai/rcan-spec" target="_blank">GitHub</a></li>
+          <li><a href="https://github.com/continuonai/rcan-spec" target="_blank" rel="noopener noreferrer">GitHub</a></li>
         </ul>
       </nav>
     </header>
@@ -168,7 +168,7 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
     <footer class="site-footer">
       <div class="footer-content">
         <p>RCAN Protocol v1.0.0 | Draft Specification</p>
-        <p>© 2026 ContinuonAI. Licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+        <p>© 2026 ContinuonAI. Licensed under <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer">CC BY 4.0</a></p>
       </div>
     </footer>
     
@@ -177,6 +177,7 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
         position: sticky;
         top: 0;
         background: rgba(10, 10, 15, 0.9);
+        -webkit-backdrop-filter: blur(10px);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid var(--color-border);
         z-index: 100;

@@ -79,6 +79,5 @@ Reference implementations are licensed under MIT.
 ## Links
 
 - [Blog: We Need an ICANN for Robotics](https://craigmerry.com/blog/2026-01-02-we-need-an-icann-for-robotics/)
-- [ContinuonXR Repository](https://github.com/continuonai/ContinuonXR)
 - [ContinuonAI](https://continuon.ai)
 
