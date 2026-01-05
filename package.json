@@ -24,11 +24,7 @@
     "urdf-loader": "^0.12.6"
   },
   "devDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.55.1",
     "@tailwindcss/typography": "^0.5.19",
     "typescript": "^5.3.0"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.54.0"
   }
 }
