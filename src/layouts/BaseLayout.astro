@@ -20,7 +20,7 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
     <title>{title} | RCAN Protocol</title>
   </head>
   <body class="bg-bg text-text font-sans antialiased min-h-screen flex flex-col selection:bg-accent selection:text-bg relative">
-    <div class="fixed inset-0 pointer-events-none opacity-[0.03] z-50 mix-blend-overlay" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E');"></div>
+    <div class="noise-background"></div>
     <SiteHeader />
     <main class="flex-1 w-full max-w-7xl mx-auto px-6 pt-24 pb-12 z-10 relative">
       <slot />
@@ -28,4 +28,16 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
     <SiteFooter />
   </body>
 </html>
+
+<style>
+  .noise-background {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    z-index: 50;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+</style>
 
