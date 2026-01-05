@@ -1,0 +1,35 @@
+rrn: "RRN-00000008"
+name: "Clearpath Jackal"
+manufacturer: "Clearpath Robotics"
+model: "jackal"
+description: "A compact, weatherproof unmanned ground vehicle for rapid ROS development. The Jackal offers an out-of-the-box ROS experience with integrated computer, IMU, and GPS. Designed for indoor and outdoor research, mapping, and autonomous navigation."
+image: "/robots/clearpath-jackal.svg"
+production_year: 2015
+status: "active"
+
+urdf_url: "https://github.com/jackal/jackal/tree/noetic-devel/jackal_description"
+github_url: "https://github.com/jackal/jackal"
+website: "https://clearpathrobotics.com/jackal-small-unmanned-ground-vehicle/"
+
+specs:
+  weight_kg: 17.0
+  dimensions: "508 x 430 x 250 mm"
+  max_speed_mps: 2.0
+  dof: 4
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["IMU", "GPS", "Wheel Encoders"]
+  compute: "Mini-ITX Computer"
+  battery_life_hours: 4.0
+  payload_kg: 20.0
+
+owner:
+  name: "Clearpath Robotics (Rockwell Automation)"
+  type: "company"
+  website: "https://clearpathrobotics.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["outdoor", "ugv", "research", "compact", "weatherproof", "autonomous"]
+

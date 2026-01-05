@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Quick Start Guide" description="Get started with RCAN in 5 minutes - register a robot, use the API, and integrate badges.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Quick Start Guide</h1>
+    <p class="lead">Get up and running with RCAN in under 5 minutes.</p>
+
+    <section>
+      <h2>1. Register Your First Robot</h2>
+      <p>The easiest way to register a robot is through a GitHub issue:</p>
+
+      <ol>
+        <li>Go to the <a href="/registry/submit/">Submit page</a></li>
+        <li>Click "Submit via GitHub Issue"</li>
+        <li>Fill in your robot's details</li>
+        <li>Submit the issue</li>
+      </ol>
+
+      <p>Within 24-48 hours, your robot will receive a permanent RRN and appear in the registry.</p>
+
+      <div class="callout">
+        <strong>Have a RURI?</strong> If your robot supports the RCAN protocol, use <a href="/registry/auto-register/">Auto-Register</a> to fetch its manifest automatically.
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Access the API</h2>
+      <p>The registry provides a JSON API for programmatic access:</p>
+
+      <h3>List all robots</h3>
+      <pre><code>curl https://rcan.dev/api/robots.json</code></pre>
+
+      <h3>Get a specific robot</h3>
+      <pre><code>curl https://rcan.dev/api/robots/RRN-00000001.json</code></pre>
+
+      <h3>Filter by status</h3>
+      <pre><code>curl "https://rcan.dev/api/robots.json?status=active"</code></pre>
+
+      <p>See the <a href="/api/">full API documentation</a> for all endpoints and options.</p>
+    </section>
+
+    <section>
+      <h2>3. Add a Badge to Your README</h2>
+      <p>Show off your robot's registration with a badge:</p>
+
+      <div class="badge-demo">
+        <img src="/api/badge/RRN-00000001.svg" alt="RCAN Badge Example" />
+      </div>
+
+      <h3>Markdown</h3>
+      <pre><code>[![RCAN](https://rcan.dev/api/badge/RRN-XXXXXXXX.svg)](https://rcan.dev/registry/RRN-XXXXXXXX/)</code></pre>
+
+      <h3>HTML</h3>
+      <pre><code>&lt;a href="https://rcan.dev/registry/RRN-XXXXXXXX/"&gt;
+  &lt;img src="https://rcan.dev/api/badge/RRN-XXXXXXXX.svg" alt="RCAN"&gt;
+&lt;/a&gt;</code></pre>
+
+      <p>Replace <code>RRN-XXXXXXXX</code> with your robot's actual RRN.</p>
+    </section>
+
+    <section>
+      <h2>4. Generate a QR Code</h2>
+      <p>Each registered robot gets a QR code linking to its registry page:</p>
+
+      <ul>
+        <li>View on the robot's registry page under "Share & Embed"</li>
+        <li>Download as SVG for printing</li>
+        <li>Access via API: <code>/api/qr/RRN-XXXXXXXX.svg</code></li>
+      </ul>
+
+      <p>Perfect for labeling physical robots!</p>
+    </section>
+
+    <section>
+      <h2>5. Explore the Registry</h2>
+      <p>Browse registered robots:</p>
+
+      <ul>
+        <li><a href="/registry/">View all robots</a></li>
+        <li>Filter by status, manufacturer, or tags</li>
+        <li>View detailed specifications</li>
+        <li>See 3D models (when URDF available)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Next Steps</h2>
+      <div class="next-links">
+        <a href="/docs/concepts/" class="next-link">
+          <span class="next-label">Learn</span>
+          <span class="next-title">Core Concepts →</span>
+        </a>
+        <a href="/docs/ruri/" class="next-link">
+          <span class="next-label">Deep Dive</span>
+          <span class="next-title">RURI Format →</span>
+        </a>
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .callout {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(167, 139, 250, 0.1));
+    border: 1px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  .badge-demo {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    margin: 1rem 0;
+  }
+
+  .next-links {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .next-link {
+    display: block;
+    padding: 1.25rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .next-link:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .next-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .next-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 600px) {
+    .next-links {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

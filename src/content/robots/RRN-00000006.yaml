@@ -1,0 +1,32 @@
+rrn: "RRN-00000006"
+name: "Universal Robots UR5e"
+manufacturer: "Universal Robots"
+model: "ur5e"
+description: "A collaborative robot arm (cobot) designed for flexible automation. The UR5e features 6 degrees of freedom, force/torque sensing, and can safely work alongside humans without guarding. Popular in manufacturing, research, and education for its ease of programming and reliability."
+image: "/robots/ur5e.svg"
+production_year: 2018
+status: "active"
+
+urdf_url: "https://github.com/UniversalRobots/Universal_Robots_ROS2_Description"
+github_url: "https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver"
+website: "https://www.universal-robots.com/products/ur5-robot/"
+
+specs:
+  weight_kg: 20.6
+  dof: 6
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["Force/Torque Sensor", "Joint Encoders"]
+  payload_kg: 5.0
+  reach_mm: 850
+
+owner:
+  name: "Universal Robots"
+  type: "company"
+  website: "https://www.universal-robots.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["cobot", "arm", "manipulator", "industrial", "6-dof", "collaborative"]
+

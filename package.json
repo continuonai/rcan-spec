@@ -8,11 +8,18 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "sync-ruri": "npx ts-node scripts/sync-ruri.ts",
+    "sync-ruri:dry": "npx ts-node scripts/sync-ruri.ts --dry-run"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.0.0",
-    "astro": "^4.0.0"
+    "@types/qrcode": "^1.5.6",
+    "@types/three": "^0.182.0",
+    "astro": "^4.0.0",
+    "qrcode": "^1.5.4",
+    "three": "^0.182.0",
+    "urdf-loader": "^0.12.6"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

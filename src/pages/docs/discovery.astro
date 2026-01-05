@@ -1,0 +1,157 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Discovery (mDNS)" description="Local network robot discovery using mDNS in RCAN.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Discovery (mDNS)</h1>
+    <p class="lead">Find robots on your local network without cloud connectivity.</p>
+
+    <section>
+      <h2>Service Type</h2>
+      <p>RCAN robots announce themselves using mDNS with the service type:</p>
+      <pre><code>_rcan._tcp.local.</code></pre>
+    </section>
+
+    <section>
+      <h2>TXT Records</h2>
+      <p>Robots broadcast metadata in DNS TXT records:</p>
+      <pre><code>ruri=rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
+model=companion-v1
+caps=arm,vision,chat,teleop
+roles=owner,user,guest
+version=1.0.0
+name=Living Room Companion
+status=idle</code></pre>
+
+      <h3>Record Fields</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>ruri</code></td>
+            <td>Full Robot URI</td>
+          </tr>
+          <tr>
+            <td><code>model</code></td>
+            <td>Robot model identifier</td>
+          </tr>
+          <tr>
+            <td><code>caps</code></td>
+            <td>Comma-separated capabilities</td>
+          </tr>
+          <tr>
+            <td><code>roles</code></td>
+            <td>Available access roles</td>
+          </tr>
+          <tr>
+            <td><code>version</code></td>
+            <td>RCAN protocol version</td>
+          </tr>
+          <tr>
+            <td><code>name</code></td>
+            <td>Human-readable name</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>Current robot status</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Discovering Robots</h2>
+
+      <h3>Using avahi-browse (Linux)</h3>
+      <pre><code>avahi-browse -r _rcan._tcp</code></pre>
+
+      <h3>Using dns-sd (macOS)</h3>
+      <pre><code>dns-sd -B _rcan._tcp local.</code></pre>
+
+      <h3>Using Python (zeroconf)</h3>
+      <pre><code>from zeroconf import ServiceBrowser, Zeroconf
+
+class RCANListener:
+    def add_service(self, zc, type, name):
+        info = zc.get_service_info(type, name)
+        if info:
+            ruri = info.properties.get(b'ruri', b'').decode()
+            print(f"Found robot: &#123;ruri&#125;")
+
+zeroconf = Zeroconf()
+browser = ServiceBrowser(zeroconf, "_rcan._tcp.local.", RCANListener())</code></pre>
+    </section>
+
+    <section>
+      <h2>Local Supremacy</h2>
+      <p>A key RCAN principle: <strong>local discovery always works</strong>, even if:</p>
+      <ul>
+        <li>Internet is unavailable</li>
+        <li>Cloud registry is down</li>
+        <li>Robot's registry ID was deleted</li>
+      </ul>
+      <p>This ensures robots remain controllable in disconnected environments.</p>
+    </section>
+
+    <section>
+      <h2>Status Values</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>idle</code></td>
+            <td>Ready and awaiting commands</td>
+          </tr>
+          <tr>
+            <td><code>busy</code></td>
+            <td>Executing a task</td>
+          </tr>
+          <tr>
+            <td><code>charging</code></td>
+            <td>On charger, not operational</td>
+          </tr>
+          <tr>
+            <td><code>error</code></td>
+            <td>Fault condition</td>
+          </tr>
+          <tr>
+            <td><code>offline</code></td>
+            <td>Not accepting connections</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+</style>

@@ -1,0 +1,214 @@
+name: 🤖 Register a Robot
+description: Submit a robot to the global robot registry
+title: "[ROBOT] "
+labels: ["robot-registration", "registry"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Register Your Robot
+        
+        Fill out this form to add a robot to the [RCAN Robot Registry](https://rcan.dev/registry/).
+        Once approved, your robot will receive a unique **Robot Registration Number (RRN)**.
+
+  - type: input
+    id: name
+    attributes:
+      label: Robot Name
+      description: The official or common name of the robot
+      placeholder: e.g., TurtleBot 3 Burger
+    validations:
+      required: true
+
+  - type: input
+    id: manufacturer
+    attributes:
+      label: Manufacturer
+      description: Company or organization that makes this robot
+      placeholder: e.g., ROBOTIS
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model Identifier
+      description: Technical model name (lowercase, underscores allowed)
+      placeholder: e.g., turtlebot3_burger
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Brief description of the robot (1-3 sentences)
+      placeholder: A compact, affordable mobile robot designed for ROS education and research...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      description: Current production/development status
+      options:
+        - active
+        - retired
+        - prototype
+        - concept
+    validations:
+      required: true
+
+  - type: input
+    id: production_year
+    attributes:
+      label: Production Year
+      description: Year the robot was first produced/released (optional)
+      placeholder: e.g., 2017
+
+  - type: markdown
+    attributes:
+      value: "## Links (Optional)"
+
+  - type: input
+    id: github_url
+    attributes:
+      label: GitHub Repository
+      description: Link to the robot's ROS packages or main repository
+      placeholder: https://github.com/...
+
+  - type: input
+    id: urdf_url
+    attributes:
+      label: URDF Location
+      description: Link to the robot's URDF description files
+      placeholder: https://github.com/.../robot_description
+
+  - type: input
+    id: website
+    attributes:
+      label: Official Website
+      description: Manufacturer's product page or official site
+      placeholder: https://...
+
+  - type: markdown
+    attributes:
+      value: "## Technical Specifications (Optional)"
+
+  - type: input
+    id: weight
+    attributes:
+      label: Weight (kg)
+      placeholder: e.g., 10.5
+
+  - type: input
+    id: dimensions
+    attributes:
+      label: Dimensions
+      placeholder: e.g., 500 x 300 x 200 mm
+
+  - type: input
+    id: dof
+    attributes:
+      label: Degrees of Freedom
+      description: Total DOF for arms, or wheel count for mobile robots
+      placeholder: e.g., 6
+
+  - type: checkboxes
+    id: ros_version
+    attributes:
+      label: ROS Version Support
+      options:
+        - label: ROS 1
+        - label: ROS 2
+
+  - type: input
+    id: sensors
+    attributes:
+      label: Sensors
+      description: Comma-separated list of main sensors
+      placeholder: e.g., LiDAR, RGB Camera, IMU, Force/Torque
+
+  - type: input
+    id: compute
+    attributes:
+      label: Compute Platform
+      placeholder: e.g., NVIDIA Jetson Orin, Raspberry Pi 4
+
+  - type: input
+    id: payload
+    attributes:
+      label: Payload Capacity (kg)
+      placeholder: e.g., 5.0
+
+  - type: input
+    id: max_speed
+    attributes:
+      label: Max Speed (m/s)
+      description: For mobile robots
+      placeholder: e.g., 1.5
+
+  - type: input
+    id: battery_life
+    attributes:
+      label: Battery Life (hours)
+      placeholder: e.g., 2.5
+
+  - type: input
+    id: reach
+    attributes:
+      label: Reach (mm)
+      description: For robot arms
+      placeholder: e.g., 850
+
+  - type: markdown
+    attributes:
+      value: "## Ownership & Metadata"
+
+  - type: dropdown
+    id: owner_type
+    attributes:
+      label: Owner/Maintainer Type
+      options:
+        - company
+        - community
+        - research
+        - individual
+
+  - type: input
+    id: owner_name
+    attributes:
+      label: Owner/Maintainer Name
+      placeholder: e.g., Boston Dynamics, Open Robotics, University of XYZ
+
+  - type: input
+    id: owner_website
+    attributes:
+      label: Owner Website
+      placeholder: https://...
+
+  - type: input
+    id: tags
+    attributes:
+      label: Tags
+      description: Comma-separated keywords for discovery
+      placeholder: e.g., mobile, quadruped, ros2, industrial, research
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Notes
+      description: Any other information about this robot
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirm this information is accurate to the best of my knowledge
+          required: true
+        - label: I understand registrations are permanent and public
+          required: true
+

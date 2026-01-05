@@ -1,0 +1,433 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const yamlTemplate = `rrn: "RRN-XXXXXXXX"  # Will be assigned
+name: "Your Robot Name"
+manufacturer: "Manufacturer Name"
+model: "model_identifier"
+description: "A brief description of what this robot does and its key features."
+image: "/robots/your-robot.svg"  # Or .jpg, .png
+production_year: 2024
+status: "active"  # active | retired | prototype | concept
+
+# Links (all optional)
+urdf_url: "https://github.com/..."
+github_url: "https://github.com/..."
+website: "https://..."
+
+# Technical specs (all optional)
+specs:
+  weight_kg: 10.0
+  dimensions: "500 x 300 x 200 mm"
+  max_speed_mps: 1.0
+  dof: 6
+  ros_version: ["ROS 2"]
+  sensors: ["LiDAR", "Camera", "IMU"]
+  compute: "NVIDIA Jetson"
+  payload_kg: 5.0
+  battery_life_hours: 2.0
+  reach_mm: 850
+
+# Owner info (optional)
+owner:
+  name: "Your Name or Organization"
+  type: "individual"  # individual | company | research | community
+  website: "https://..."
+
+# RCAN integration (optional)
+ruri: null
+
+# Metadata
+submitted_by: "github:your-username"
+submitted_date: "2026-01-04"
+tags: ["mobile", "ros2", "research"]`;
+---
+
+<BaseLayout title="Register a Robot" description="Submit your robot to the global robot registry. Get a unique Robot Registration Number (RRN) and permanent documentation.">
+  <nav class="breadcrumb">
+    <a href="/registry/">← Back to Registry</a>
+  </nav>
+
+  <div class="submit-header">
+    <h1>Register a Robot</h1>
+    <p class="subtitle">Add your robot to the permanent, global registry. Free and open to everyone.</p>
+  </div>
+
+  <section class="why-register">
+    <h2>Why Register?</h2>
+    <div class="benefits-grid">
+      <div class="benefit">
+        <span class="benefit-icon">🔢</span>
+        <h3>Unique Serial Number</h3>
+        <p>Get a permanent Robot Registration Number (RRN) that uniquely identifies your robot forever.</p>
+      </div>
+      <div class="benefit">
+        <span class="benefit-icon">📋</span>
+        <h3>Documented Specs</h3>
+        <p>Centralized documentation of your robot's specifications, capabilities, and resources.</p>
+      </div>
+      <div class="benefit">
+        <span class="benefit-icon">🔍</span>
+        <h3>Discoverable</h3>
+        <p>Make your robot findable by researchers, developers, and the robotics community.</p>
+      </div>
+      <div class="benefit">
+        <span class="benefit-icon">🔗</span>
+        <h3>RCAN Ready</h3>
+        <p>Prepare for RCAN protocol integration with a documented identity.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-to-submit">
+    <h2>How to Submit</h2>
+    
+    <div class="method">
+      <h3>Option 1: GitHub Issue (Recommended)</h3>
+      <p>The easiest way to register a robot. Fill out our form and we'll add it for you.</p>
+      <a href="https://github.com/continuonai/rcan-spec/issues/new?template=new-robot.yml&title=%5BROBOT%5D+Your+Robot+Name" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        Submit via GitHub Issue
+      </a>
+    </div>
+
+    <div class="method method-highlight">
+      <h3>Option 2: Auto-Register from RURI (RCAN Protocol)</h3>
+      <p>If your robot supports the RCAN protocol and has a RURI (Robot URI), you can auto-register by fetching its manifest directly.</p>
+      <a href="/registry/auto-register/" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+        Auto-Register from RURI
+      </a>
+    </div>
+
+    <div class="method">
+      <h3>Option 3: Pull Request (Power Users)</h3>
+      <p>For developers comfortable with Git: submit a PR with your robot's YAML file.</p>
+      <ol>
+        <li>Fork the <a href="https://github.com/continuonai/rcan-spec" target="_blank" rel="noopener noreferrer">rcan-spec repository</a></li>
+        <li>Create a new file: <code>src/content/robots/RRN-XXXXXXXX.yaml</code></li>
+        <li>Use the template below and fill in your robot's details</li>
+        <li>Add an image to <code>public/robots/</code> (optional)</li>
+        <li>Submit a pull request</li>
+      </ol>
+      <p class="note">Note: Leave the RRN as placeholder; we'll assign the next available number.</p>
+    </div>
+  </section>
+
+  <section class="template-section">
+    <h2>YAML Template</h2>
+    <p>Use this template for your robot registration:</p>
+    <div class="template-container">
+      <button class="copy-btn" id="copy-template" aria-label="Copy template">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span>Copy</span>
+      </button>
+      <pre><code id="yaml-template">{yamlTemplate}</code></pre>
+    </div>
+  </section>
+
+  <section class="guidelines">
+    <h2>Submission Guidelines</h2>
+    <ul>
+      <li><strong>One robot per submission.</strong> For robot variants (e.g., TurtleBot 3 Burger vs Waffle), submit each separately.</li>
+      <li><strong>Be accurate.</strong> Verify specs from official sources when possible.</li>
+      <li><strong>Include links.</strong> URDF, GitHub, and official websites help others find resources.</li>
+      <li><strong>Use descriptive tags.</strong> Help others discover your robot with relevant keywords.</li>
+      <li><strong>Images welcome.</strong> SVG preferred, but PNG/JPG accepted. Keep under 100KB.</li>
+    </ul>
+  </section>
+
+  <section class="faq">
+    <h2>FAQ</h2>
+    
+    <details>
+      <summary>What robots can be registered?</summary>
+      <p>Any robot! Production robots, research platforms, prototypes, even concept designs. If it's a robot and uses or could use ROS, it belongs here.</p>
+    </details>
+    
+    <details>
+      <summary>Is registration permanent?</summary>
+      <p>Yes. Once assigned, an RRN is permanent and will never be reused. You can update the details, but the registration itself is forever.</p>
+    </details>
+    
+    <details>
+      <summary>Can I register someone else's robot?</summary>
+      <p>Yes, for well-known commercial or open-source robots. Community contributions help build a complete registry. For private/personal robots, only the owner should register.</p>
+    </details>
+    
+    <details>
+      <summary>How long until my robot appears?</summary>
+      <p>Typically within 24-48 hours. We review submissions to ensure quality and accuracy.</p>
+    </details>
+    
+    <details>
+      <summary>What if I need to update my robot's info?</summary>
+      <p>Submit a GitHub issue or PR with the corrections. Reference the RRN in your update.</p>
+    </details>
+  </section>
+
+</BaseLayout>
+
+<script>
+  const copyBtn = document.getElementById('copy-template');
+  const template = document.getElementById('yaml-template');
+  
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(template?.textContent || '');
+      const span = copyBtn.querySelector('span');
+      if (span) {
+        span.textContent = 'Copied!';
+        setTimeout(() => {
+          span.textContent = 'Copy';
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  });
+</script>
+
+<style>
+  .breadcrumb {
+    margin-bottom: 2rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .submit-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .submit-header h1 {
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(135deg, var(--color-accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .why-register {
+    margin-bottom: 3rem;
+  }
+
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .benefit {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .benefit-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .benefit h3 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .benefit p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .how-to-submit {
+    margin-bottom: 3rem;
+  }
+
+  .method {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .method h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+  }
+
+  .method ol {
+    margin-bottom: 1rem;
+  }
+
+  .method .note {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+    text-decoration: none;
+  }
+
+  .btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    text-decoration: none;
+  }
+
+  .method-highlight {
+    border-color: var(--color-accent);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.05), rgba(167, 139, 250, 0.05));
+  }
+
+  .template-section {
+    margin-bottom: 3rem;
+  }
+
+  .template-container {
+    position: relative;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+
+  .template-container pre {
+    margin: 0;
+    padding-top: 3rem;
+  }
+
+  .guidelines {
+    margin-bottom: 3rem;
+  }
+
+  .guidelines ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .guidelines li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .guidelines li:last-child {
+    border-bottom: none;
+  }
+
+  .faq {
+    margin-bottom: 2rem;
+  }
+
+  details {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+  }
+
+  summary {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::before {
+    content: '▸';
+    margin-right: 0.75rem;
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+
+  details[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  details p {
+    padding: 0 1.25rem 1rem;
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .submit-header h1 {
+      font-size: 2rem;
+    }
+
+    .benefits-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+

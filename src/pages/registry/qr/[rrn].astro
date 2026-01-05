@@ -1,0 +1,167 @@
+---
+import { getCollection } from 'astro:content';
+import QRCode from 'qrcode';
+
+export async function getStaticPaths() {
+  const robots = await getCollection('robots');
+  return robots.map(robot => ({
+    params: { rrn: robot.data.rrn },
+    props: { robot: robot.data },
+  }));
+}
+
+interface Props {
+  robot: {
+    rrn: string;
+    name: string;
+    manufacturer: string;
+    model: string;
+  };
+}
+
+const { robot } = Astro.props;
+const registryUrl = `https://rcan.dev/registry/${robot.rrn}/`;
+
+const svgString = await QRCode.toString(registryUrl, {
+  type: 'svg',
+  width: 400,
+  margin: 2,
+  color: {
+    dark: '#000000',
+    light: '#ffffff',
+  },
+});
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code - {robot.name}</title>
+    <style>
+      @media print {
+        @page {
+          size: 4in 4in;
+          margin: 0.25in;
+        }
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 1rem;
+        background: #fff;
+        color: #000;
+      }
+
+      .qr-label {
+        text-align: center;
+        max-width: 400px;
+      }
+
+      .qr-code {
+        margin-bottom: 1.5rem;
+      }
+
+      .qr-code :global(svg) {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .robot-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+      }
+
+      .robot-meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.75rem;
+      }
+
+      .rrn {
+        font-family: 'JetBrains Mono', 'SF Mono', monospace;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.5rem;
+      }
+
+      .url {
+        font-size: 0.75rem;
+        color: #888;
+        word-break: break-all;
+      }
+
+      .print-controls {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+      }
+
+      .print-btn, .back-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .print-btn {
+        background: #22d3ee;
+        color: #000;
+      }
+
+      .print-btn:hover {
+        background: #06b6d4;
+      }
+
+      .back-btn {
+        background: #e5e5e5;
+        color: #333;
+        text-decoration: none;
+      }
+
+      .back-btn:hover {
+        background: #d5d5d5;
+      }
+
+      @media print {
+        .print-controls {
+          display: none;
+        }
+
+        body {
+          min-height: auto;
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="qr-label">
+      <div class="qr-code" set:html={svgString} />
+      <h1 class="robot-name">{robot.name}</h1>
+      <p class="robot-meta">{robot.manufacturer} / {robot.model}</p>
+      <p class="rrn">{robot.rrn}</p>
+      <p class="url">{registryUrl}</p>
+    </div>
+    <div class="print-controls">
+      <button class="print-btn" onclick="window.print()">Print Label</button>
+      <a class="back-btn" href={`/registry/${robot.rrn}/`}>Back to Registry</a>
+    </div>
+  </body>
+</html>

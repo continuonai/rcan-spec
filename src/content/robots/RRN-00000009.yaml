@@ -1,0 +1,35 @@
+rrn: "RRN-00000009"
+name: "ANYmal D"
+manufacturer: "ANYbotics"
+model: "anymal_d"
+description: "An advanced quadruped robot designed for industrial inspection in hazardous environments. ANYmal D features IP67 protection, autonomous navigation, and can operate in explosive atmospheres. Used for oil & gas, mining, and power plant inspections."
+image: "/robots/anymal-d.svg"
+production_year: 2021
+status: "active"
+
+urdf_url: "https://github.com/ANYbotics/anymal_b_simple_description"
+github_url: "https://github.com/ANYbotics"
+website: "https://www.anybotics.com/anymal/"
+
+specs:
+  weight_kg: 50.0
+  dimensions: "800 x 530 x 700 mm"
+  max_speed_mps: 1.0
+  dof: 12
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["LiDAR", "Cameras", "Thermal Camera", "Gas Sensors", "IMU"]
+  compute: "Industrial PC"
+  battery_life_hours: 2.0
+  payload_kg: 10.0
+
+owner:
+  name: "ANYbotics AG"
+  type: "company"
+  website: "https://www.anybotics.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["quadruped", "industrial", "inspection", "autonomous", "legged", "hazardous-environment"]
+

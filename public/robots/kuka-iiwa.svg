@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e1e2e"/>
+  <!-- Orange KUKA style -->
+  <!-- Base -->
+  <ellipse cx="50" cy="180" rx="28" ry="10" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <rect x="32" y="162" width="36" height="18" rx="3" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <!-- Arm with distinctive KUKA styling -->
+  <path d="M50 162 L50 130" stroke="#ff6b35" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="50" cy="130" r="9" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <path d="M50 130 L85 95" stroke="#ff6b35" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="85" cy="95" r="8" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <path d="M85 95 L130 80" stroke="#ff6b35" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="130" cy="80" r="7" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <path d="M130 80 L160 60" stroke="#ff6b35" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="160" cy="60" r="6" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <!-- End effector flange -->
+  <circle cx="170" cy="50" r="8" stroke="#ff6b35" stroke-width="2" fill="none"/>
+  <circle cx="170" cy="50" r="4" stroke="#ff6b35" stroke-width="1" fill="none"/>
+  <!-- 7 joint indicators -->
+  <circle cx="50" cy="162" r="2" fill="#ff6b35"/>
+  <circle cx="50" cy="130" r="2" fill="#ff6b35"/>
+  <circle cx="68" cy="112" r="2" fill="#ff6b35"/>
+  <circle cx="85" cy="95" r="2" fill="#ff6b35"/>
+  <circle cx="107" cy="87" r="2" fill="#ff6b35"/>
+  <circle cx="130" cy="80" r="2" fill="#ff6b35"/>
+  <circle cx="160" cy="60" r="2" fill="#ff6b35"/>
+</svg>
+

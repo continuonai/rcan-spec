@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e1e2e"/>
+  <!-- Rugged body -->
+  <rect x="35" y="70" width="130" height="60" rx="5" stroke="#ef4444" stroke-width="3" fill="none"/>
+  <!-- Top platform -->
+  <rect x="50" y="55" width="100" height="20" rx="3" stroke="#ef4444" stroke-width="2" fill="none"/>
+  <!-- Large rugged wheels -->
+  <circle cx="55" cy="145" r="22" stroke="#ef4444" stroke-width="3" fill="none"/>
+  <circle cx="55" cy="145" r="12" stroke="#ef4444" stroke-width="2" fill="none"/>
+  <circle cx="145" cy="145" r="22" stroke="#ef4444" stroke-width="3" fill="none"/>
+  <circle cx="145" cy="145" r="12" stroke="#ef4444" stroke-width="2" fill="none"/>
+  <!-- Wheel treads -->
+  <line x1="35" y1="145" x2="33" y2="145" stroke="#ef4444" stroke-width="2"/>
+  <line x1="77" y1="145" x2="79" y2="145" stroke="#ef4444" stroke-width="2"/>
+  <line x1="123" y1="145" x2="121" y2="145" stroke="#ef4444" stroke-width="2"/>
+  <line x1="167" y1="145" x2="169" y2="145" stroke="#ef4444" stroke-width="2"/>
+  <!-- Front sensors -->
+  <rect x="160" y="85" width="8" height="30" rx="2" stroke="#ef4444" stroke-width="1.5" fill="none"/>
+</svg>
+

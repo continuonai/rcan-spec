@@ -1,0 +1,180 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Ownership & Transfers" description="Managing robot ownership and tracking transfer history in RCAN.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Ownership & Transfers</h1>
+    <p class="lead">Track ownership changes and maintain accurate robot provenance.</p>
+
+    <section>
+      <h2>Owner Types</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Examples</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>individual</code></td>
+            <td>Personal ownership</td>
+            <td>Hobbyists, researchers</td>
+          </tr>
+          <tr>
+            <td><code>company</code></td>
+            <td>Commercial entity</td>
+            <td>Manufacturers, businesses</td>
+          </tr>
+          <tr>
+            <td><code>research</code></td>
+            <td>Academic institution</td>
+            <td>Universities, labs</td>
+          </tr>
+          <tr>
+            <td><code>community</code></td>
+            <td>Open source project</td>
+            <td>ROS community, foundations</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Current Owner</h2>
+      <p>Set the current owner in your robot's YAML:</p>
+      <pre><code>owner:
+  name: "RoboTech Labs"
+  type: "research"
+  website: "https://robotech-labs.edu"</code></pre>
+    </section>
+
+    <section>
+      <h2>Ownership History</h2>
+      <p>Track all previous owners with the <code>ownership_history</code> field:</p>
+      <pre><code>ownership_history:
+  - owner_name: "Original Manufacturer"
+    owner_type: "company"
+    owner_website: "https://manufacturer.com"
+    acquired_date: "2020-01-15"
+    transferred_date: "2022-06-01"
+    transfer_reason: "Sold to research lab"
+    verified: true
+
+  - owner_name: "University Research Lab"
+    owner_type: "research"
+    owner_website: "https://university.edu/robotics"
+    acquired_date: "2022-06-01"
+    transferred_date: "2024-01-10"
+    transfer_reason: "Donated to open source"
+    verified: true
+
+  - owner_name: "Open Source Community"
+    owner_type: "community"
+    acquired_date: "2024-01-10"
+    verified: false</code></pre>
+    </section>
+
+    <section>
+      <h2>History Fields</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>owner_name</code></td>
+            <td>Yes</td>
+            <td>Name of the owner</td>
+          </tr>
+          <tr>
+            <td><code>owner_type</code></td>
+            <td>Yes</td>
+            <td>Type: individual, company, research, community</td>
+          </tr>
+          <tr>
+            <td><code>owner_website</code></td>
+            <td>No</td>
+            <td>Owner's website URL</td>
+          </tr>
+          <tr>
+            <td><code>acquired_date</code></td>
+            <td>Yes</td>
+            <td>Date ownership began (YYYY-MM-DD)</td>
+          </tr>
+          <tr>
+            <td><code>transferred_date</code></td>
+            <td>No</td>
+            <td>Date ownership ended (YYYY-MM-DD)</td>
+          </tr>
+          <tr>
+            <td><code>transfer_reason</code></td>
+            <td>No</td>
+            <td>Reason for the transfer</td>
+          </tr>
+          <tr>
+            <td><code>verified</code></td>
+            <td>Yes</td>
+            <td>Whether the transfer was verified</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Verification</h2>
+      <p>Ownership transfers can be verified by:</p>
+      <ul>
+        <li>Email confirmation from both parties</li>
+        <li>GitHub identity verification</li>
+        <li>Official documentation</li>
+        <li>Maintainer review</li>
+      </ul>
+      <p>Verified transfers are displayed with a checkmark in the timeline.</p>
+    </section>
+
+    <section>
+      <h2>Requesting a Transfer</h2>
+      <p>To transfer ownership:</p>
+      <ol>
+        <li>Submit a GitHub issue with:
+          <ul>
+            <li>Robot RRN</li>
+            <li>Current owner verification</li>
+            <li>New owner information</li>
+            <li>Reason for transfer</li>
+          </ul>
+        </li>
+        <li>Both parties confirm the transfer</li>
+        <li>Maintainers update the registry</li>
+      </ol>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+</style>

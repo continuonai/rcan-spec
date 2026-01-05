@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e1e2e"/>
+  <!-- Base -->
+  <ellipse cx="50" cy="175" rx="30" ry="10" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <rect x="35" y="160" width="30" height="15" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <!-- Arm segments -->
+  <rect x="45" y="110" width="15" height="55" rx="3" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <!-- Joint 1 -->
+  <circle cx="52" cy="110" r="10" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <!-- Upper arm -->
+  <rect x="52" y="60" width="60" height="12" rx="3" stroke="#3b82f6" stroke-width="2" fill="none" transform="rotate(15 52 66)"/>
+  <!-- Joint 2 -->
+  <circle cx="110" cy="75" r="8" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <!-- Forearm -->
+  <rect x="110" y="75" width="45" height="10" rx="3" stroke="#3b82f6" stroke-width="2" fill="none" transform="rotate(-30 110 80)"/>
+  <!-- Wrist -->
+  <circle cx="150" cy="55" r="6" stroke="#3b82f6" stroke-width="2" fill="none"/>
+  <!-- End effector -->
+  <path d="M155 50 L170 40 M155 60 L170 70" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+</svg>
+

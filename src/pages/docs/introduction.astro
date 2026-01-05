@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Introduction to RCAN" description="What is RCAN and why it matters for the future of robotics communication and identification.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Introduction to RCAN</h1>
+    <p class="lead">The Robot Communication & Addressing Network (RCAN) is an open protocol for identifying, discovering, and communicating with robots across networks and organizations.</p>
+
+    <section>
+      <h2>What is RCAN?</h2>
+      <p>RCAN is a federated protocol that provides:</p>
+      <ul>
+        <li><strong>Universal Robot Identification</strong> - Every robot gets a unique, permanent Robot Registration Number (RRN)</li>
+        <li><strong>Addressable URIs</strong> - Robot URIs (RURIs) that work like email addresses for robots</li>
+        <li><strong>Local Discovery</strong> - mDNS-based discovery for LAN environments</li>
+        <li><strong>Role-Based Access</strong> - Five-level permission system from Guest to Creator</li>
+        <li><strong>Safety First</strong> - Protocol-level safety invariants that can't be bypassed</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Why RCAN?</h2>
+      <p>As robots become more prevalent, we need standards for:</p>
+
+      <h3>Identity</h3>
+      <p>How do you uniquely identify a robot across its lifetime? Serial numbers are manufacturer-specific. MAC addresses can be spoofed. RCAN provides permanent, verifiable identities through RRNs.</p>
+
+      <h3>Discovery</h3>
+      <p>How do robots find each other on a network? How do applications discover available robots? RCAN uses mDNS for local discovery and federated registries for global lookup.</p>
+
+      <h3>Communication</h3>
+      <p>How do you send commands to a robot securely? How do you ensure only authorized users can control it? RCAN defines message formats, authentication, and role-based permissions.</p>
+
+      <h3>Safety</h3>
+      <p>How do you ensure remote commands can't override local safety systems? RCAN makes safety invariants part of the protocol itself, not optional features.</p>
+    </section>
+
+    <section>
+      <h2>Core Principles</h2>
+
+      <div class="principle">
+        <h3>Federated, Not Centralized</h3>
+        <p>Like email, RCAN is federated. Anyone can run a registry. Robots can move between registries. No single entity controls the network.</p>
+      </div>
+
+      <div class="principle">
+        <h3>Local Supremacy</h3>
+        <p>A robot's local safety systems always take precedence over remote commands. If the network goes down, the robot enters a safe state.</p>
+      </div>
+
+      <div class="principle">
+        <h3>Owner Control</h3>
+        <p>Robot owners (Level 4) can always redirect their robot to a different registry. No vendor lock-in.</p>
+      </div>
+
+      <div class="principle">
+        <h3>Open Standard</h3>
+        <p>RCAN is open source and community-driven. The specification, reference implementations, and registry are all publicly available.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Components</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RRN</strong></td>
+            <td>Robot Registration Number - permanent unique identifier (e.g., RRN-00000001)</td>
+          </tr>
+          <tr>
+            <td><strong>RURI</strong></td>
+            <td>Robot URI - addressable endpoint (e.g., rcan://registry.example.com/acme/bot-x1/12345678)</td>
+          </tr>
+          <tr>
+            <td><strong>Registry</strong></td>
+            <td>Database of registered robots with their specifications and metadata</td>
+          </tr>
+          <tr>
+            <td><strong>Discovery</strong></td>
+            <td>mDNS service for finding robots on local networks</td>
+          </tr>
+          <tr>
+            <td><strong>Messages</strong></td>
+            <td>Protocol buffer format for robot communication</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Next Steps</h2>
+      <div class="next-links">
+        <a href="/docs/quick-start/" class="next-link">
+          <span class="next-label">Next</span>
+          <span class="next-title">Quick Start Guide →</span>
+        </a>
+        <a href="/docs/concepts/" class="next-link">
+          <span class="next-label">Learn</span>
+          <span class="next-title">Core Concepts →</span>
+        </a>
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .doc-article {
+    max-width: 100%;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .principle {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .principle h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .principle p {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .next-links {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .next-link {
+    display: block;
+    padding: 1.25rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .next-link:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .next-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .next-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 600px) {
+    .next-links {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

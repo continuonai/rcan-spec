@@ -1,0 +1,185 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="RURI Format" description="Understanding the Robot URI format for addressing robots in RCAN.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>RURI Format</h1>
+    <p class="lead">The Robot URI (RURI) is an addressable identifier for locating and communicating with robots.</p>
+
+    <section>
+      <h2>Format</h2>
+      <pre><code>rcan://&lt;registry&gt;/&lt;manufacturer&gt;/&lt;model&gt;/&lt;device-id&gt;[:&lt;port&gt;][/&lt;capability&gt;]</code></pre>
+    </section>
+
+    <section>
+      <h2>Components</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Required</th>
+            <th>Description</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>scheme</code></td>
+            <td>Yes</td>
+            <td>Always "rcan://"</td>
+            <td>rcan://</td>
+          </tr>
+          <tr>
+            <td><code>registry</code></td>
+            <td>Yes</td>
+            <td>Registry domain</td>
+            <td>continuon.cloud</td>
+          </tr>
+          <tr>
+            <td><code>manufacturer</code></td>
+            <td>Yes</td>
+            <td>Manufacturer namespace</td>
+            <td>acme</td>
+          </tr>
+          <tr>
+            <td><code>model</code></td>
+            <td>Yes</td>
+            <td>Robot model</td>
+            <td>bot-x1</td>
+          </tr>
+          <tr>
+            <td><code>device-id</code></td>
+            <td>Yes</td>
+            <td>Unique device ID (8 hex or UUID)</td>
+            <td>12345678</td>
+          </tr>
+          <tr>
+            <td><code>port</code></td>
+            <td>No</td>
+            <td>Network port (default: 8080)</td>
+            <td>:9000</td>
+          </tr>
+          <tr>
+            <td><code>capability</code></td>
+            <td>No</td>
+            <td>Specific endpoint</td>
+            <td>/arm</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Examples</h2>
+      <pre><code># Basic RURI
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
+
+# With full UUID
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6-7890-1234-5678-abcdef012345
+
+# With capability endpoint
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6/arm
+
+# Local network discovery
+rcan://local.rcan/discovered/192.168.1.42:8080
+
+# Custom port
+rcan://my-server.lan/acme/bot-x1/a1b2c3d4:9000</code></pre>
+    </section>
+
+    <section>
+      <h2>Validation Regex</h2>
+      <pre><code class="small">^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]&#123;8&#125;(?:-[0-9a-f]&#123;4&#125;-[0-9a-f]&#123;4&#125;-[0-9a-f]&#123;4&#125;-[0-9a-f]&#123;12&#125;)?)(?::(\d&#123;1,5&#125;))?(/[a-z][a-z0-9/-]*)?$</code></pre>
+    </section>
+
+    <section>
+      <h2>Device ID Formats</h2>
+      <h3>Short Form (8 hex characters)</h3>
+      <pre><code>d3a4b5c6</code></pre>
+      <p>Typically derived from MAC address or assigned by manufacturer.</p>
+
+      <h3>Full UUID</h3>
+      <pre><code>d3a4b5c6-7890-1234-5678-abcdef012345</code></pre>
+      <p>Standard UUID format for guaranteed uniqueness.</p>
+    </section>
+
+    <section>
+      <h2>Common Capabilities</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/arm</code></td>
+            <td>Robotic arm control</td>
+          </tr>
+          <tr>
+            <td><code>/vision</code></td>
+            <td>Camera and vision system</td>
+          </tr>
+          <tr>
+            <td><code>/nav</code></td>
+            <td>Navigation and localization</td>
+          </tr>
+          <tr>
+            <td><code>/teleop</code></td>
+            <td>Teleoperation interface</td>
+          </tr>
+          <tr>
+            <td><code>/chat</code></td>
+            <td>Voice/text interaction</td>
+          </tr>
+          <tr>
+            <td><code>/status</code></td>
+            <td>Health and diagnostics</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Parsing in Code</h2>
+      <h3>JavaScript/TypeScript</h3>
+      <pre><code>import &#123; parseRURI &#125; from '@/utils/ruri';
+
+const result = parseRURI('rcan://continuon.cloud/acme/bot-x1/12345678');
+if (result.valid) &#123;
+  console.log(result.parsed.registry);     // "continuon.cloud"
+  console.log(result.parsed.manufacturer); // "acme"
+  console.log(result.parsed.model);        // "bot-x1"
+  console.log(result.parsed.deviceId);     // "12345678"
+&#125;</code></pre>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  code.small {
+    font-size: 0.7rem;
+    word-break: break-all;
+  }
+</style>

@@ -1,0 +1,360 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Core Concepts" description="Understanding the fundamental concepts of RCAN: RRN, RURI, registries, and more.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Core Concepts</h1>
+    <p class="lead">Understanding the building blocks of the RCAN protocol.</p>
+
+    <section id="rrn">
+      <h2>Robot Registration Number (RRN)</h2>
+      <p>An RRN is a <strong>permanent, globally unique identifier</strong> assigned to each robot in the registry.</p>
+
+      <div class="example-box">
+        <code class="large">RRN-00000001</code>
+      </div>
+
+      <h3>Format</h3>
+      <ul>
+        <li>Prefix: <code>RRN-</code></li>
+        <li>8-digit zero-padded number</li>
+        <li>Assigned sequentially</li>
+        <li>Never reused, even if robot is retired</li>
+      </ul>
+
+      <h3>Properties</h3>
+      <table>
+        <tbody>
+          <tr>
+            <th>Permanent</th>
+            <td>Once assigned, an RRN never changes</td>
+          </tr>
+          <tr>
+            <th>Unique</th>
+            <td>No two robots share an RRN</td>
+          </tr>
+          <tr>
+            <th>Sequential</th>
+            <td>Assigned in order of registration</td>
+          </tr>
+          <tr>
+            <th>Verifiable</th>
+            <td>Can be looked up in the registry</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="ruri">
+      <h2>Robot URI (RURI)</h2>
+      <p>A RURI is an <strong>addressable identifier</strong> that locates a specific robot instance on a network.</p>
+
+      <div class="example-box">
+        <code class="large">rcan://continuon.cloud/acme/bot-x1/12345678</code>
+      </div>
+
+      <h3>Components</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Part</th>
+            <th>Example</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>scheme</code></td>
+            <td>rcan://</td>
+            <td>Protocol identifier</td>
+          </tr>
+          <tr>
+            <td><code>registry</code></td>
+            <td>continuon.cloud</td>
+            <td>Registry domain</td>
+          </tr>
+          <tr>
+            <td><code>manufacturer</code></td>
+            <td>acme</td>
+            <td>Manufacturer namespace</td>
+          </tr>
+          <tr>
+            <td><code>model</code></td>
+            <td>bot-x1</td>
+            <td>Robot model</td>
+          </tr>
+          <tr>
+            <td><code>device-id</code></td>
+            <td>12345678</td>
+            <td>Unique device identifier</td>
+          </tr>
+          <tr>
+            <td><code>port</code></td>
+            <td>:8080</td>
+            <td>Optional port</td>
+          </tr>
+          <tr>
+            <td><code>capability</code></td>
+            <td>/arm</td>
+            <td>Optional sub-endpoint</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>RRN vs RURI</h3>
+      <div class="comparison">
+        <div class="compare-item">
+          <h4>RRN</h4>
+          <p>Registry identity - "who is this robot?"</p>
+          <p>Static, permanent, for documentation</p>
+        </div>
+        <div class="compare-item">
+          <h4>RURI</h4>
+          <p>Network address - "where is this robot?"</p>
+          <p>Dynamic, can change, for communication</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="registry">
+      <h2>Registry</h2>
+      <p>A registry is a <strong>database of robot records</strong> that stores specifications, metadata, and ownership information.</p>
+
+      <h3>Types of Registries</h3>
+      <ul>
+        <li><strong>Public</strong> - Like rcan.dev, open to all</li>
+        <li><strong>Private</strong> - Corporate or organizational</li>
+        <li><strong>Local</strong> - Self-hosted for private networks</li>
+      </ul>
+
+      <h3>Federation</h3>
+      <p>Registries are federated like email servers. A robot registered at one registry can communicate with robots at another. Owners can migrate robots between registries.</p>
+    </section>
+
+    <section id="roles">
+      <h2>Role-Based Access Control</h2>
+      <p>RCAN defines five permission levels:</p>
+
+      <div class="roles-list">
+        <div class="role role-5">
+          <span class="role-level">5</span>
+          <div class="role-info">
+            <h4>CREATOR</h4>
+            <p>Full hardware/software control, OTA updates, safety overrides</p>
+          </div>
+        </div>
+        <div class="role role-4">
+          <span class="role-level">4</span>
+          <div class="role-info">
+            <h4>OWNER</h4>
+            <p>Configuration, skill installation, user management</p>
+          </div>
+        </div>
+        <div class="role role-3">
+          <span class="role-level">3</span>
+          <div class="role-info">
+            <h4>LEASEE</h4>
+            <p>Time-bound operational control</p>
+          </div>
+        </div>
+        <div class="role role-2">
+          <span class="role-level">2</span>
+          <div class="role-info">
+            <h4>USER</h4>
+            <p>Operational control within allowed modes</p>
+          </div>
+        </div>
+        <div class="role role-1">
+          <span class="role-level">1</span>
+          <div class="role-info">
+            <h4>GUEST</h4>
+            <p>Limited interaction, status viewing</p>
+          </div>
+        </div>
+      </div>
+
+      <p><strong>Rule:</strong> Higher roles inherit all permissions of lower roles.</p>
+    </section>
+
+    <section id="discovery">
+      <h2>Discovery</h2>
+      <p>Robots can be discovered via:</p>
+
+      <h3>mDNS (Local Network)</h3>
+      <pre><code>_rcan._tcp.local.</code></pre>
+      <p>Works without internet. Broadcasts robot presence with TXT records containing RURI, capabilities, and status.</p>
+
+      <h3>Registry Lookup</h3>
+      <p>Query a registry's API to find robots by manufacturer, model, or capabilities.</p>
+    </section>
+
+    <section>
+      <h2>Next Steps</h2>
+      <div class="next-links">
+        <a href="/docs/registration/" class="next-link">
+          <span class="next-label">Next</span>
+          <span class="next-title">Registering a Robot →</span>
+        </a>
+        <a href="/spec/" class="next-link">
+          <span class="next-label">Reference</span>
+          <span class="next-title">Full Specification →</span>
+        </a>
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .example-box {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 1.5rem 0;
+  }
+
+  .example-box code.large {
+    font-size: 1.25rem;
+    background: none;
+    padding: 0;
+    color: var(--color-accent);
+  }
+
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .compare-item {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+
+  .compare-item h4 {
+    margin: 0 0 0.5rem;
+    color: var(--color-accent);
+  }
+
+  .compare-item p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .roles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .role {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .role-level {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .role-5 .role-level { background: #dc2626; color: white; }
+  .role-4 .role-level { background: #f59e0b; color: black; }
+  .role-3 .role-level { background: #22c55e; color: white; }
+  .role-2 .role-level { background: #3b82f6; color: white; }
+  .role-1 .role-level { background: #6b7280; color: white; }
+
+  .role-info h4 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+  }
+
+  .role-info p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .next-links {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .next-link {
+    display: block;
+    padding: 1.25rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .next-link:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .next-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .next-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 600px) {
+    .comparison {
+      grid-template-columns: 1fr;
+    }
+
+    .next-links {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

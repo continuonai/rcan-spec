@@ -1,0 +1,32 @@
+rrn: "RRN-00000007"
+name: "Franka Emika Panda"
+manufacturer: "Franka Emika"
+model: "panda"
+description: "A sensitive and precise 7-DOF robotic arm designed for human-robot collaboration and research. Known for its torque sensors in every joint, enabling precise force control and safe human interaction. Widely used in academic research for manipulation and learning."
+image: "/robots/franka-panda.svg"
+production_year: 2017
+status: "active"
+
+urdf_url: "https://github.com/frankaemika/franka_ros2"
+github_url: "https://github.com/frankaemika/franka_ros2"
+website: "https://franka.de/"
+
+specs:
+  weight_kg: 18.0
+  dof: 7
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["Torque Sensors (7x)", "Joint Encoders"]
+  payload_kg: 3.0
+  reach_mm: 855
+
+owner:
+  name: "Franka Emika"
+  type: "company"
+  website: "https://franka.de/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["cobot", "arm", "manipulator", "research", "7-dof", "torque-control", "collaborative"]
+

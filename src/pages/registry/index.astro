@@ -1,0 +1,405 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RobotCard from '../../components/RobotCard.astro';
+import { getCollection } from 'astro:content';
+
+const robots = await getCollection('robots');
+
+// Sort by RRN
+const sortedRobots = robots.sort((a, b) => a.data.rrn.localeCompare(b.data.rrn));
+
+// Get unique manufacturers and tags for filters
+const manufacturers = [...new Set(robots.map(r => r.data.manufacturer))].sort();
+const allTags = [...new Set(robots.flatMap(r => r.data.tags))].sort();
+const statuses = ['active', 'retired', 'prototype', 'concept'];
+---
+
+<BaseLayout title="Robot Registry" description="The global registry for ROS robots. Browse, search, and discover robots from around the world.">
+  <div class="registry-header">
+    <h1>Robot Registry</h1>
+    <p class="subtitle">The global registry for robots. Every robot. Every serial number. Every spec.</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">{robots.length}</span>
+        <span class="stat-label">Registered Robots</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{manufacturers.length}</span>
+        <span class="stat-label">Manufacturers</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-section">
+    <div class="search-box">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Search by name, manufacturer, or tag..." 
+        autocomplete="off"
+      />
+      <button id="clear-search" class="clear-btn" aria-label="Clear search">×</button>
+    </div>
+    
+    <div class="filters">
+      <div class="filter-group">
+        <label for="status-filter">Status:</label>
+        <select id="status-filter">
+          <option value="">All</option>
+          {statuses.map(status => (
+            <option value={status}>{status.charAt(0).toUpperCase() + status.slice(1)}</option>
+          ))}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="manufacturer-filter">Manufacturer:</label>
+        <select id="manufacturer-filter">
+          <option value="">All</option>
+          {manufacturers.map(mfr => (
+            <option value={mfr.toLowerCase()}>{mfr}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="results-count" class="results-count">
+    Showing <span id="visible-count">{robots.length}</span> of {robots.length} robots
+  </div>
+
+  <div class="robot-grid" id="robot-grid">
+    {sortedRobots.map(robot => (
+      <RobotCard 
+        rrn={robot.data.rrn}
+        name={robot.data.name}
+        manufacturer={robot.data.manufacturer}
+        model={robot.data.model}
+        description={robot.data.description}
+        image={robot.data.image}
+        status={robot.data.status}
+        tags={robot.data.tags}
+      />
+    ))}
+  </div>
+
+  <div id="no-results" class="no-results" style="display: none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.3-4.3"></path>
+      <path d="M8 8l6 6"></path>
+      <path d="M14 8l-6 6"></path>
+    </svg>
+    <h3>No robots found</h3>
+    <p>Try adjusting your search or filters</p>
+  </div>
+
+  <div class="registry-cta">
+    <h2>Don't see your robot?</h2>
+    <p>Register it in the global robot registry. It's free, open, and permanent.</p>
+    <a href="/registry/submit/" class="btn btn-primary">Register a Robot</a>
+  </div>
+</BaseLayout>
+
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const clearBtn = document.getElementById('clear-search') as HTMLButtonElement;
+  const statusFilter = document.getElementById('status-filter') as HTMLSelectElement;
+  const manufacturerFilter = document.getElementById('manufacturer-filter') as HTMLSelectElement;
+  const robotGrid = document.getElementById('robot-grid') as HTMLDivElement;
+  const visibleCount = document.getElementById('visible-count') as HTMLSpanElement;
+  const noResults = document.getElementById('no-results') as HTMLDivElement;
+  const cards = robotGrid.querySelectorAll('.robot-card') as NodeListOf<HTMLAnchorElement>;
+
+  function filterRobots() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const statusValue = statusFilter.value.toLowerCase();
+    const manufacturerValue = manufacturerFilter.value.toLowerCase();
+    
+    let visibleCards = 0;
+
+    cards.forEach(card => {
+      const name = card.dataset.name || '';
+      const manufacturer = card.dataset.manufacturer || '';
+      const tags = card.dataset.tags || '';
+      const status = card.querySelector('.status-badge')?.textContent?.toLowerCase() || '';
+
+      const matchesSearch = !searchTerm || 
+        name.includes(searchTerm) || 
+        manufacturer.includes(searchTerm) || 
+        tags.includes(searchTerm);
+      
+      const matchesStatus = !statusValue || status === statusValue;
+      const matchesManufacturer = !manufacturerValue || manufacturer === manufacturerValue;
+
+      const isVisible = matchesSearch && matchesStatus && matchesManufacturer;
+      
+      card.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCards++;
+    });
+
+    visibleCount.textContent = visibleCards.toString();
+    noResults.style.display = visibleCards === 0 ? 'flex' : 'none';
+    robotGrid.style.display = visibleCards === 0 ? 'none' : '';
+    
+    // Show/hide clear button
+    clearBtn.style.opacity = searchTerm ? '1' : '0';
+    clearBtn.style.pointerEvents = searchTerm ? 'auto' : 'none';
+  }
+
+  searchInput.addEventListener('input', filterRobots);
+  statusFilter.addEventListener('change', filterRobots);
+  manufacturerFilter.addEventListener('change', filterRobots);
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    filterRobots();
+    searchInput.focus();
+  });
+
+  // Initialize
+  filterRobots();
+</script>
+
+<style>
+  .registry-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .registry-header h1 {
+    font-size: 3rem;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(135deg, var(--color-accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin: 0 0 2rem;
+  }
+
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .search-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .search-box {
+    position: relative;
+    margin-bottom: 1rem;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 1rem 3rem;
+    font-size: 1rem;
+    background: var(--color-bg-alt);
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    color: var(--color-text);
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .search-box input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .search-box input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+    padding: 0.25rem;
+    line-height: 1;
+  }
+
+  .clear-btn:hover {
+    color: var(--color-text);
+  }
+
+  .filters {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .filter-group label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .filter-group select {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .filter-group select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .results-count {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .robot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .no-results {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  .no-results svg {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .no-results h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+  }
+
+  .no-results p {
+    margin: 0;
+  }
+
+  .registry-cta {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    margin-top: 2rem;
+  }
+
+  .registry-cta h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.5rem;
+    border: none;
+    padding: 0;
+  }
+
+  .registry-cta p {
+    color: var(--color-text-muted);
+    margin: 0 0 1.5rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+    text-decoration: none;
+  }
+
+  @media (max-width: 768px) {
+    .registry-header h1 {
+      font-size: 2rem;
+    }
+
+    .stats {
+      gap: 2rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+    }
+
+    .filters {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .robot-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+

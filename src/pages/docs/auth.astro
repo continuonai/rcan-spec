@@ -1,0 +1,241 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Authentication" description="JWT tokens and role-based access control in RCAN.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Authentication</h1>
+    <p class="lead">RCAN uses JWT tokens for secure, role-based robot access.</p>
+
+    <section>
+      <h2>JWT Token Structure</h2>
+      <pre><code>&#123;
+  "sub": "550e8400-e29b-41d4-a716-446655440000",
+  "iss": "continuon.cloud",
+  "aud": "rcan://continuon.cloud/continuon/companion-v1/*",
+  "role": "owner",
+  "scope": ["control", "config", "training"],
+  "fleet": ["d3a4b5c6", "a1b2c3d4"],
+  "exp": 1735689600,
+  "iat": 1735603200
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>Token Claims</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Claim</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>sub</code></td>
+            <td>Subject - user identifier (UUID)</td>
+          </tr>
+          <tr>
+            <td><code>iss</code></td>
+            <td>Issuer - registry that issued the token</td>
+          </tr>
+          <tr>
+            <td><code>aud</code></td>
+            <td>Audience - target robot(s) or fleet pattern</td>
+          </tr>
+          <tr>
+            <td><code>role</code></td>
+            <td>Access role level (creator/owner/leasee/user/guest)</td>
+          </tr>
+          <tr>
+            <td><code>scope</code></td>
+            <td>Permitted actions</td>
+          </tr>
+          <tr>
+            <td><code>fleet</code></td>
+            <td>Device IDs this token can access</td>
+          </tr>
+          <tr>
+            <td><code>exp</code></td>
+            <td>Expiration timestamp (Unix)</td>
+          </tr>
+          <tr>
+            <td><code>iat</code></td>
+            <td>Issued-at timestamp (Unix)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Role Hierarchy</h2>
+      <div class="roles-list">
+        <div class="role">
+          <span class="level">5</span>
+          <div>
+            <strong>CREATOR</strong>
+            <p>Full control, OTA updates, safety overrides</p>
+          </div>
+        </div>
+        <div class="role">
+          <span class="level">4</span>
+          <div>
+            <strong>OWNER</strong>
+            <p>Configuration, skill installation, user management</p>
+          </div>
+        </div>
+        <div class="role">
+          <span class="level">3</span>
+          <div>
+            <strong>LEASEE</strong>
+            <p>Time-bound operational control</p>
+          </div>
+        </div>
+        <div class="role">
+          <span class="level">2</span>
+          <div>
+            <strong>USER</strong>
+            <p>Operational control within allowed modes</p>
+          </div>
+        </div>
+        <div class="role">
+          <span class="level">1</span>
+          <div>
+            <strong>GUEST</strong>
+            <p>Limited interaction, status viewing</p>
+          </div>
+        </div>
+      </div>
+      <p><strong>Rule:</strong> Higher roles inherit all permissions of lower roles.</p>
+    </section>
+
+    <section>
+      <h2>Scopes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Scope</th>
+            <th>Permission</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>status</code></td>
+            <td>Read robot status and diagnostics</td>
+          </tr>
+          <tr>
+            <td><code>control</code></td>
+            <td>Send movement/action commands</td>
+          </tr>
+          <tr>
+            <td><code>config</code></td>
+            <td>Modify robot configuration</td>
+          </tr>
+          <tr>
+            <td><code>training</code></td>
+            <td>Upload skills and behaviors</td>
+          </tr>
+          <tr>
+            <td><code>admin</code></td>
+            <td>Manage users and permissions</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Audience Patterns</h2>
+      <pre><code># Specific robot
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
+
+# All robots of a model
+rcan://continuon.cloud/continuon/companion-v1/*
+
+# All robots from a manufacturer
+rcan://continuon.cloud/continuon/*/*
+
+# Fleet by device IDs (use fleet claim instead)
+"fleet": ["d3a4b5c6", "a1b2c3d4", "e5f6g7h8"]</code></pre>
+    </section>
+
+    <section>
+      <h2>Token Validation</h2>
+      <p>Robots validate tokens by:</p>
+      <ol>
+        <li>Verifying signature against issuer's public key</li>
+        <li>Checking expiration (<code>exp</code>)</li>
+        <li>Matching audience to self (<code>aud</code>)</li>
+        <li>Confirming role has required scope</li>
+      </ol>
+
+      <div class="callout">
+        <strong>Timeout Enforcement:</strong> Control sessions expire. Clients must explicitly renew tokens. This prevents stale sessions from maintaining control indefinitely.
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .roles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .role {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .level {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent);
+    color: #000;
+    font-weight: 700;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .role p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  .callout {
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+</style>

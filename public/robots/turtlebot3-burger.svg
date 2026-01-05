@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e1e2e"/>
+  <!-- Base platform -->
+  <ellipse cx="100" cy="140" rx="55" ry="20" stroke="#22d3ee" stroke-width="2" fill="none"/>
+  <ellipse cx="100" cy="120" rx="55" ry="20" stroke="#22d3ee" stroke-width="2" fill="none"/>
+  <!-- LiDAR on top -->
+  <ellipse cx="100" cy="100" rx="35" ry="12" stroke="#22d3ee" stroke-width="2" fill="none"/>
+  <circle cx="100" cy="80" r="15" stroke="#22d3ee" stroke-width="2" fill="none"/>
+  <circle cx="100" cy="80" r="5" fill="#22d3ee"/>
+  <!-- Wheels -->
+  <ellipse cx="55" cy="150" rx="12" ry="18" stroke="#22d3ee" stroke-width="2" fill="none"/>
+  <ellipse cx="145" cy="150" rx="12" ry="18" stroke="#22d3ee" stroke-width="2" fill="none"/>
+  <!-- Connection lines -->
+  <line x1="100" y1="95" x2="100" y2="100" stroke="#22d3ee" stroke-width="2"/>
+</svg>
+

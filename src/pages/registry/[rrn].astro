@@ -1,0 +1,851 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import QRCodeComponent from '../../components/QRCode.astro';
+import URDFViewer from '../../components/URDFViewer.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const robots = await getCollection('robots');
+  return robots.map(robot => ({
+    params: { rrn: robot.data.rrn },
+    props: { robot: robot.data },
+  }));
+}
+
+interface Props {
+  robot: {
+    rrn: string;
+    name: string;
+    manufacturer: string;
+    model: string;
+    description: string;
+    image?: string;
+    production_year?: number;
+    status: 'active' | 'retired' | 'prototype' | 'concept';
+    urdf_url?: string;
+    github_url?: string;
+    website?: string;
+    specs?: {
+      weight_kg?: number;
+      dimensions?: string;
+      max_speed_mps?: number;
+      dof?: number;
+      ros_version?: string[];
+      sensors?: string[];
+      compute?: string;
+      payload_kg?: number;
+      battery_life_hours?: number;
+      reach_mm?: number;
+    };
+    owner?: {
+      name: string;
+      type: 'individual' | 'company' | 'research' | 'community';
+      website?: string;
+    };
+    ownership_history?: Array<{
+      owner_name: string;
+      owner_type: 'individual' | 'company' | 'research' | 'community';
+      owner_website?: string;
+      acquired_date: string;
+      transferred_date?: string;
+      transfer_reason?: string;
+      verified: boolean;
+    }>;
+    ruri?: string | null;
+    submitted_by?: string;
+    submitted_date?: string;
+    tags: string[];
+  };
+}
+
+const { robot } = Astro.props;
+const registryUrl = `https://rcan.dev/registry/${robot.rrn}/`;
+const badgeUrl = `https://rcan.dev/api/badge/${robot.rrn}.svg`;
+const qrUrl = `https://rcan.dev/api/qr/${robot.rrn}.svg`;
+
+const statusColors = {
+  active: '#22c55e',
+  retired: '#6b7280',
+  prototype: '#f59e0b',
+  concept: '#8b5cf6',
+};
+
+const ownerTypeIcons = {
+  individual: '👤',
+  company: '🏢',
+  research: '🔬',
+  community: '🌐',
+};
+---
+
+<BaseLayout title={`${robot.name} - Robot Registry`} description={robot.description}>
+  <nav class="breadcrumb">
+    <a href="/registry/">← Back to Registry</a>
+  </nav>
+
+  <article class="robot-profile">
+    <header class="profile-header">
+      <div class="header-content">
+        <div class="header-meta">
+          <span class="rrn-badge">{robot.rrn}</span>
+          <span class="status-badge" style={`--status-color: ${statusColors[robot.status]}`}>
+            {robot.status}
+          </span>
+        </div>
+        <h1>{robot.name}</h1>
+        <p class="manufacturer">
+          <a href={robot.website || '#'} target="_blank" rel="noopener noreferrer">
+            {robot.manufacturer}
+          </a>
+          <span class="model">/ {robot.model}</span>
+        </p>
+        {robot.production_year && (
+          <p class="production-year">First produced: {robot.production_year}</p>
+        )}
+      </div>
+      <div class="header-image">
+        <img src={robot.image || '/robots/placeholder.svg'} alt={robot.name} />
+      </div>
+    </header>
+
+    <section class="description">
+      <h2>About</h2>
+      <p>{robot.description}</p>
+    </section>
+
+    {robot.urdf_url && (
+      <section class="urdf-section">
+        <h2>3D Model</h2>
+        <URDFViewer urdfUrl={robot.urdf_url} robotName={robot.name} />
+      </section>
+    )}
+
+    <div class="profile-grid">
+      {robot.specs && Object.keys(robot.specs).length > 0 && (
+        <section class="specs">
+          <h2>Technical Specifications</h2>
+          <table>
+            <tbody>
+              {robot.specs.weight_kg && (
+                <tr>
+                  <th>Weight</th>
+                  <td>{robot.specs.weight_kg} kg</td>
+                </tr>
+              )}
+              {robot.specs.dimensions && (
+                <tr>
+                  <th>Dimensions</th>
+                  <td>{robot.specs.dimensions}</td>
+                </tr>
+              )}
+              {robot.specs.max_speed_mps && (
+                <tr>
+                  <th>Max Speed</th>
+                  <td>{robot.specs.max_speed_mps} m/s</td>
+                </tr>
+              )}
+              {robot.specs.dof && (
+                <tr>
+                  <th>Degrees of Freedom</th>
+                  <td>{robot.specs.dof}</td>
+                </tr>
+              )}
+              {robot.specs.payload_kg && (
+                <tr>
+                  <th>Payload Capacity</th>
+                  <td>{robot.specs.payload_kg} kg</td>
+                </tr>
+              )}
+              {robot.specs.reach_mm && (
+                <tr>
+                  <th>Reach</th>
+                  <td>{robot.specs.reach_mm} mm</td>
+                </tr>
+              )}
+              {robot.specs.battery_life_hours && (
+                <tr>
+                  <th>Battery Life</th>
+                  <td>{robot.specs.battery_life_hours} hours</td>
+                </tr>
+              )}
+              {robot.specs.compute && (
+                <tr>
+                  <th>Compute</th>
+                  <td>{robot.specs.compute}</td>
+                </tr>
+              )}
+              {robot.specs.ros_version && robot.specs.ros_version.length > 0 && (
+                <tr>
+                  <th>ROS Support</th>
+                  <td>{robot.specs.ros_version.join(', ')}</td>
+                </tr>
+              )}
+              {robot.specs.sensors && robot.specs.sensors.length > 0 && (
+                <tr>
+                  <th>Sensors</th>
+                  <td>{robot.specs.sensors.join(', ')}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      <section class="links-section">
+        <h2>Resources</h2>
+        <div class="links-grid">
+          {robot.github_url && (
+            <a href={robot.github_url} class="link-card" target="_blank" rel="noopener noreferrer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span>GitHub Repository</span>
+            </a>
+          )}
+          {robot.urdf_url && (
+            <a href={robot.urdf_url} class="link-card" target="_blank" rel="noopener noreferrer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+              <span>URDF Description</span>
+            </a>
+          )}
+          {robot.website && (
+            <a href={robot.website} class="link-card" target="_blank" rel="noopener noreferrer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>Official Website</span>
+            </a>
+          )}
+        </div>
+      </section>
+    </div>
+
+    {robot.owner && (
+      <section class="owner-section">
+        <h2>Maintained By</h2>
+        <div class="owner-card">
+          <span class="owner-icon">{ownerTypeIcons[robot.owner.type]}</span>
+          <div class="owner-info">
+            {robot.owner.website ? (
+              <a href={robot.owner.website} target="_blank" rel="noopener noreferrer">{robot.owner.name}</a>
+            ) : (
+              <span>{robot.owner.name}</span>
+            )}
+            <span class="owner-type">{robot.owner.type}</span>
+          </div>
+        </div>
+      </section>
+    )}
+
+    {robot.ruri && (
+      <section class="rcan-section">
+        <h2>RCAN Integration</h2>
+        <p>This robot is registered with the RCAN protocol:</p>
+        <code class="ruri">{robot.ruri}</code>
+      </section>
+    )}
+
+    <section class="tags-section">
+      <h2>Tags</h2>
+      <div class="tags">
+        {robot.tags.map(tag => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+    </section>
+
+    {robot.ownership_history && robot.ownership_history.length > 0 && (
+      <section class="ownership-history-section">
+        <h2>Ownership History</h2>
+        <div class="timeline">
+          {robot.ownership_history.map((entry, index) => (
+            <div class="timeline-entry">
+              <div class="timeline-marker" data-verified={entry.verified}></div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  {entry.owner_website ? (
+                    <a href={entry.owner_website} target="_blank" rel="noopener noreferrer" class="owner-name">
+                      {entry.owner_name}
+                    </a>
+                  ) : (
+                    <span class="owner-name">{entry.owner_name}</span>
+                  )}
+                  <span class="owner-type-badge">{entry.owner_type}</span>
+                  {entry.verified && <span class="verified-badge">Verified</span>}
+                </div>
+                <div class="timeline-dates">
+                  <span>Acquired: {entry.acquired_date}</span>
+                  {entry.transferred_date && <span> → Transferred: {entry.transferred_date}</span>}
+                </div>
+                {entry.transfer_reason && (
+                  <p class="transfer-reason">{entry.transfer_reason}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="share-section">
+      <h2>Share & Embed</h2>
+      <div class="share-grid">
+        <div class="share-item">
+          <h3>QR Code</h3>
+          <p>Scan to view this robot's registry page</p>
+          <QRCodeComponent url={registryUrl} title={robot.rrn} size={150} />
+          <a href={`/registry/qr/${robot.rrn}/`} class="print-link">Open printable version</a>
+        </div>
+        <div class="share-item">
+          <h3>Badge for README</h3>
+          <p>Add this badge to your GitHub repository</p>
+          <div class="badge-preview">
+            <img src={badgeUrl} alt={`RCAN ${robot.rrn}`} />
+          </div>
+          <div class="embed-codes">
+            <div class="embed-option">
+              <label>Markdown</label>
+              <div class="code-copy">
+                <code id="markdown-code">{`[![RCAN](${badgeUrl})](${registryUrl})`}</code>
+                <button class="copy-embed-btn" data-target="markdown-code">Copy</button>
+              </div>
+            </div>
+            <div class="embed-option">
+              <label>HTML</label>
+              <div class="code-copy">
+                <code id="html-code">{`<a href="${registryUrl}"><img src="${badgeUrl}" alt="RCAN Registry"></a>`}</code>
+                <button class="copy-embed-btn" data-target="html-code">Copy</button>
+              </div>
+            </div>
+          </div>
+          <div class="badge-styles">
+            <span>Styles:</span>
+            <a href={`${badgeUrl}?style=flat`}>flat</a>
+            <a href={`${badgeUrl}?style=flat-square`}>flat-square</a>
+            <a href={`${badgeUrl}?style=plastic`}>plastic</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="profile-footer">
+      <p>
+        Registered on {robot.submitted_date || 'Unknown'}
+        {robot.submitted_by && <span> by {robot.submitted_by}</span>}
+      </p>
+      <p class="correction-note">
+        See an error? <a href="https://github.com/continuonai/rcan-spec/issues/new?title=Correction%20for%20{robot.rrn}" target="_blank" rel="noopener noreferrer">Submit a correction</a>
+      </p>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .breadcrumb {
+    margin-bottom: 2rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-accent);
+  }
+
+  .robot-profile {
+    max-width: 100%;
+  }
+
+  .profile-header {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .rrn-badge {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-accent);
+  }
+
+  .status-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--status-color) 20%, transparent);
+    color: var(--status-color);
+  }
+
+  .profile-header h1 {
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .manufacturer {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .manufacturer a {
+    color: var(--color-accent);
+  }
+
+  .model {
+    color: var(--color-text-muted);
+  }
+
+  .production-year {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+  }
+
+  .header-image {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .header-image img {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+  }
+
+  .description {
+    margin-bottom: 2rem;
+  }
+
+  .description p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--color-text-muted);
+  }
+
+  .urdf-section {
+    margin-bottom: 2rem;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .specs, .links-section {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .specs h2, .links-section h2 {
+    font-size: 1.25rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    border: none;
+  }
+
+  .specs table {
+    width: 100%;
+    margin: 0;
+  }
+
+  .specs th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    padding: 0.5rem 1rem 0.5rem 0;
+    width: 40%;
+  }
+
+  .specs td {
+    padding: 0.5rem 0;
+  }
+
+  .specs th, .specs td {
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .specs tr:last-child th,
+  .specs tr:last-child td {
+    border-bottom: none;
+  }
+
+  .links-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .link-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text);
+    transition: all 0.2s;
+  }
+
+  .link-card:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .link-card svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .owner-section, .rcan-section, .tags-section {
+    margin-bottom: 2rem;
+  }
+
+  .owner-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .owner-icon {
+    font-size: 1.5rem;
+  }
+
+  .owner-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .owner-info a {
+    font-weight: 500;
+  }
+
+  .owner-type {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+
+  .ruri {
+    display: block;
+    padding: 1rem;
+    background: var(--color-code-bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    word-break: break-all;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    color: var(--color-text-muted);
+  }
+
+  .profile-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .correction-note {
+    margin-top: 0.5rem;
+  }
+
+  /* Ownership History Timeline */
+  .ownership-history-section {
+    margin-bottom: 2rem;
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-border);
+  }
+
+  .timeline-entry {
+    position: relative;
+    padding-bottom: 1.5rem;
+  }
+
+  .timeline-entry:last-child {
+    padding-bottom: 0;
+  }
+
+  .timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-bg-alt);
+    border: 2px solid var(--color-border);
+  }
+
+  .timeline-marker[data-verified="true"] {
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+
+  .timeline-content {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .timeline-header .owner-name {
+    font-weight: 600;
+  }
+
+  .owner-type-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+
+  .verified-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border-radius: 4px;
+  }
+
+  .timeline-dates {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  .transfer-reason {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  /* Share & Embed Section */
+  .share-section {
+    margin-bottom: 2rem;
+  }
+
+  .share-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .share-item {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .share-item h3 {
+    font-size: 1rem;
+    margin: 0 0 0.25rem;
+  }
+
+  .share-item > p {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .print-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .badge-preview {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--color-bg);
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .badge-preview img {
+    max-width: 100%;
+  }
+
+  .embed-codes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .embed-option label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .code-copy {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .code-copy code {
+    flex: 1;
+    font-size: 0.7rem;
+    padding: 0.5rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .copy-embed-btn {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .copy-embed-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .badge-styles {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+
+  .badge-styles a {
+    margin-left: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .profile-header {
+      grid-template-columns: 1fr;
+    }
+
+    .header-image {
+      order: -1;
+    }
+
+    .profile-header h1 {
+      font-size: 1.75rem;
+    }
+
+    .profile-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .share-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.copy-embed-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = (btn as HTMLElement).dataset.target;
+      if (!targetId) return;
+
+      const codeEl = document.getElementById(targetId);
+      if (!codeEl) return;
+
+      try {
+        await navigator.clipboard.writeText(codeEl.textContent || '');
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    });
+  });
+</script>
+

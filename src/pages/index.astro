@@ -85,7 +85,7 @@ await client.connect(ruri)
 token = await client.claim(Role.USER, credential="my-key")
 
 # Send a command
-result = await client.command("/arm", "move", {"{"}x: 0.5, y: 0.2{"}"})
+result = await client.command("/arm", "move", &#123;x: 0.5, y: 0.2&#125;)
 
 # Clean up
 await client.release()</code></pre>

@@ -1,0 +1,605 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Auto-Register Robot" description="Register a robot automatically from its RURI endpoint">
+  <h1>Auto-Register from RURI</h1>
+  <p class="lead">
+    Discover and register robots automatically by providing their RCAN Robot URI (RURI).
+    The system will fetch the robot's manifest and create a registry entry.
+  </p>
+
+  <section class="register-form-section">
+    <form id="ruri-form" class="ruri-form">
+      <div class="form-group">
+        <label for="ruri-input">Robot URI (RURI)</label>
+        <input
+          type="text"
+          id="ruri-input"
+          name="ruri"
+          placeholder="rcan://registry.example.com/manufacturer/model/device-id"
+          required
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <p class="help-text">
+          Enter the full RURI of the robot you want to register.
+          <a href="/spec/#ruri">Learn more about RURI format</a>
+        </p>
+      </div>
+      <button type="submit" class="submit-btn" id="submit-btn">
+        <span class="btn-text">Discover Robot</span>
+        <span class="btn-loading" style="display: none;">
+          <span class="spinner"></span>
+          Fetching...
+        </span>
+      </button>
+    </form>
+  </section>
+
+  <section id="validation-result" class="validation-result" style="display: none;">
+    <h2>RURI Validation</h2>
+    <div class="result-content">
+      <div id="validation-error" class="error-message" style="display: none;"></div>
+      <div id="validation-success" class="success-message" style="display: none;">
+        <h3>Parsed RURI Components</h3>
+        <table class="parsed-table">
+          <tbody>
+            <tr><th>Registry</th><td id="parsed-registry"></td></tr>
+            <tr><th>Manufacturer</th><td id="parsed-manufacturer"></td></tr>
+            <tr><th>Model</th><td id="parsed-model"></td></tr>
+            <tr><th>Device ID</th><td id="parsed-device-id"></td></tr>
+            <tr><th>Port</th><td id="parsed-port"></td></tr>
+            <tr><th>Capability</th><td id="parsed-capability"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="manifest-result" class="manifest-result" style="display: none;">
+    <h2>Robot Manifest</h2>
+    <div class="result-content">
+      <div id="manifest-error" class="error-message" style="display: none;"></div>
+      <div id="manifest-preview" class="manifest-preview" style="display: none;">
+        <div class="robot-preview-card">
+          <div class="preview-header">
+            <h3 id="preview-name"></h3>
+            <span class="preview-status" id="preview-status"></span>
+          </div>
+          <p id="preview-description"></p>
+          <div class="preview-meta">
+            <span id="preview-manufacturer"></span>
+            <span class="separator">/</span>
+            <span id="preview-model"></span>
+          </div>
+          <div class="preview-capabilities" id="preview-capabilities"></div>
+        </div>
+
+        <div class="registration-actions">
+          <p>This robot can be registered in the RCAN Registry.</p>
+          <a href="#" id="create-issue-btn" class="create-issue-btn" target="_blank" rel="noopener noreferrer">
+            Create Registration Request
+          </a>
+          <p class="action-note">
+            This will open a pre-filled GitHub issue for maintainer review.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="manual-entry">
+    <h2>Manual Registration</h2>
+    <p>
+      If auto-discovery doesn't work (CORS restrictions, private network, etc.),
+      you can still <a href="/registry/submit/">submit a robot manually</a>.
+    </p>
+  </section>
+
+  <section class="how-it-works">
+    <h2>How Auto-Registration Works</h2>
+    <ol>
+      <li>
+        <strong>Enter RURI</strong>
+        <p>Provide the robot's RCAN URI in the format <code>rcan://registry/manufacturer/model/device-id</code></p>
+      </li>
+      <li>
+        <strong>Fetch Manifest</strong>
+        <p>The system attempts to fetch the robot's manifest from <code>/.well-known/rcan-manifest.json</code></p>
+      </li>
+      <li>
+        <strong>Review Data</strong>
+        <p>Preview the robot's information before registration</p>
+      </li>
+      <li>
+        <strong>Submit Request</strong>
+        <p>Create a GitHub issue for maintainer review and approval</p>
+      </li>
+    </ol>
+  </section>
+</BaseLayout>
+
+<script>
+  import { parseRURI, ruriToHttpUrl, validateManifest, type ParsedRURI, type RobotManifest } from '../../utils/ruri';
+
+  const form = document.getElementById('ruri-form') as HTMLFormElement;
+  const input = document.getElementById('ruri-input') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
+  const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
+
+  const validationSection = document.getElementById('validation-result') as HTMLElement;
+  const validationError = document.getElementById('validation-error') as HTMLElement;
+  const validationSuccess = document.getElementById('validation-success') as HTMLElement;
+
+  const manifestSection = document.getElementById('manifest-result') as HTMLElement;
+  const manifestError = document.getElementById('manifest-error') as HTMLElement;
+  const manifestPreview = document.getElementById('manifest-preview') as HTMLElement;
+
+  function showLoading(show: boolean) {
+    btnText.style.display = show ? 'none' : 'inline';
+    btnLoading.style.display = show ? 'inline-flex' : 'none';
+    submitBtn.disabled = show;
+  }
+
+  function showValidationResult(parsed: ParsedRURI | null, error: string | null) {
+    validationSection.style.display = 'block';
+
+    if (error) {
+      validationError.style.display = 'block';
+      validationError.textContent = error;
+      validationSuccess.style.display = 'none';
+    } else if (parsed) {
+      validationError.style.display = 'none';
+      validationSuccess.style.display = 'block';
+
+      (document.getElementById('parsed-registry') as HTMLElement).textContent = parsed.registry;
+      (document.getElementById('parsed-manufacturer') as HTMLElement).textContent = parsed.manufacturer;
+      (document.getElementById('parsed-model') as HTMLElement).textContent = parsed.model;
+      (document.getElementById('parsed-device-id') as HTMLElement).textContent = parsed.deviceId;
+      (document.getElementById('parsed-port') as HTMLElement).textContent = parsed.port?.toString() || 'default (8080)';
+      (document.getElementById('parsed-capability') as HTMLElement).textContent = parsed.capability || 'none';
+    }
+  }
+
+  function showManifestResult(manifest: RobotManifest | null, error: string | null, ruri: string) {
+    manifestSection.style.display = 'block';
+
+    if (error) {
+      manifestError.style.display = 'block';
+      manifestError.innerHTML = `
+        <p><strong>Could not fetch robot manifest</strong></p>
+        <p>${error}</p>
+        <p class="error-note">
+          This is common due to CORS restrictions or if the robot is on a private network.
+          You can still <a href="/registry/submit/">register manually</a>.
+        </p>
+      `;
+      manifestPreview.style.display = 'none';
+    } else if (manifest) {
+      manifestError.style.display = 'none';
+      manifestPreview.style.display = 'block';
+
+      (document.getElementById('preview-name') as HTMLElement).textContent = manifest.name;
+      (document.getElementById('preview-status') as HTMLElement).textContent = manifest.status || 'unknown';
+      (document.getElementById('preview-description') as HTMLElement).textContent = manifest.description || 'No description provided';
+      (document.getElementById('preview-manufacturer') as HTMLElement).textContent = manifest.manufacturer;
+      (document.getElementById('preview-model') as HTMLElement).textContent = manifest.model;
+
+      const capsEl = document.getElementById('preview-capabilities') as HTMLElement;
+      if (manifest.capabilities && manifest.capabilities.length > 0) {
+        capsEl.innerHTML = manifest.capabilities.map(c => `<span class="cap-tag">${c}</span>`).join('');
+      } else {
+        capsEl.innerHTML = '<span class="cap-tag">No capabilities listed</span>';
+      }
+
+      // Build GitHub issue URL
+      const issueTitle = encodeURIComponent(`[Auto-Register] ${manifest.name}`);
+      const issueBody = encodeURIComponent(`## Robot Auto-Registration Request
+
+**RURI:** \`${ruri}\`
+**Name:** ${manifest.name}
+**Manufacturer:** ${manifest.manufacturer}
+**Model:** ${manifest.model}
+
+### Description
+${manifest.description || 'No description provided'}
+
+### Capabilities
+${manifest.capabilities?.join(', ') || 'None listed'}
+
+### Source
+This registration was initiated via the auto-register form at https://rcan.dev/registry/auto-register/
+
+---
+*Submitted via RCAN Auto-Register*`);
+
+      const issueUrl = `https://github.com/continuonai/rcan-spec/issues/new?title=${issueTitle}&body=${issueBody}&labels=robot-registration,auto-register`;
+      (document.getElementById('create-issue-btn') as HTMLAnchorElement).href = issueUrl;
+    }
+  }
+
+  async function fetchManifest(ruri: string): Promise<RobotManifest | null> {
+    const url = ruriToHttpUrl(ruri);
+    if (!url) {
+      throw new Error('Could not convert RURI to HTTP URL');
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!validateManifest(data)) {
+        throw new Error('Invalid manifest format');
+      }
+
+      return data;
+    } catch (err) {
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        throw new Error('Network error - the robot may not be accessible from this browser due to CORS or network restrictions');
+      }
+      throw err;
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ruri = input.value.trim();
+
+    // Reset UI
+    manifestSection.style.display = 'none';
+
+    // Validate RURI
+    const result = parseRURI(ruri);
+    showValidationResult(result.parsed || null, result.error || null);
+
+    if (!result.valid || !result.parsed) {
+      return;
+    }
+
+    // Try to fetch manifest
+    showLoading(true);
+
+    try {
+      const manifest = await fetchManifest(ruri);
+      showManifestResult(manifest, null, ruri);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
+      showManifestResult(null, errorMsg, ruri);
+    } finally {
+      showLoading(false);
+    }
+  });
+
+  // Real-time RURI validation as user types
+  let debounceTimer: ReturnType<typeof setTimeout>;
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const ruri = input.value.trim();
+      if (ruri.length > 10) {
+        const result = parseRURI(ruri);
+        if (result.valid) {
+          input.classList.remove('invalid');
+          input.classList.add('valid');
+        } else {
+          input.classList.remove('valid');
+          input.classList.add('invalid');
+        }
+      } else {
+        input.classList.remove('valid', 'invalid');
+      }
+    }, 300);
+  });
+</script>
+
+<style>
+  .lead {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .register-form-section {
+    margin-bottom: 2rem;
+  }
+
+  .ruri-form {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text);
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .form-group input.valid {
+    border-color: #22c55e;
+  }
+
+  .form-group input.invalid {
+    border-color: #f87171;
+  }
+
+  .help-text {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+  }
+
+  .submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    background: var(--color-accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .btn-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .validation-result,
+  .manifest-result {
+    margin-bottom: 2rem;
+  }
+
+  .result-content {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .error-message {
+    color: #f87171;
+  }
+
+  .error-message p {
+    margin: 0.5rem 0;
+  }
+
+  .error-note {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .success-message h3 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+  }
+
+  .parsed-table {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .parsed-table th {
+    width: 120px;
+    background: transparent;
+  }
+
+  .parsed-table td {
+    font-family: var(--font-mono);
+  }
+
+  .robot-preview-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .preview-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .preview-status {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border-radius: 4px;
+  }
+
+  .preview-meta {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .separator {
+    margin: 0 0.25rem;
+  }
+
+  .preview-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cap-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+  }
+
+  .registration-actions {
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .registration-actions > p:first-child {
+    margin-bottom: 1rem;
+  }
+
+  .create-issue-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #22c55e;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .create-issue-btn:hover {
+    background: #16a34a;
+    text-decoration: none;
+    color: #fff;
+  }
+
+  .action-note {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 0.75rem;
+  }
+
+  .manual-entry {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .manual-entry h2 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    border: none;
+    padding: 0;
+  }
+
+  .manual-entry p {
+    margin-bottom: 0;
+    color: var(--color-text-muted);
+  }
+
+  .how-it-works {
+    margin-bottom: 2rem;
+  }
+
+  .how-it-works ol {
+    list-style: none;
+    padding: 0;
+    counter-reset: step;
+  }
+
+  .how-it-works li {
+    position: relative;
+    padding-left: 3rem;
+    margin-bottom: 1.5rem;
+    counter-increment: step;
+  }
+
+  .how-it-works li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2rem;
+    height: 2rem;
+    background: var(--color-accent);
+    color: #000;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+  }
+
+  .how-it-works li strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .how-it-works li p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+</style>

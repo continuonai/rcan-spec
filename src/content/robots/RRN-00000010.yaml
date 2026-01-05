@@ -1,0 +1,32 @@
+rrn: "RRN-00000010"
+name: "KUKA iiwa 14"
+manufacturer: "KUKA"
+model: "iiwa_14"
+description: "The LBR iiwa (intelligent industrial work assistant) is a 7-axis lightweight robot with integrated torque sensors in all joints. Designed for sensitive assembly tasks, human-robot collaboration, and complex applications requiring force feedback and compliance."
+image: "/robots/kuka-iiwa.svg"
+production_year: 2013
+status: "active"
+
+urdf_url: "https://github.com/IFL-CAMP/iiwa_stack"
+github_url: "https://github.com/IFL-CAMP/iiwa_stack"
+website: "https://www.kuka.com/en-us/products/robotics-systems/industrial-robots/lbr-iiwa"
+
+specs:
+  weight_kg: 29.9
+  dof: 7
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["Torque Sensors (7x)", "Joint Encoders"]
+  payload_kg: 14.0
+  reach_mm: 820
+
+owner:
+  name: "KUKA AG"
+  type: "company"
+  website: "https://www.kuka.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["cobot", "arm", "manipulator", "industrial", "7-dof", "torque-control", "sensitive"]
+

@@ -1,0 +1,235 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Registering a Robot" description="Complete guide to registering your robot in the RCAN registry.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Registering a Robot</h1>
+    <p class="lead">Three ways to add your robot to the global registry.</p>
+
+    <section>
+      <h2>Method 1: GitHub Issue (Recommended)</h2>
+      <p>The simplest method - no coding required.</p>
+
+      <ol>
+        <li>Go to the <a href="/registry/submit/">Submit page</a></li>
+        <li>Click <strong>"Submit via GitHub Issue"</strong></li>
+        <li>Fill in the form fields:
+          <ul>
+            <li>Robot name and manufacturer</li>
+            <li>Model identifier</li>
+            <li>Description</li>
+            <li>Technical specifications (optional)</li>
+            <li>Links to URDF, GitHub, website</li>
+          </ul>
+        </li>
+        <li>Submit the issue</li>
+        <li>Wait for maintainer review (24-48 hours)</li>
+      </ol>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Include as much detail as possible. Complete registrations are processed faster.
+      </div>
+    </section>
+
+    <section>
+      <h2>Method 2: Auto-Register from RURI</h2>
+      <p>If your robot supports the RCAN protocol and serves a manifest:</p>
+
+      <ol>
+        <li>Go to <a href="/registry/auto-register/">Auto-Register</a></li>
+        <li>Enter your robot's RURI</li>
+        <li>The system fetches the manifest automatically</li>
+        <li>Review the data</li>
+        <li>Click to create a GitHub issue</li>
+      </ol>
+
+      <h3>Manifest Requirements</h3>
+      <p>Your robot must serve a JSON manifest at:</p>
+      <pre><code>https://&lt;registry&gt;/.well-known/rcan-manifest.json</code></pre>
+
+      <p>Minimum required fields:</p>
+      <pre><code>&#123;
+  "ruri": "rcan://example.com/acme/bot-x1/12345678",
+  "name": "Robot Name",
+  "manufacturer": "Manufacturer",
+  "model": "model-id"
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>Method 3: Pull Request</h2>
+      <p>For developers comfortable with Git:</p>
+
+      <ol>
+        <li>Fork the <a href="https://github.com/continuonai/rcan-spec" target="_blank" rel="noopener noreferrer">rcan-spec repository</a></li>
+        <li>Create a new file: <code>src/content/robots/RRN-XXXXXXXX.yaml</code></li>
+        <li>Use the <a href="/docs/schema/">YAML schema</a></li>
+        <li>Optionally add an image to <code>public/robots/</code></li>
+        <li>Submit a pull request</li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <strong>Note:</strong> Leave the RRN as a placeholder. Maintainers will assign the next available number.
+      </div>
+    </section>
+
+    <section>
+      <h2>What Happens After Registration?</h2>
+      <ol>
+        <li><strong>Review</strong> - Maintainers verify the data</li>
+        <li><strong>RRN Assignment</strong> - Your robot gets a unique number</li>
+        <li><strong>Publication</strong> - Robot appears in the registry</li>
+        <li><strong>Resources</strong> - Badge, QR code, and API access become available</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Registration Requirements</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Required</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Name</td>
+            <td>Yes</td>
+            <td>Human-readable robot name</td>
+          </tr>
+          <tr>
+            <td>Manufacturer</td>
+            <td>Yes</td>
+            <td>Company or organization</td>
+          </tr>
+          <tr>
+            <td>Model</td>
+            <td>Yes</td>
+            <td>Unique model identifier</td>
+          </tr>
+          <tr>
+            <td>Description</td>
+            <td>Yes</td>
+            <td>Brief description of the robot</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td>Yes</td>
+            <td>active, retired, prototype, or concept</td>
+          </tr>
+          <tr>
+            <td>Image</td>
+            <td>No</td>
+            <td>SVG preferred, PNG/JPG accepted</td>
+          </tr>
+          <tr>
+            <td>Specs</td>
+            <td>No</td>
+            <td>Technical specifications</td>
+          </tr>
+          <tr>
+            <td>Links</td>
+            <td>No</td>
+            <td>URDF, GitHub, website URLs</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Next Steps</h2>
+      <div class="next-links">
+        <a href="/docs/schema/" class="next-link">
+          <span class="next-label">Reference</span>
+          <span class="next-title">YAML Schema</span>
+        </a>
+        <a href="/docs/badges/" class="next-link">
+          <span class="next-label">Next</span>
+          <span class="next-title">Badges and Embeds</span>
+        </a>
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  .callout-info {
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid var(--color-accent);
+  }
+
+  .callout-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid #f59e0b;
+  }
+
+  .next-links {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .next-link {
+    display: block;
+    padding: 1.25rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .next-link:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .next-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .next-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 600px) {
+    .next-links {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

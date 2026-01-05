@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e1e2e"/>
+  <!-- Sleek body -->
+  <path d="M45 80 Q100 65 155 80 L155 100 Q100 115 45 100 Z" stroke="#10b981" stroke-width="2" fill="none"/>
+  <!-- Head/sensors -->
+  <rect x="145" y="75" width="25" height="20" rx="4" stroke="#10b981" stroke-width="2" fill="none"/>
+  <circle cx="162" cy="85" r="3" fill="#10b981"/>
+  <!-- Legs - athletic stance -->
+  <path d="M60 100 L55 125 L60 155 L65 175" stroke="#10b981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M85 100 L80 125 L85 155 L90 175" stroke="#10b981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M115 100 L120 125 L115 155 L110 175" stroke="#10b981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M140 100 L145 125 L140 155 L135 175" stroke="#10b981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Speed lines -->
+  <line x1="25" y1="90" x2="40" y2="90" stroke="#10b981" stroke-width="1" opacity="0.5"/>
+  <line x1="20" y1="100" x2="40" y2="100" stroke="#10b981" stroke-width="1" opacity="0.5"/>
+</svg>
+

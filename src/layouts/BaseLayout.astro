@@ -151,11 +151,17 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
           <span class="logo-icon">⚡</span>
           <span class="logo-text">RCAN</span>
         </a>
-        <ul class="nav-links">
-          <li><a href="/">Overview</a></li>
-          <li><a href="/spec/">Specification</a></li>
-          <li><a href="/conformance/">Conformance</a></li>
-          <li><a href="/implementations/">Implementations</a></li>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="/docs/">Docs</a></li>
+          <li><a href="/spec/">Spec</a></li>
+          <li><a href="/registry/">Registry</a></li>
+          <li><a href="/api/">API</a></li>
+          <li><a href="/implementations/">SDKs</a></li>
           <li><a href="https://github.com/continuonai/rcan-spec" target="_blank" rel="noopener noreferrer">GitHub</a></li>
         </ul>
       </nav>
@@ -210,31 +216,65 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
         font-size: 1.75rem;
       }
       
+      .nav-toggle {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        width: 28px;
+        height: 28px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .nav-toggle span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: var(--color-text);
+        transition: all 0.2s;
+      }
+
+      .nav-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(4px, 4px);
+      }
+
+      .nav-toggle.active span:nth-child(2) {
+        opacity: 0;
+      }
+
+      .nav-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(4px, -4px);
+      }
+
       .nav-links {
         display: flex;
         list-style: none;
-        gap: 2rem;
+        gap: 1.5rem;
         padding: 0;
         margin: 0;
       }
-      
+
       .nav-links a {
         color: var(--color-text-muted);
         font-weight: 500;
+        font-size: 0.9rem;
         transition: color 0.2s;
       }
-      
+
       .nav-links a:hover {
         color: var(--color-accent);
         text-decoration: none;
       }
-      
+
       main {
         max-width: 900px;
         margin: 0 auto;
         padding: 3rem 2rem;
       }
-      
+
       .site-footer {
         border-top: 1px solid var(--color-border);
         margin-top: 4rem;
@@ -243,36 +283,92 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
         color: var(--color-text-muted);
         font-size: 0.875rem;
       }
-      
+
       .footer-content {
         max-width: 1200px;
         margin: 0 auto;
       }
-      
+
       .footer-content p {
         margin: 0.5rem 0;
       }
-      
-      @media (max-width: 768px) {
-        .site-header nav {
-          flex-direction: column;
-          gap: 1rem;
-        }
-        
+
+      @media (max-width: 900px) {
         .nav-links {
           gap: 1rem;
-          flex-wrap: wrap;
-          justify-content: center;
         }
-        
+
+        .nav-links a {
+          font-size: 0.85rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .site-header nav {
+          position: relative;
+        }
+
+        .nav-toggle {
+          display: flex;
+        }
+
+        .nav-links {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          flex-direction: column;
+          gap: 0;
+          background: var(--color-bg);
+          border-bottom: 1px solid var(--color-border);
+          padding: 0.5rem 0;
+        }
+
+        .nav-links.active {
+          display: flex;
+        }
+
+        .nav-links li {
+          margin: 0;
+        }
+
+        .nav-links a {
+          display: block;
+          padding: 0.75rem 2rem;
+          font-size: 1rem;
+        }
+
+        .nav-links a:hover {
+          background: var(--color-bg-alt);
+        }
+
         main {
           padding: 2rem 1rem;
         }
-        
-        h1 { font-size: 2rem; }
-        h2 { font-size: 1.5rem; }
+
+        h1 { font-size: 1.75rem; }
+        h2 { font-size: 1.35rem; }
       }
     </style>
+
+    <script>
+      const navToggle = document.getElementById('nav-toggle');
+      const navLinks = document.getElementById('nav-links');
+
+      navToggle?.addEventListener('click', () => {
+        navToggle.classList.toggle('active');
+        navLinks?.classList.toggle('active');
+      });
+
+      // Close nav when clicking a link
+      navLinks?.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          navToggle?.classList.remove('active');
+          navLinks?.classList.remove('active');
+        });
+      });
+    </script>
   </body>
 </html>
 

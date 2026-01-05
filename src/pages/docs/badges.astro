@@ -1,0 +1,203 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Badges & Embeds" description="Add RCAN badges to your GitHub README and documentation.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Badges & Embeds</h1>
+    <p class="lead">Show your robot's RCAN registration with embeddable badges.</p>
+
+    <section>
+      <h2>Badge Styles</h2>
+      <p>Three badge styles are available:</p>
+
+      <div class="badge-showcase">
+        <div class="badge-item">
+          <h3>Flat (Default)</h3>
+          <img src="/api/badge/RRN-00000001.svg?style=flat" alt="Flat badge" />
+          <code>?style=flat</code>
+        </div>
+        <div class="badge-item">
+          <h3>Flat Square</h3>
+          <img src="/api/badge/RRN-00000001.svg?style=flat-square" alt="Flat square badge" />
+          <code>?style=flat-square</code>
+        </div>
+        <div class="badge-item">
+          <h3>Plastic</h3>
+          <img src="/api/badge/RRN-00000001.svg?style=plastic" alt="Plastic badge" />
+          <code>?style=plastic</code>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Usage</h2>
+
+      <h3>Markdown</h3>
+      <pre><code>[![RCAN](https://rcan.dev/api/badge/RRN-XXXXXXXX.svg)](https://rcan.dev/registry/RRN-XXXXXXXX/)</code></pre>
+
+      <h3>HTML</h3>
+      <pre><code>&lt;a href="https://rcan.dev/registry/RRN-XXXXXXXX/"&gt;
+  &lt;img src="https://rcan.dev/api/badge/RRN-XXXXXXXX.svg" alt="RCAN Registry"&gt;
+&lt;/a&gt;</code></pre>
+
+      <h3>reStructuredText</h3>
+      <pre><code>.. image:: https://rcan.dev/api/badge/RRN-XXXXXXXX.svg
+   :target: https://rcan.dev/registry/RRN-XXXXXXXX/
+   :alt: RCAN Registry</code></pre>
+    </section>
+
+    <section>
+      <h2>API Endpoint</h2>
+      <pre><code>GET /api/badge/&#123;rrn&#125;.svg</code></pre>
+
+      <h3>Query Parameters</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Values</th>
+            <th>Default</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>style</code></td>
+            <td>flat, flat-square, plastic</td>
+            <td>flat</td>
+          </tr>
+          <tr>
+            <td><code>label</code></td>
+            <td>Custom text</td>
+            <td>RCAN</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Examples</h3>
+      <pre><code>/api/badge/RRN-00000001.svg
+/api/badge/RRN-00000001.svg?style=plastic
+/api/badge/RRN-00000001.svg?label=Robot</code></pre>
+    </section>
+
+    <section>
+      <h2>Status Colors</h2>
+      <p>Badges are color-coded by robot status:</p>
+
+      <div class="status-colors">
+        <div class="status-item">
+          <span class="status-dot" style="background: #22c55e;"></span>
+          <span><strong>active</strong> - Green</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" style="background: #f59e0b;"></span>
+          <span><strong>prototype</strong> - Amber</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" style="background: #8b5cf6;"></span>
+          <span><strong>concept</strong> - Purple</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" style="background: #6b7280;"></span>
+          <span><strong>retired</strong> - Gray</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Finding Your Badge</h2>
+      <p>Every robot's registry page has a "Share & Embed" section with:</p>
+      <ul>
+        <li>Pre-generated badge preview</li>
+        <li>Copy-to-clipboard Markdown code</li>
+        <li>Copy-to-clipboard HTML code</li>
+        <li>Links to all badge styles</li>
+      </ul>
+      <p>Just visit your robot's page at <code>/registry/RRN-XXXXXXXX/</code> and scroll to the bottom.</p>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .badge-showcase {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .badge-item {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .badge-item h3 {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+  }
+
+  .badge-item img {
+    display: block;
+    margin: 0 auto 1rem;
+  }
+
+  .badge-item code {
+    font-size: 0.75rem;
+  }
+
+  .status-colors {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .badge-showcase {
+      grid-template-columns: 1fr;
+    }
+
+    .status-colors {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

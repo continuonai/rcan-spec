@@ -1,0 +1,35 @@
+rrn: "RRN-00000002"
+name: "TurtleBot 3 Waffle Pi"
+manufacturer: "ROBOTIS"
+model: "turtlebot3_waffle_pi"
+description: "The larger TurtleBot 3 variant with enhanced payload capacity and Intel RealSense depth camera. Ideal for SLAM, navigation research, and more demanding robotics applications requiring additional sensors and compute power."
+image: "/robots/turtlebot3-waffle.svg"
+production_year: 2017
+status: "active"
+
+urdf_url: "https://github.com/ROBOTIS-GIT/turtlebot3/tree/main/turtlebot3_description"
+github_url: "https://github.com/ROBOTIS-GIT/turtlebot3"
+website: "https://www.robotis.us/turtlebot-3/"
+
+specs:
+  weight_kg: 1.8
+  dimensions: "281 x 306 x 141 mm"
+  max_speed_mps: 0.26
+  dof: 2
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["LDS-01 LiDAR", "Intel RealSense D435", "IMU", "Wheel Encoders"]
+  compute: "Raspberry Pi 4"
+  battery_life_hours: 2.0
+  payload_kg: 30.0
+
+owner:
+  name: "Open Source Community"
+  type: "community"
+  website: "https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["education", "mobile", "ros2", "lidar", "depth-camera", "slam", "open-source"]
+

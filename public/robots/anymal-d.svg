@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e1e2e"/>
+  <!-- Industrial body -->
+  <rect x="45" y="65" width="110" height="45" rx="6" stroke="#06b6d4" stroke-width="2" fill="none"/>
+  <!-- Sensor array on top -->
+  <rect x="60" y="50" width="80" height="18" rx="4" stroke="#06b6d4" stroke-width="2" fill="none"/>
+  <circle cx="80" cy="59" r="4" fill="#06b6d4"/>
+  <circle cx="100" cy="59" r="4" fill="#06b6d4"/>
+  <circle cx="120" cy="59" r="4" fill="#06b6d4"/>
+  <!-- Strong industrial legs -->
+  <path d="M60 110 L55 130 L60 150 L55 170" stroke="#06b6d4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M85 110 L80 130 L85 150 L80 170" stroke="#06b6d4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M115 110 L120 130 L115 150 L120 170" stroke="#06b6d4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M140 110 L145 130 L140 150 L145 170" stroke="#06b6d4" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- IP67 badge -->
+  <rect x="140" y="70" width="20" height="12" rx="2" stroke="#06b6d4" stroke-width="1" fill="none"/>
+  <text x="150" y="79" font-size="6" fill="#06b6d4" text-anchor="middle" font-family="monospace">IP67</text>
+</svg>
+

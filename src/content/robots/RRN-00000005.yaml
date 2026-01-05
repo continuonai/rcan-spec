@@ -1,0 +1,35 @@
+rrn: "RRN-00000005"
+name: "Clearpath Husky"
+manufacturer: "Clearpath Robotics"
+model: "husky_a200"
+description: "A rugged, all-terrain unmanned ground vehicle designed for outdoor robotics research. The Husky is known for its reliability, large payload capacity, and extensive customization options. Widely used in field robotics, agriculture, and defense applications."
+image: "/robots/clearpath-husky.svg"
+production_year: 2012
+status: "active"
+
+urdf_url: "https://github.com/husky/husky/tree/noetic-devel/husky_description"
+github_url: "https://github.com/husky/husky"
+website: "https://clearpathrobotics.com/husky-unmanned-ground-vehicle-robot/"
+
+specs:
+  weight_kg: 50.0
+  dimensions: "990 x 670 x 390 mm"
+  max_speed_mps: 1.0
+  dof: 4
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["Optional LiDAR", "Optional IMU", "Wheel Encoders"]
+  compute: "User-provided"
+  battery_life_hours: 3.0
+  payload_kg: 75.0
+
+owner:
+  name: "Clearpath Robotics (Rockwell Automation)"
+  type: "company"
+  website: "https://clearpathrobotics.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["outdoor", "ugv", "research", "all-terrain", "rugged", "field-robotics"]
+

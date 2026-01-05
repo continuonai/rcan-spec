@@ -1,0 +1,35 @@
+rrn: "RRN-00000004"
+name: "Unitree Go2"
+manufacturer: "Unitree Robotics"
+model: "go2"
+description: "An affordable and capable quadruped robot designed for research, education, and consumer applications. Features advanced locomotion, built-in AI capabilities, and comprehensive ROS 2 support. Available in multiple configurations from basic to professional."
+image: "/robots/unitree-go2.svg"
+production_year: 2023
+status: "active"
+
+urdf_url: "https://github.com/unitreerobotics/unitree_ros2"
+github_url: "https://github.com/unitreerobotics/unitree_ros2"
+website: "https://www.unitree.com/go2/"
+
+specs:
+  weight_kg: 15.0
+  dimensions: "700 x 310 x 400 mm"
+  max_speed_mps: 5.0
+  dof: 12
+  ros_version: ["ROS 2"]
+  sensors: ["Intel RealSense D435", "Wide-angle Cameras", "LiDAR (Pro)", "IMU"]
+  compute: "NVIDIA Jetson Orin"
+  battery_life_hours: 2.0
+  payload_kg: 8.0
+
+owner:
+  name: "Unitree Robotics"
+  type: "company"
+  website: "https://www.unitree.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["quadruped", "legged", "ros2", "affordable", "research", "ai"]
+

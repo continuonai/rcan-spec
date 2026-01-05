@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="QR Codes" description="Generate and use QR codes for robot identification.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>QR Codes</h1>
+    <p class="lead">Every registered robot gets a QR code linking to its registry page.</p>
+
+    <section>
+      <h2>Use Cases</h2>
+      <ul>
+        <li><strong>Physical Labels</strong> - Print and attach to robots for easy identification</li>
+        <li><strong>Documentation</strong> - Include in manuals and spec sheets</li>
+        <li><strong>Presentations</strong> - Quick audience access to robot info</li>
+        <li><strong>Asset Tracking</strong> - Scan to look up robot details</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>API Endpoint</h2>
+      <pre><code>GET /api/qr/&#123;rrn&#125;.svg</code></pre>
+
+      <h3>Query Parameters</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>size</code></td>
+            <td>integer</td>
+            <td>200</td>
+            <td>Size in pixels (max: 1000)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Examples</h3>
+      <pre><code>/api/qr/RRN-00000001.svg
+/api/qr/RRN-00000001.svg?size=300
+/api/qr/RRN-00000001.svg?size=500</code></pre>
+    </section>
+
+    <section>
+      <h2>Printable Labels</h2>
+      <p>Each robot has a dedicated printable QR page optimized for 4" x 4" labels:</p>
+      <pre><code>/registry/qr/RRN-XXXXXXXX/</code></pre>
+
+      <p>Features:</p>
+      <ul>
+        <li>High-contrast QR code</li>
+        <li>Robot name and manufacturer</li>
+        <li>RRN in large text</li>
+        <li>Registry URL</li>
+        <li>Print button</li>
+      </ul>
+
+      <p>Just visit the page and click "Print Label" to print directly or save as PDF.</p>
+    </section>
+
+    <section>
+      <h2>Embedding QR Codes</h2>
+
+      <h3>HTML</h3>
+      <pre><code>&lt;img src="https://rcan.dev/api/qr/RRN-XXXXXXXX.svg" alt="QR Code" width="200"&gt;</code></pre>
+
+      <h3>Markdown</h3>
+      <pre><code>![QR Code](https://rcan.dev/api/qr/RRN-XXXXXXXX.svg)</code></pre>
+    </section>
+
+    <section>
+      <h2>Download Options</h2>
+      <p>On each robot's registry page, the "Share & Embed" section provides:</p>
+      <ul>
+        <li><strong>Download SVG</strong> - Vector format, scales infinitely</li>
+        <li><strong>Copy URL</strong> - Direct link to the registry page</li>
+        <li><strong>Open Printable</strong> - Full-page print layout</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+</style>

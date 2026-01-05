@@ -1,0 +1,185 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Documentation" description="RCAN Protocol documentation - guides, references, and specifications for robot communication.">
+  <div class="docs-header">
+    <h1>Documentation</h1>
+    <p class="lead">Everything you need to know about the RCAN Protocol.</p>
+  </div>
+
+  <div class="docs-grid">
+    <section class="doc-section">
+      <h2>Getting Started</h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/introduction/" class="doc-link">
+            <span class="doc-title">Introduction to RCAN</span>
+            <span class="doc-desc">What is RCAN and why it matters for robotics</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/quick-start/" class="doc-link">
+            <span class="doc-title">Quick Start Guide</span>
+            <span class="doc-desc">Get up and running in 5 minutes</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/concepts/" class="doc-link">
+            <span class="doc-title">Core Concepts</span>
+            <span class="doc-desc">RRN, RURI, registries, and roles explained</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="doc-section">
+      <h2>Protocol Details</h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/ruri/" class="doc-link">
+            <span class="doc-title">RURI Format</span>
+            <span class="doc-desc">Robot URI structure and parsing</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/discovery/" class="doc-link">
+            <span class="doc-title">Discovery Protocol</span>
+            <span class="doc-desc">mDNS and network discovery</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/auth/" class="doc-link">
+            <span class="doc-title">Authentication</span>
+            <span class="doc-desc">Role-based access control system</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="doc-section">
+      <h2>Registry</h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/registration/" class="doc-link">
+            <span class="doc-title">Registering a Robot</span>
+            <span class="doc-desc">Three ways to add your robot</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/schema/" class="doc-link">
+            <span class="doc-title">YAML Schema</span>
+            <span class="doc-desc">Robot definition format reference</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/ownership/" class="doc-link">
+            <span class="doc-title">Ownership History</span>
+            <span class="doc-desc">Transfer and tracking features</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="doc-section">
+      <h2>Integration</h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/badges/" class="doc-link">
+            <span class="doc-title">Badges and Embeds</span>
+            <span class="doc-desc">Add RCAN badges to your projects</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/qr-codes/" class="doc-link">
+            <span class="doc-title">QR Codes</span>
+            <span class="doc-desc">Generate and use robot QR codes</span>
+          </a>
+        </li>
+        <li>
+          <a href="/api/" class="doc-link">
+            <span class="doc-title">API Reference</span>
+            <span class="doc-desc">REST API documentation</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .docs-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+  }
+
+  .docs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .doc-section {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .doc-section h2 {
+    font-size: 1.1rem;
+    margin: 0 0 1rem;
+    color: var(--color-accent);
+  }
+
+  .doc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .doc-list li {
+    margin-bottom: 0.75rem;
+  }
+
+  .doc-list li:last-child {
+    margin-bottom: 0;
+  }
+
+  .doc-link {
+    display: block;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .doc-link:hover {
+    background: rgba(34, 211, 238, 0.1);
+    text-decoration: none;
+  }
+
+  .doc-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.25rem;
+  }
+
+  .doc-desc {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .docs-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

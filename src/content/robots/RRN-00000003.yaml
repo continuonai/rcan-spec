@@ -1,0 +1,35 @@
+rrn: "RRN-00000003"
+name: "Boston Dynamics Spot"
+manufacturer: "Boston Dynamics"
+model: "spot"
+description: "A highly agile quadruped robot capable of navigating terrain that wheeled robots cannot. Spot features advanced perception, autonomous navigation, and can be equipped with various payloads including manipulator arms, cameras, and sensors for industrial inspection."
+image: "/robots/spot.svg"
+production_year: 2020
+status: "active"
+
+urdf_url: "https://github.com/heuristicus/spot_ros/tree/master/spot_description"
+github_url: "https://github.com/boston-dynamics/spot-sdk"
+website: "https://bostondynamics.com/products/spot/"
+
+specs:
+  weight_kg: 32.0
+  dimensions: "1100 x 500 x 840 mm"
+  max_speed_mps: 1.6
+  dof: 12
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["Stereo Cameras (5x)", "IMU", "Proprioceptive Sensors"]
+  compute: "NVIDIA Jetson (with Spot CORE)"
+  battery_life_hours: 1.5
+  payload_kg: 14.0
+
+owner:
+  name: "Boston Dynamics"
+  type: "company"
+  website: "https://bostondynamics.com/"
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["quadruped", "industrial", "inspection", "autonomous", "legged", "commercial"]
+

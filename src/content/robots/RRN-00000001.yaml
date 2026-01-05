@@ -1,0 +1,48 @@
+rrn: "RRN-00000001"
+name: "TurtleBot 3 Burger"
+manufacturer: "ROBOTIS"
+model: "turtlebot3_burger"
+description: "A compact, affordable mobile robot designed for ROS education and research. The Burger is the smaller variant featuring a 360° LiDAR, IMU, and differential drive system. It has become one of the most widely used platforms for learning robotics and ROS development."
+image: "/robots/turtlebot3-burger.svg"
+production_year: 2017
+status: "active"
+
+urdf_url: "https://github.com/ROBOTIS-GIT/turtlebot3/tree/main/turtlebot3_description"
+github_url: "https://github.com/ROBOTIS-GIT/turtlebot3"
+website: "https://www.robotis.us/turtlebot-3/"
+
+specs:
+  weight_kg: 1.0
+  dimensions: "138 x 178 x 192 mm"
+  max_speed_mps: 0.22
+  dof: 2
+  ros_version: ["ROS 1", "ROS 2"]
+  sensors: ["LDS-01 LiDAR", "IMU", "Wheel Encoders"]
+  compute: "Raspberry Pi 4"
+  battery_life_hours: 2.5
+
+owner:
+  name: "Open Source Community"
+  type: "community"
+  website: "https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/"
+
+ownership_history:
+  - owner_name: "ROBOTIS"
+    owner_type: "company"
+    owner_website: "https://www.robotis.us/"
+    acquired_date: "2017-05-01"
+    transferred_date: "2018-01-15"
+    transfer_reason: "Open-sourced to community"
+    verified: true
+  - owner_name: "Open Source Community"
+    owner_type: "community"
+    owner_website: "https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/"
+    acquired_date: "2018-01-15"
+    verified: true
+
+ruri: null
+
+submitted_by: "github:continuonai"
+submitted_date: "2026-01-04"
+tags: ["education", "mobile", "ros2", "lidar", "differential-drive", "open-source"]
+
