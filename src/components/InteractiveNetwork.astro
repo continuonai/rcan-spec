@@ -1,0 +1,189 @@
+<div id="hero-network-canvas" class="absolute inset-0 z-0 pointer-events-none opacity-40"></div>
+
+<script>
+  import * as THREE from 'three';
+
+  class NetworkAnimation {
+    private container: HTMLElement;
+    private scene: THREE.Scene;
+    private camera: THREE.PerspectiveCamera;
+    private renderer: THREE.WebGLRenderer;
+    private particles: THREE.BufferGeometry;
+    private particleMaterial: THREE.PointsMaterial;
+    private particleMesh: THREE.Points;
+    private linesMesh: THREE.LineSegments;
+    private mouse: THREE.Vector2;
+    private particlePositions: Float32Array;
+    private particleVelocities: Float32Array;
+    private particleCount = 100;
+    private connectionDistance = 2.5;
+
+    constructor(containerId: string) {
+      this.container = document.getElementById(containerId) as HTMLElement;
+      this.mouse = new THREE.Vector2(0, 0);
+
+      if (!this.container) return;
+
+      this.init();
+      this.animate();
+      this.handleResize();
+      this.handleMouseMove();
+    }
+
+    private init() {
+      // Scene setup
+      this.scene = new THREE.Scene();
+
+      // Camera
+      const width = this.container.clientWidth;
+      const height = this.container.clientHeight;
+      const aspect = width / height;
+      this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+      this.camera.position.z = 15;
+
+      // Renderer
+      this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      this.renderer.setSize(width, height);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.container.appendChild(this.renderer.domElement);
+
+      // Particles
+      this.createParticles();
+    }
+
+    private createParticles() {
+      this.particles = new THREE.BufferGeometry();
+      this.particlePositions = new Float32Array(this.particleCount * 3);
+      this.particleVelocities = new Float32Array(this.particleCount * 3);
+
+      for (let i = 0; i < this.particleCount; i++) {
+        const i3 = i * 3;
+        this.particlePositions[i3] = (Math.random() - 0.5) * 20;
+        this.particlePositions[i3 + 1] = (Math.random() - 0.5) * 10;
+        this.particlePositions[i3 + 2] = (Math.random() - 0.5) * 10;
+
+        this.particleVelocities[i3] = (Math.random() - 0.5) * 0.02;
+        this.particleVelocities[i3 + 1] = (Math.random() - 0.5) * 0.02;
+        this.particleVelocities[i3 + 2] = (Math.random() - 0.5) * 0.02;
+      }
+
+      this.particles.setAttribute('position', new THREE.BufferAttribute(this.particlePositions, 3));
+
+      // Materials
+      this.particleMaterial = new THREE.PointsMaterial({
+        color: 0x22d3ee,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.8,
+      });
+
+      this.particleMesh = new THREE.Points(this.particles, this.particleMaterial);
+      this.scene.add(this.particleMesh);
+
+      // Lines
+      const lineGeometry = new THREE.BufferGeometry();
+      const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0x22d3ee,
+        transparent: true,
+        opacity: 0.15,
+      });
+
+      this.linesMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
+      this.scene.add(this.linesMesh);
+    }
+
+    private updateParticles() {
+      const positions = this.particles.attributes.position.array as Float32Array;
+      
+      // Update positions
+      for (let i = 0; i < this.particleCount; i++) {
+        const i3 = i * 3;
+        
+        positions[i3] += this.particleVelocities[i3];
+        positions[i3 + 1] += this.particleVelocities[i3 + 1];
+        positions[i3 + 2] += this.particleVelocities[i3 + 2];
+
+        // Boundary check (bounce)
+        if (positions[i3] < -15 || positions[i3] > 15) this.particleVelocities[i3] *= -1;
+        if (positions[i3+1] < -8 || positions[i3+1] > 8) this.particleVelocities[i3+1] *= -1;
+        if (positions[i3+2] < -5 || positions[i3+2] > 5) this.particleVelocities[i3+2] *= -1;
+      }
+
+      this.particles.attributes.position.needsUpdate = true;
+
+      // Update lines based on proximity
+      const linePositions: number[] = [];
+      const mousePos3 = new THREE.Vector3(
+        (this.mouse.x * 15), 
+        (this.mouse.y * 8), 
+        0
+      );
+
+      for (let i = 0; i < this.particleCount; i++) {
+        const i3 = i * 3;
+        const p1 = new THREE.Vector3(positions[i3], positions[i3+1], positions[i3+2]);
+
+        // Mouse interaction
+        const distToMouse = p1.distanceTo(mousePos3);
+        if (distToMouse < 4) {
+             // Push away slightly
+             const dir = p1.clone().sub(mousePos3).normalize().multiplyScalar(0.05);
+             positions[i3] += dir.x;
+             positions[i3+1] += dir.y;
+        }
+
+        // Connect to neighbors
+        for (let j = i + 1; j < this.particleCount; j++) {
+          const j3 = j * 3;
+          const p2 = new THREE.Vector3(positions[j3], positions[j3+1], positions[j3+2]);
+          
+          if (p1.distanceTo(p2) < this.connectionDistance) {
+            linePositions.push(p1.x, p1.y, p1.z);
+            linePositions.push(p2.x, p2.y, p2.z);
+          }
+        }
+      }
+
+      this.linesMesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+    }
+
+    private handleResize() {
+      window.addEventListener('resize', () => {
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+      });
+    }
+
+    private handleMouseMove() {
+      document.addEventListener('mousemove', (e) => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        this.mouse.x = (e.clientX / width) * 2 - 1;
+        this.mouse.y = -(e.clientY / height) * 2 + 1;
+      });
+    }
+
+    private animate = () => {
+      requestAnimationFrame(this.animate);
+      
+      this.updateParticles();
+      
+      // Gentle rotation
+      this.scene.rotation.y += 0.001;
+      this.scene.rotation.x = this.mouse.y * 0.05;
+      this.scene.rotation.z = this.mouse.x * 0.05;
+
+      this.renderer.render(this.scene, this.camera);
+    };
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    new NetworkAnimation('hero-network-canvas');
+  });
+</script>

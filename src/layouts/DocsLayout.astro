@@ -1,0 +1,86 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+
+const sidebarLinks = [
+  { section: 'Getting Started', links: [
+    { title: 'Introduction', href: '/docs/introduction/' },
+    { title: 'Quick Start', href: '/docs/quick-start/' },
+    { title: 'Core Concepts', href: '/docs/concepts/' },
+  ]},
+  { section: 'Protocol', links: [
+    { title: 'RURI Format', href: '/docs/ruri/' },
+    { title: 'Discovery', href: '/docs/discovery/' },
+    { title: 'Authentication', href: '/docs/auth/' },
+    { title: 'Safety Invariants', href: '/spec/#safety' },
+  ]},
+  { section: 'Registry', links: [
+    { title: 'Registration', href: '/docs/registration/' },
+    { title: 'Schema Reference', href: '/docs/schema/' },
+    { title: 'Ownership', href: '/docs/ownership/' },
+  ]},
+  { section: 'Resources', links: [
+     { title: 'Full Specification', href: '/spec/' },
+     { title: 'Badges', href: '/docs/badges/' },
+     { title: 'QR Codes', href: '/docs/qr-codes/' },
+     { title: 'API Reference', href: '/api/' },
+  ]}
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="flex flex-col lg:flex-row gap-12">
+    <!-- Sidebar -->
+    <aside class="w-full lg:w-64 flex-shrink-0">
+      <nav class="sticky top-32 space-y-8">
+        {sidebarLinks.map(section => (
+          <div>
+            <h3 class="font-bold text-text mb-3 px-3">{section.section}</h3>
+            <ul class="space-y-1">
+              {section.links.map(link => {
+                const isActive = currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href));
+                return (
+                  <li>
+                    <a 
+                      href={link.href}
+                      class:list={[
+                        "block px-3 py-2 rounded-lg text-sm transition-colors",
+                        isActive 
+                          ? "bg-accent/10 text-accent font-medium border border-accent/20" 
+                          : "text-text-muted hover:text-text hover:bg-white/5"
+                      ]}
+                    >
+                      {link.title}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <article class="flex-1 w-full min-w-0">
+      <div class="prose prose-invert prose-lg max-w-none prose-headings:scroll-mt-32 prose-headings:font-bold prose-h1:text-4xl prose-h1:tracking-tight prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl">
+        <slot />
+      </div>
+
+      <div class="mt-16 pt-8 border-t border-white/10 flex justify-between text-sm text-text-muted">
+        <a href="https://github.com/continuonai/rcan-spec" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">
+          Edit this page on GitHub
+        </a>
+        <span>Last updated: {new Date().toLocaleDateString()}</span>
+      </div>
+    </article>
+  </div>
+</BaseLayout>

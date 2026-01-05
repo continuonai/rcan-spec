@@ -1,5 +1,6 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
 
 const protobufCode = `message RCANMessage {
   string version = 1;           // "1.0.0"
@@ -59,28 +60,37 @@ rcan://my-server.lan/acme/bot-x1/a1b2c3d4:9000/teleop`;
 const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(/[a-z][a-z0-9/-]*)?$`;
 ---
 
-<BaseLayout title="Specification" description="RCAN Protocol Specification v1.0.0 - Complete technical specification with JSON Schemas and Protocol Buffers.">
-  <h1>RCAN Protocol Specification</h1>
-  <p class="version-badge">Version 1.0.0 | Draft</p>
+<DocsLayout title="Specification" description="RCAN Protocol Specification v1.0.0 - Complete technical specification with JSON Schemas and Protocol Buffers.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">RCAN Protocol Specification</h1>
+  </div>
+  <div class="flex gap-2 mb-8">
+     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+       Version 1.0.0
+     </span>
+     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+       Draft
+     </span>
+  </div>
   
-  <nav class="toc">
-    <h2>Table of Contents</h2>
-    <ol>
-      <li><a href="#ruri">Robot URI (RURI)</a></li>
-      <li><a href="#roles">Role-Based Access Control</a></li>
-      <li><a href="#messages">Message Format</a></li>
-      <li><a href="#discovery">Discovery (mDNS)</a></li>
-      <li><a href="#auth">Authentication</a></li>
-      <li><a href="#safety">Safety Invariants</a></li>
-      <li><a href="#federation">Federation</a></li>
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#ruri" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">01.</span> Robot URI (RURI)</a></li>
+      <li><a href="#roles" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">02.</span> Role-Based Access</a></li>
+      <li><a href="#messages" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">03.</span> Message Format</a></li>
+      <li><a href="#discovery" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">04.</span> Discovery (mDNS)</a></li>
+      <li><a href="#auth" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">05.</span> Authentication</a></li>
+      <li><a href="#safety" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">06.</span> Safety Invariants</a></li>
+      <li><a href="#federation" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">07.</span> Federation</a></li>
     </ol>
-  </nav>
+  </div>
   
   <hr />
   
   <section id="ruri">
     <h2>1. Robot URI (RURI)</h2>
-    <p>Every robot has a globally unique RURI:</p>
+    <p>Every robot has a globally unique RURI similar to a URL:</p>
     <pre><code>rcan://&lt;registry&gt;/&lt;manufacturer&gt;/&lt;model&gt;/&lt;device-id&gt;[:&lt;port&gt;][/&lt;capability&gt;]</code></pre>
     
     <h3>Examples</h3>
@@ -102,7 +112,9 @@ const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[
     </table>
     
     <h3>Validation Regex</h3>
-    <pre><code set:text={regexPattern}></code></pre>
+    <div class="not-prose">
+      <CodeWindow code={regexPattern} language="regex" title="ruri-validation.regex" />
+    </div>
   </section>
   
   <hr />
@@ -133,7 +145,9 @@ const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[
     <h2>3. Message Format</h2>
     <p>All RCAN messages use a common envelope:</p>
     
-    <pre><code class="language-protobuf" set:text={protobufCode}></code></pre>
+    <div class="not-prose">
+      <CodeWindow code={protobufCode} language="protobuf" title="message_envelope.proto" />
+    </div>
   </section>
   
   <hr />
@@ -153,7 +167,9 @@ const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[
     <h2>5. Authentication</h2>
     <p>RCAN uses JWT tokens for session management:</p>
     
-    <pre><code class="language-json" set:text={jwtExample}></code></pre>
+    <div class="not-prose">
+      <CodeWindow code={jwtExample} language="json" title="session_token.jwt" />
+    </div>
   </section>
   
   <hr />
@@ -183,42 +199,17 @@ const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[
       <li><code>rcan://robotics-co-op.org/...</code> — Community run</li>
     </ul>
     
-    <p><strong>The Right to Redirect:</strong> An Owner (Level 4) can always change the robot's upstream registry.</p>
-    <p><strong>Local Supremacy:</strong> Even if the cloud registry deletes your ID, local discovery (<code>_rcan._tcp.local</code>) always works.</p>
+    <blockquote>
+      <p><strong>The Right to Redirect:</strong> An Owner (Level 4) can always change the robot's upstream registry.</p>
+    </blockquote>
+    <blockquote>
+      <p><strong>Local Supremacy:</strong> Even if the cloud registry deletes your ID, local discovery (<code>_rcan._tcp.local</code>) always works.</p>
+    </blockquote>
   </section>
   
-  <hr />
-  
-  <p><a href="/conformance/">→ Next: Conformance Tests</a></p>
-</BaseLayout>
-
-<style>
-  .version-badge {
-    display: inline-block;
-    background: var(--color-bg-alt);
-    border: 1px solid var(--color-border);
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-    margin-bottom: 2rem;
-  }
-  
-  .toc {
-    background: var(--color-bg-alt);
-    padding: 1.5rem 2rem;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-  }
-  
-  .toc h2 {
-    margin-top: 0;
-    font-size: 1.25rem;
-    border: none;
-    padding: 0;
-  }
-  
-  .toc ol {
-    margin-bottom: 0;
-  }
-</style>
+  <div class="not-prose mt-12">
+    <a href="/conformance/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      Next: Conformance Tests →
+    </a>
+  </div>
+</DocsLayout>

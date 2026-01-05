@@ -1,79 +1,73 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroSection from '../components/HeroSection.astro';
+import FeatureGrid from '../components/FeatureGrid.astro';
+import CodeWindow from '../components/CodeWindow.astro';
 ---
 
 <BaseLayout title="RCAN Protocol" description="RCAN - Robot Communication & Addressing Network. An open protocol for addressing, discovering, and authenticating robotic agents.">
-  <div class="hero">
-    <h1>RCAN Protocol</h1>
-    <p class="tagline">Robot Communication & Addressing Network</p>
-    <p class="subtitle">An open, federated protocol for addressing, discovering, and authenticating robotic agents across local networks and the internet.</p>
-    
-    <div class="cta-buttons">
-      <a href="/spec/" class="btn btn-primary">Read the Spec</a>
-      <a href="https://github.com/continuonai/rcan-spec" class="btn btn-secondary" rel="noopener noreferrer">View on GitHub</a>
+  <HeroSection />
+  
+  <section class="max-w-4xl mx-auto py-24 border-b border-white/5">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold mb-6">Why RCAN?</h2>
+      <p class="text-xl text-text-muted">
+        The internet has DNS and ICANN. IoT has Matter. <strong class="text-accent">Robotics has nothing.</strong>
+      </p>
     </div>
-  </div>
-  
-  <section class="intro">
-    <h2>Why RCAN?</h2>
-    <p>
-      The internet has DNS and ICANN. IoT has Matter. <strong>Robotics has nothing.</strong>
-    </p>
-    <p>
-      As millions of robots are manufactured and deployed—from warehouse arms to delivery bots to humanoids—there is no standard way to:
-    </p>
-    <ul>
-      <li><strong>Address</strong> a robot uniquely and globally</li>
-      <li><strong>Authenticate</strong> who is allowed to control it</li>
-      <li><strong>Coordinate</strong> fleets and swarms across manufacturers</li>
-      <li><strong>Ensure safety</strong> when networks fail or control transfers</li>
-    </ul>
-    <p>
-      RCAN is an open protocol specification designed to solve these problems with a federated, offline-resilient architecture.
-    </p>
-  </section>
-  
-  <section class="features">
-    <h2>Key Features</h2>
-    
-    <div class="feature-grid">
-      <div class="feature">
-        <h3>🔗 Robot URI (RURI)</h3>
-        <p>Globally unique identifiers for every robot, similar to URLs for websites.</p>
-        <code>rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6</code>
-      </div>
-      
-      <div class="feature">
-        <h3>🔐 Role-Based Access</h3>
-        <p>Five-level hierarchy: Guest → User → Leasee → Owner → Creator. Each role has explicit permissions.</p>
-      </div>
-      
-      <div class="feature">
-        <h3>📡 Local Discovery</h3>
-        <p>mDNS/DNS-SD discovery via <code>_rcan._tcp.local</code>. Works offline when cloud is unreachable.</p>
-      </div>
-      
-      <div class="feature">
-        <h3>🛡️ Safety Invariants</h3>
-        <p>Local safety always wins. Network loss triggers safe-stop. All commands are audited.</p>
-      </div>
-      
-      <div class="feature">
-        <h3>🌐 Federated Registries</h3>
-        <p>Like email servers, anyone can run an RCAN registry. No single point of control.</p>
-      </div>
-      
-      <div class="feature">
-        <h3>🤖 Fleet Coordination</h3>
-        <p>Choreographed multi-robot commands, swarm discovery, and conflict resolution.</p>
-      </div>
+
+    <div class="prose prose-invert prose-lg mx-auto text-text-muted">
+      <p>
+        As millions of robots are manufactured and deployed—from warehouse arms to delivery bots to humanoids—there is no standard way to:
+      </p>
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 list-none pl-0 my-8">
+        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
+          <span class="text-accent">Target</span> <strong>Address</strong> a robot uniquely and globally
+        </li>
+        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
+          <span class="text-accent">Auth</span> <strong>Authenticate</strong> who is allowed to control it
+        </li>
+        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
+           <span class="text-accent">Swarm</span> <strong>Coordinate</strong> fleets and swarms across manufacturers
+        </li>
+        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
+           <span class="text-accent">Safety</span> <strong>Ensure safety</strong> when networks fail
+        </li>
+      </ul>
+      <p class="text-center">
+        RCAN is an open protocol specification designed to solve these problems with a federated, offline-resilient architecture.
+      </p>
     </div>
   </section>
   
-  <section class="quick-start">
-    <h2>Quick Example</h2>
-    
-    <pre><code class="language-python"># Connect to a robot via RCAN
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4 text-center">Key Features</h2>
+      <p class="text-text-muted text-center max-w-2xl mx-auto mb-12">Built to handle the complexity of real-world robotics.</p>
+      <FeatureGrid />
+    </div>
+  </section>
+  
+  <section class="py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div>
+      <h2 class="text-3xl md:text-4xl font-bold mb-6">Built for Developers</h2>
+      <p class="text-lg text-text-muted mb-6">
+        RCAN is designed to be easy to implement. It provides standard SDKs for Python, TypeScript, C++, and Rust (coming soon). 
+      </p>
+      <p class="text-text-muted mb-8">
+        Connect to robots just like you connect to databases.
+      </p>
+      <a href="/docs/quickstart" class="text-accent hover:text-accent-hover font-medium flex items-center gap-2 group">
+        Read the Quick Start Guide 
+        <span class="transform group-hover:translate-x-1 transition-transform">→</span>
+      </a>
+    </div>
+
+    <div>
+      <CodeWindow 
+        language="python" 
+        title="control_robot.py"
+        code={`# Connect to a robot via RCAN
 from rcan import RURI, RCANClient, Role
 
 # Parse the robot's address
@@ -85,147 +79,34 @@ await client.connect(ruri)
 token = await client.claim(Role.USER, credential="my-key")
 
 # Send a command
-result = await client.command("/arm", "move", &#123;x: 0.5, y: 0.2&#125;)
+result = await client.command("/arm", "move", {x: 0.5, y: 0.2})
 
 # Clean up
-await client.release()</code></pre>
+await client.release()`} 
+      />
+    </div>
   </section>
   
-  <section class="links">
-    <h2>Documentation</h2>
-    <ul>
-      <li><a href="/spec/">Full Specification</a> — Complete protocol definition with schemas</li>
-      <li><a href="/conformance/">Conformance Tests</a> — Test suite for implementations</li>
-      <li><a href="/implementations/">Reference Implementations</a> — Python, TypeScript, Dart code</li>
-      <li><a href="https://craigmerry.com/blog/2026-01-02-we-need-an-icann-for-robotics/" rel="noopener noreferrer">Blog: We Need an ICANN for Robotics</a> — The rationale behind RCAN</li>
-    </ul>
+  <section class="py-24 text-center">
+    <h2 class="text-3xl font-bold mb-8">Documentation</h2>
+    <div class="flex flex-wrap justify-center gap-6">
+      <a href="/spec/" class="group p-6 bg-bg-alt border border-white/5 rounded-xl hover:border-accent/50 transition-all hover:-translate-y-1 w-64">
+        <h3 class="font-bold text-lg mb-2 group-hover:text-accent transition-colors">Full Specification</h3>
+        <p class="text-sm text-text-muted">Complete protocol definition with schemas</p>
+      </a>
+      <a href="/conformance/" class="group p-6 bg-bg-alt border border-white/5 rounded-xl hover:border-accent/50 transition-all hover:-translate-y-1 w-64">
+        <h3 class="font-bold text-lg mb-2 group-hover:text-accent transition-colors">Conformance Tests</h3>
+        <p class="text-sm text-text-muted">Test suite for implementations</p>
+      </a>
+      <a href="/implementations/" class="group p-6 bg-bg-alt border border-white/5 rounded-xl hover:border-accent/50 transition-all hover:-translate-y-1 w-64">
+        <h3 class="font-bold text-lg mb-2 group-hover:text-accent transition-colors">SDKs & Tools</h3>
+        <p class="text-sm text-text-muted">Reference implementations</p>
+      </a>
+    </div>
+    <div class="mt-12">
+        <a href="https://craigmerry.com/blog/2026-01-02-we-need-an-icann-for-robotics/" target="_blank" rel="noopener noreferrer" class="text-text-muted hover:text-accent transition-colors underline decoration-dotted">
+            Blog: We Need an ICANN for Robotics
+        </a>
+    </div>
   </section>
 </BaseLayout>
-
-<style>
-  .hero {
-    text-align: center;
-    padding: 4rem 0;
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: 3rem;
-  }
-  
-  .hero h1 {
-    font-size: 3.5rem;
-    margin: 0;
-    background: linear-gradient(135deg, var(--color-accent), #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  .tagline {
-    font-size: 1.5rem;
-    color: var(--color-text-muted);
-    margin: 0.5rem 0 1.5rem;
-  }
-  
-  .subtitle {
-    font-size: 1.125rem;
-    max-width: 600px;
-    margin: 0 auto 2rem;
-    color: var(--color-text-muted);
-  }
-  
-  .cta-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  
-  .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-  
-  .btn-primary {
-    background: var(--color-accent);
-    color: var(--color-bg);
-  }
-  
-  .btn-primary:hover {
-    background: var(--color-accent-hover);
-    text-decoration: none;
-  }
-  
-  .btn-secondary {
-    background: transparent;
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
-  }
-  
-  .btn-secondary:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    text-decoration: none;
-  }
-  
-  .intro {
-    margin-bottom: 3rem;
-  }
-  
-  .feature-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-  }
-  
-  .feature {
-    background: var(--color-bg-alt);
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-  }
-  
-  .feature h3 {
-    margin-top: 0;
-    font-size: 1.125rem;
-  }
-  
-  .feature p {
-    color: var(--color-text-muted);
-    margin-bottom: 0.5rem;
-  }
-  
-  .feature code {
-    font-size: 0.75rem;
-  }
-  
-  .quick-start pre {
-    background: var(--color-code-bg);
-  }
-  
-  .links ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .links li {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-  
-  .links li:last-child {
-    border-bottom: none;
-  }
-  
-  @media (max-width: 768px) {
-    .hero h1 {
-      font-size: 2.5rem;
-    }
-    
-    .tagline {
-      font-size: 1.25rem;
-    }
-  }
-</style>
-

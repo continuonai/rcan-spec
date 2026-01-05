@@ -1,0 +1,68 @@
+---
+const links = [
+  { href: '/docs/', label: 'Docs' },
+  { href: '/spec/', label: 'Spec' },
+  { href: '/registry/', label: 'Registry' },
+  { href: '/api/', label: 'API' },
+  { href: '/implementations/', label: 'SDKs' },
+  { href: 'https://github.com/continuonai/rcan-spec', label: 'GitHub', external: true },
+];
+---
+
+<header class="fixed top-0 w-full z-50 border-b border-white/5 bg-bg/80 backdrop-blur-md transition-all duration-300" id="site-header">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-text hover:text-accent transition-colors group">
+      <span class="text-2xl group-hover:animate-pulse">⚡</span>
+      <span>RCAN</span>
+    </a>
+
+    <!-- Desktop Nav -->
+    <nav class="hidden md:flex items-center gap-8">
+      {links.map(link => (
+        <a 
+          href={link.href}
+          target={link.external ? "_blank" : undefined}
+          rel={link.external ? "noopener noreferrer" : undefined}
+          class="text-sm font-medium text-text-muted hover:text-accent transition-colors"
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button id="nav-toggle" class="md:hidden p-2 text-text-muted hover:text-accent transition-colors" aria-label="Toggle menu">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile Nav Overlay -->
+  <div id="mobile-menu" class="fixed inset-0 top-16 bg-bg/95 backdrop-blur-xl border-t border-white/5 transform translate-x-full transition-transform duration-300 md:hidden flex flex-col p-6 gap-4">
+    {links.map(link => (
+      <a 
+        href={link.href}
+        target={link.external ? "_blank" : undefined}
+        rel={link.external ? "noopener noreferrer" : undefined}
+        class="text-lg font-medium text-text-muted hover:text-accent transition-colors py-2 border-b border-white/5"
+      >
+        {link.label}
+      </a>
+    ))}
+  </div>
+</header>
+
+<script>
+  const header = document.getElementById('site-header');
+  const toggle = document.getElementById('nav-toggle');
+  const menu = document.getElementById('mobile-menu');
+
+  toggle?.addEventListener('click', () => {
+    menu?.classList.toggle('translate-x-full');
+    const isOpen = !menu?.classList.contains('translate-x-full');
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  });
+</script>
