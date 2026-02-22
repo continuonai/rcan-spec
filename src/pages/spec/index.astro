@@ -3,213 +3,787 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 import CodeWindow from '../../components/CodeWindow.astro';
 
 const protobufCode = `message RCANMessage {
-  string version = 1;           // "1.0.0"
-  string message_id = 2;        // UUID
-  string source_ruri = 3;       // Sender RURI
-  string target_ruri = 4;       // Recipient RURI (or "broadcast")
-  string auth_token = 5;        // JWT session token
-  MessageType type = 6;
-  bytes payload = 7;            // Type-specific payload
-  int64 timestamp_ms = 8;
-  int32 ttl_ms = 9;             // Time-to-live (0 = no expiry)
-  Priority priority = 10;
-  
+  string version        = 1;   // "1.1.0"
+  string message_id     = 2;   // UUID v4
+  string source_ruri    = 3;   // Sender RURI
+  string target_ruri    = 4;   // Recipient RURI or "broadcast"
+  string auth_token     = 5;   // JWT session token (optional for DISCOVER)
+  MessageType type      = 6;
+  bytes payload         = 7;   // Type-specific JSON payload
+  int64 timestamp_ms    = 8;
+  int32 ttl_ms          = 9;   // Time-to-live (0 = no expiry)
+  Priority priority     = 10;
+  string reply_to       = 11;  // RURI to reply to (optional)
+  repeated string scope = 12;  // Required scopes for this message
+
   enum MessageType {
     DISCOVER = 1;
-    STATUS = 2;
-    COMMAND = 3;
-    STREAM = 4;
-    EVENT = 5;
-    HANDOFF = 6;
-    ACK = 7;
-    ERROR = 8;
+    STATUS   = 2;
+    COMMAND  = 3;
+    STREAM   = 4;
+    EVENT    = 5;
+    HANDOFF  = 6;
+    ACK      = 7;
+    ERROR    = 8;
   }
-  
+
   enum Priority {
-    LOW = 1;
+    LOW    = 1;
     NORMAL = 2;
-    HIGH = 3;
-    SAFETY = 4;  // Always processed first
+    HIGH   = 3;
+    SAFETY = 4;  // Always processed first; cannot be rate-limited
   }
 }`;
 
 const jwtExample = `{
-  "sub": "550e8400-e29b-41d4-a716-446655440000",
-  "iss": "continuon.cloud",
-  "aud": "rcan://continuon.cloud/continuon/companion-v1/*",
-  "role": "owner",
-  "scope": ["control", "config", "training"],
+  "sub":   "550e8400-e29b-41d4-a716-446655440000",
+  "iss":   "rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6",
+  "aud":   "rcan://continuon.cloud/continuon/companion-v1/*",
+  "role":  "owner",
+  "scope": ["status", "control", "config", "training"],
   "fleet": ["d3a4b5c6", "a1b2c3d4"],
-  "exp": 1735689600,
-  "iat": 1735603200
+  "exp":   1735689600,
+  "iat":   1735603200
 }`;
+
+const gatewayJwtExample = `{
+  "sub":  "alice",
+  "role": "operator",
+  "iss":  "opencastor-gateway",
+  "exp":  1735689600,
+  "iat":  1735603200
+}
+
+/* Gateway roles map to RCAN roles:
+   admin    → OWNER  (level 4)
+   operator → LEASEE (level 3)
+   viewer   → GUEST  (level 1)  */`;
 
 const txtRecords = `ruri=rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
 model=companion-v1
-caps=arm,vision,chat,teleop
+caps=nav,vision,chat,teleop,arm,status
 roles=owner,user,guest
-version=1.0.0
+version=1.1.0
 name=Living Room Companion
 status=idle`;
 
-const ruriExamples = `rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6-7890-1234-5678-abcdef012345
+const ruriCanonical = `# Canonical form (with registry)
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
 rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6/arm
-rcan://local.rcan/discovered/192.168.1.42:8080
-rcan://my-server.lan/acme/bot-x1/a1b2c3d4:9000/teleop`;
+rcan://my-server.lan/acme/bot-x1/a1b2c3d4:9000/teleop
 
-const regexPattern = `^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(/[a-z][a-z0-9/-]*)?$`;
+# Local shorthand (no registry; implies local.rcan)
+rcan://acme.bot-x1.a1b2c3d4        # → rcan://local.rcan/acme/bot-x1/a1b2c3d4
+rcan://opencastor.rover.abc123/nav  # → rcan://local.rcan/opencastor/rover/abc123/nav
+
+# Special addresses
+rcan://local.rcan/discovered/192.168.1.42:8080  # mDNS-discovered device`;
+
+const ruriRegex = `# Canonical RURI
+^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\d{1,5}))?(/[a-z][a-z0-9/-]*)?$
+
+# Local shorthand  (authority contains dots, no path segments for identity)
+^rcan://([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)\.([a-z0-9]{4,36})(/[a-z][a-z0-9/-]*)?$`;
+
+const rcanConfig = `rcan_version: "1.1.0"
+
+metadata:
+  robot_name:   "Alex"
+  robot_uuid:   "550e8400-e29b-41d4-a716-446655440000"
+  author:       "craigm26"
+  license:      "Apache-2.0"
+  manufacturer: "opencastor"
+  model:        "rover"
+  tags:         [rpi5, camera, i2c, rover]
+
+agent:
+  provider:          "huggingface"
+  model:             "Qwen/Qwen2.5-VL-7B-Instruct"
+  latency_budget_ms: 3000
+  safety_stop:       true
+
+provider_fallback:
+  enabled:          true
+  provider:         "ollama"
+  model:            "llama3.2:3b"
+  quota_cooldown_s: 3600
+  alert_channel:    "telegram"
+
+physics:
+  type: "differential_drive"
+  dof:  2
+  wheel_circumference_m:  0.21
+  turn_time_per_deg_s:    0.008
+
+drivers:
+  - protocol: "pca9685"
+    port:     "/dev/i2c-1"
+    address:  "0x40"
+    channels:
+      left_motor:  0
+      right_motor: 1
+
+camera:
+  type:          "oakd"
+  resolution:    [640, 480]
+  framerate:     30
+  depth_enabled: true
+
+rcan_protocol:
+  port:         8000
+  capabilities: [nav, vision, chat, teleop, status]
+  enable_mdns:  true
+  enable_jwt:   true`;
+
+const capabilityTable = `| Capability | Scope Required | Description                          | Standard Endpoints      |
+|------------|---------------|--------------------------------------|-------------------------|
+| status     | STATUS        | Health, telemetry, sensor readings   | GET /api/status         |
+| nav        | CONTROL       | Autonomous waypoint navigation       | POST /api/nav/waypoint  |
+| teleop     | CONTROL       | Direct real-time motor commands      | POST /api/action        |
+| vision     | STATUS        | Camera stream, depth overlay         | GET /api/stream/mjpeg   |
+| chat       | CONTROL       | NL command → brain → action          | POST /api/command       |
+| arm        | CONTROL       | Manipulator/gripper control          | POST /api/action        |`;
+
+const waypointRequest = `// POST /api/nav/waypoint
+{
+  "distance_m":  1.5,    // metres forward (negative = reverse)
+  "heading_deg": 90,     // turn to this absolute heading (0 = current forward)
+  "speed":       0.6     // 0.0–1.0 normalised motor speed
+}
+
+// Response
+{
+  "ok":       true,
+  "job_id":   "nav-a1b2c3",
+  "eta_ms":   3200
+}
+
+// GET /api/nav/status
+{
+  "running":     true,
+  "job_id":      "nav-a1b2c3",
+  "distance_m":  1.5,
+  "heading_deg": 90,
+  "elapsed_ms":  1100
+}`;
+
+const behaviorYaml = `# behavior.yaml — RCAN Behavior Script v1.1
+name: patrol_loop
+
+steps:
+  - type: speak
+    text: "Starting patrol"
+
+  - type: waypoint
+    distance_m:  1.0
+    heading_deg: 0
+    speed:       0.5
+
+  - type: think
+    instruction: "Describe what you see"
+
+  - type: wait
+    seconds: 2
+
+  - type: waypoint
+    distance_m:  1.0
+    heading_deg: 180   # turn around
+
+  - type: speak
+    text: "Patrol complete"
+
+  - type: stop`;
+
+const obstacleZones = `// GET /api/depth/obstacles
+{
+  "available":   true,
+  "left_cm":     45,    // min depth in left third
+  "center_cm":   82,    // min depth in centre third
+  "right_cm":    38,    // min depth in right third  ← nearest
+  "nearest_cm":  38,
+  "timestamp_ms": 1735603215123
+}
+
+// GET /api/depth/frame
+// Returns: JPEG image with JET colormap depth overlay (45% opacity)
+// Content-Type: image/jpeg`;
+
+const telemetryWs = `// WS /ws/telemetry?token=<jwt>
+// Server pushes at 5 Hz (200 ms interval)
+{
+  "ts":              1735603215123,    // Unix ms
+  "loop_latency_ms": 412,
+  "loop_count":      8423,
+  "battery_v":       7.4,             // null if not available
+  "provider":        "huggingface",
+  "using_fallback":  false,
+  "obstacles": {
+    "left_cm":    45,
+    "center_cm":  82,
+    "right_cm":   38,
+    "nearest_cm": 38
+  },
+  "nav_running":     false,
+  "behavior_name":   null,
+  "paused":          false
+}`;
+
+const swarmConfig = `# config/swarm.yaml — RCAN Swarm Node Registry
+nodes:
+  - name:  "alex"
+    host:  "alex.local"
+    ip:    "192.168.68.91"    # static IP fallback
+    port:  8000
+    token: "<OPENCASTOR_API_TOKEN for this node>"
+    rcan:  "~/OpenCastor/alex.rcan.yaml"
+    tags:  [rpi5, camera, i2c, rover]
+    added: "2026-02-21"`;
+
+const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
+// Implementors SHOULD forward to swarm peers when X-Swarm-Broadcast: true
+{
+  "instruction": "stop all motors",
+  "broadcast":   true
+}
+
+// CLI shorthand
+// castor swarm command --instruction "go forward" [--node alex]
+// castor swarm stop   [--node alex]
+// castor swarm status [--json]`;
 ---
 
-<DocsLayout title="Specification" description="RCAN Protocol Specification v1.0.0 - Complete technical specification with JSON Schemas and Protocol Buffers.">
+<DocsLayout title="Specification v1.1.0" description="RCAN Protocol Specification v1.1.0 Draft — robot addressing, auth, config schema, autonomous actions, sensing, telemetry, and swarm.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">RCAN Protocol Specification</h1>
   </div>
   <div class="flex gap-2 mb-8">
-     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-       Version 1.0.0
-     </span>
-     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
-       Draft
-     </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      Version 1.1.0
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+      Draft
+    </span>
+    <a href="/spec/v1.0/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      View v1.0.0 →
+    </a>
   </div>
-  
+
   <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
     <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
     <ol class="grid md:grid-cols-2 gap-2 text-sm">
-      <li><a href="#ruri" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">01.</span> Robot URI (RURI)</a></li>
-      <li><a href="#roles" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">02.</span> Role-Based Access</a></li>
-      <li><a href="#messages" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">03.</span> Message Format</a></li>
-      <li><a href="#discovery" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">04.</span> Discovery (mDNS)</a></li>
-      <li><a href="#auth" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">05.</span> Authentication</a></li>
-      <li><a href="#safety" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">06.</span> Safety Invariants</a></li>
-      <li><a href="#federation" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">07.</span> Federation</a></li>
+      <li><a href="#ruri"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">01.</span> Robot URI (RURI)</a></li>
+      <li><a href="#roles"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">02.</span> Role-Based Access</a></li>
+      <li><a href="#messages"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">03.</span> Message Format</a></li>
+      <li><a href="#discovery"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">04.</span> Discovery (mDNS)</a></li>
+      <li><a href="#auth"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">05.</span> Authentication</a></li>
+      <li><a href="#safety"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">06.</span> Safety Invariants</a></li>
+      <li><a href="#federation"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">07.</span> Federation</a></li>
+      <li><a href="#config"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">08.</span> Robot Config (RCAN File)</a></li>
+      <li><a href="#capabilities" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">09.</span> Capabilities</a></li>
+      <li><a href="#nav"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">10.</span> Autonomous Navigation</a></li>
+      <li><a href="#behaviors"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">11.</span> Behavior Scripts</a></li>
+      <li><a href="#sensing"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">12.</span> Depth &amp; Sensing</a></li>
+      <li><a href="#telemetry"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.</span> Telemetry Streaming</a></li>
+      <li><a href="#providers"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.</span> Provider Management</a></li>
+      <li><a href="#swarm"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">15.</span> Swarm Coordination</a></li>
     </ol>
   </div>
-  
+
   <hr />
-  
+
+  <!-- ── 1. RURI ─────────────────────────────────────────────────────────── -->
   <section id="ruri">
     <h2>1. Robot URI (RURI)</h2>
-    <p>Every robot has a globally unique RURI similar to a URL:</p>
+    <p>Every robot has a globally unique RURI. Two syntactic forms are valid:</p>
+
+    <h3>Canonical form</h3>
     <pre><code>rcan://&lt;registry&gt;/&lt;manufacturer&gt;/&lt;model&gt;/&lt;device-id&gt;[:&lt;port&gt;][/&lt;capability&gt;]</code></pre>
-    
-    <h3>Examples</h3>
-    <pre><code set:text={ruriExamples}></code></pre>
-    
+
+    <h3>Local shorthand</h3>
+    <p>When no registry domain is needed (LAN-only deployments), the authority section
+    uses dot-separated segments. Parsers MUST expand this to the canonical form with
+    <code>local.rcan</code> as the registry:</p>
+    <pre><code>rcan://&lt;manufacturer&gt;.&lt;model&gt;.&lt;instance&gt;[/&lt;capability&gt;]</code></pre>
+    <p>Example: <code>rcan://opencastor.rover.abc123</code> expands to <code>rcan://local.rcan/opencastor/rover/abc123</code></p>
+
+    <div class="not-prose">
+      <CodeWindow code={ruriCanonical} language="bash" title="ruri-examples.txt" />
+    </div>
+
     <h3>Components</h3>
     <table>
       <thead>
         <tr><th>Component</th><th>Description</th><th>Required</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>registry</code></td><td>Root registry domain (e.g., <code>continuon.cloud</code>, <code>local.rcan</code>)</td><td>Yes</td></tr>
-        <tr><td><code>manufacturer</code></td><td>Manufacturer namespace</td><td>Yes</td></tr>
+        <tr><td><code>registry</code></td><td>Root registry domain (<code>continuon.cloud</code>, <code>local.rcan</code>)</td><td>Canonical only</td></tr>
+        <tr><td><code>manufacturer</code></td><td>Manufacturer or organisation namespace</td><td>Yes</td></tr>
         <tr><td><code>model</code></td><td>Robot model identifier</td><td>Yes</td></tr>
-        <tr><td><code>device-id</code></td><td>UUID or short-form (8 hex chars)</td><td>Yes</td></tr>
-        <tr><td><code>port</code></td><td>Communication port (default: 8080)</td><td>No</td></tr>
-        <tr><td><code>capability</code></td><td>Specific endpoint (e.g., <code>/arm</code>, <code>/vision</code>)</td><td>No</td></tr>
+        <tr><td><code>device-id</code></td><td>UUID or 8-char hex short-form; dot-form uses any alphanumeric slug</td><td>Yes</td></tr>
+        <tr><td><code>port</code></td><td>Communication port (default: 8000)</td><td>No</td></tr>
+        <tr><td><code>capability</code></td><td>Specific endpoint path (e.g. <code>/arm</code>, <code>/nav</code>)</td><td>No</td></tr>
       </tbody>
     </table>
-    
-    <h3>Validation Regex</h3>
+
+    <h3>Validation patterns</h3>
     <div class="not-prose">
-      <CodeWindow code={regexPattern} language="regex" title="ruri-validation.regex" />
+      <CodeWindow code={ruriRegex} language="regex" title="ruri-validation.regex" />
     </div>
+
+    <p><strong>Wildcard matching:</strong> <code>*</code> may appear in any segment for audience
+    matching in JWT tokens (e.g. <code>rcan://continuon.cloud/continuon/companion-v1/*</code>
+    grants access to all devices of that model).</p>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ── 2. RBAC ─────────────────────────────────────────────────────────── -->
   <section id="roles">
     <h2>2. Role-Based Access Control</h2>
-    <p>RCAN defines a five-level role hierarchy:</p>
-    
+    <p>RCAN defines a five-level role hierarchy. Higher roles inherit all permissions of lower roles.</p>
+
     <table>
       <thead>
-        <tr><th>Role</th><th>Level</th><th>Key Permissions</th></tr>
+        <tr><th>Role</th><th>Level</th><th>Rate limit</th><th>Session TTL</th><th>Key permissions</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>CREATOR</strong></td><td>5</td><td>Full hardware/software control, OTA push, safety override</td></tr>
-        <tr><td><strong>OWNER</strong></td><td>4</td><td>Configuration, skill installation, user management</td></tr>
-        <tr><td><strong>LEASEE</strong></td><td>3</td><td>Time-bound operational control, cannot change ownership</td></tr>
-        <tr><td><strong>USER</strong></td><td>2</td><td>Operational control within allowed modes</td></tr>
-        <tr><td><strong>GUEST</strong></td><td>1</td><td>Limited interaction, chat, read-only status</td></tr>
+        <tr><td><strong>CREATOR</strong></td><td>5</td><td>Unlimited</td><td>None</td><td>Full hardware/software control, OTA push, safety override</td></tr>
+        <tr><td><strong>OWNER</strong></td><td>4</td><td>1000/min</td><td>8 h</td><td>Configuration, skill installation, user management</td></tr>
+        <tr><td><strong>LEASEE</strong></td><td>3</td><td>500/min</td><td>2 h</td><td>Time-bound operational control, cannot change ownership</td></tr>
+        <tr><td><strong>USER</strong></td><td>2</td><td>100/min</td><td>1 h</td><td>Operational control within allowed modes</td></tr>
+        <tr><td><strong>GUEST</strong></td><td>1</td><td>10/min</td><td>5 min</td><td>Status viewing, read-only telemetry, text chat</td></tr>
       </tbody>
     </table>
-    
-    <p><strong>Rule:</strong> Higher roles inherit all permissions of lower roles.</p>
+
+    <h3>Scopes</h3>
+    <p>Scopes are fine-grained permissions included in JWT tokens:</p>
+    <table>
+      <thead>
+        <tr><th>Scope</th><th>Minimum role</th><th>Grants</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>status</code></td><td>GUEST</td><td>Read health, telemetry, sensor data</td></tr>
+        <tr><td><code>control</code></td><td>USER</td><td>Issue commands, drive motors, run behaviors</td></tr>
+        <tr><td><code>config</code></td><td>OWNER</td><td>Modify RCAN config, reload, OTA</td></tr>
+        <tr><td><code>training</code></td><td>OWNER</td><td>Submit episodes, trigger learner, export data</td></tr>
+        <tr><td><code>admin</code></td><td>CREATOR</td><td>Safety overrides, hardware resets, key rotation</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Gateway roles (implementation note)</h3>
+    <p>Implementations MAY expose a simplified three-level gateway role system for human
+    operators, mapped onto RCAN roles as follows:</p>
+    <table>
+      <thead>
+        <tr><th>Gateway role</th><th>RCAN role</th><th>Default scopes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>admin</code></td><td>OWNER (4)</td><td>status, control, config, training</td></tr>
+        <tr><td><code>operator</code></td><td>LEASEE (3)</td><td>status, control</td></tr>
+        <tr><td><code>viewer</code></td><td>GUEST (1)</td><td>status</td></tr>
+      </tbody>
+    </table>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ── 3. Messages ─────────────────────────────────────────────────────── -->
   <section id="messages">
     <h2>3. Message Format</h2>
-    <p>All RCAN messages use a common envelope:</p>
-    
+    <p>All RCAN messages use a common envelope. Implementations MUST support JSON encoding;
+    Protobuf encoding is RECOMMENDED for bandwidth-constrained links.</p>
+
     <div class="not-prose">
       <CodeWindow code={protobufCode} language="protobuf" title="message_envelope.proto" />
     </div>
+
+    <h3>Payload types</h3>
+    <table>
+      <thead>
+        <tr><th>MessageType</th><th>Required scope</th><th>Payload fields</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>DISCOVER</code></td><td>none</td><td><code>capabilities[]</code>, <code>ruri</code></td></tr>
+        <tr><td><code>STATUS</code></td><td>status</td><td><code>state</code>, <code>battery_v</code>, <code>loop_latency_ms</code></td></tr>
+        <tr><td><code>COMMAND</code></td><td>control</td><td><code>instruction</code>, <code>image_b64</code> (optional)</td></tr>
+        <tr><td><code>STREAM</code></td><td>status</td><td>See §13 Telemetry Streaming</td></tr>
+        <tr><td><code>EVENT</code></td><td>status</td><td><code>event_type</code>, <code>data</code></td></tr>
+        <tr><td><code>HANDOFF</code></td><td>control</td><td><code>target_ruri</code>, <code>reason</code></td></tr>
+        <tr><td><code>ACK</code></td><td>—</td><td><code>ref_id</code>, <code>ok</code></td></tr>
+        <tr><td><code>ERROR</code></td><td>—</td><td><code>code</code>, <code>message</code>, <code>ref_id</code></td></tr>
+      </tbody>
+    </table>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ── 4. Discovery ────────────────────────────────────────────────────── -->
   <section id="discovery">
     <h2>4. Discovery (mDNS)</h2>
-    <p>For LAN discovery without cloud connectivity:</p>
+    <p>For LAN discovery without cloud connectivity, implementations MUST broadcast:</p>
     <pre><code>_rcan._tcp.local.</code></pre>
-    
-    <h3>TXT Records</h3>
-    <pre><code set:text={txtRecords}></code></pre>
+
+    <h3>Required TXT records</h3>
+    <div class="not-prose">
+      <CodeWindow code={txtRecords} language="yaml" title="mdns-txt-records.txt" />
+    </div>
+
+    <p><code>caps</code> MUST be a comma-separated list of standard capability names (§9).<br />
+    <code>status</code> SHOULD be one of: <code>idle</code>, <code>running</code>, <code>paused</code>, <code>error</code>.</p>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ── 5. Auth ─────────────────────────────────────────────────────────── -->
   <section id="auth">
     <h2>5. Authentication</h2>
-    <p>RCAN uses JWT tokens for session management:</p>
-    
+
+    <h3>RCAN JWT (device-level)</h3>
+    <p>Full RCAN tokens include all identity and fleet claims:</p>
     <div class="not-prose">
-      <CodeWindow code={jwtExample} language="json" title="session_token.jwt" />
+      <CodeWindow code={jwtExample} language="json" title="rcan_session_token.jwt" />
     </div>
+
+    <h3>Gateway JWT (operator-level)</h3>
+    <p>Implementations MAY also issue simplified gateway tokens for human operators.
+    These MUST be mapped to a RCAN role before authorization decisions are made:</p>
+    <div class="not-prose">
+      <CodeWindow code={gatewayJwtExample} language="json" title="gateway_token.jwt" />
+    </div>
+
+    <h3>Verification order</h3>
+    <ol>
+      <li>Validate JWT signature (HMAC-SHA256 minimum; RS256 recommended for production)</li>
+      <li>Check <code>exp</code> and <code>iat</code> claims</li>
+      <li>Verify <code>aud</code> matches the robot's RURI (wildcard matching allowed)</li>
+      <li>Map <code>role</code> to RCAN level; check level ≥ required for requested scope</li>
+      <li>If <code>fleet</code> is present, verify target device-id is in the list</li>
+    </ol>
+
+    <h3>Token endpoint</h3>
+    <pre><code>POST /auth/token
+Body:  {"{"}  "username": "alice", "password": "..." {"}"}
+Reply: {"{"}  "access_token": "...", "token_type": "bearer", "role": "operator" {"}"}</code></pre>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ── 6. Safety ────────────────────────────────────────────────────────── -->
   <section id="safety">
     <h2>6. Safety Invariants</h2>
     <p>These are <strong>protocol requirements</strong>, not suggestions:</p>
-    
+
     <ol>
-      <li><strong>Local safety always wins.</strong> No remote command can bypass on-device safety checks.</li>
-      <li><strong>Graceful degradation.</strong> Network loss triggers safe-stop, not undefined behavior.</li>
-      <li><strong>Audit trail.</strong> All commands logged with user, timestamp, and outcome.</li>
-      <li><strong>Rate limiting.</strong> Commands throttled per role (Guest: 10/min, User: 100/min, etc.).</li>
-      <li><strong>Timeout enforcement.</strong> Control sessions expire; explicit renewal required.</li>
+      <li><strong>Local safety always wins.</strong> No remote command can bypass on-device safety checks, bounds checking, or emergency-stop state.</li>
+      <li><strong>Graceful degradation.</strong> Network loss MUST trigger a safe-stop within one <code>latency_budget_ms</code> interval, not undefined behavior.</li>
+      <li><strong>Audit trail.</strong> All COMMAND and CONFIG messages MUST be logged with: principal identity, RURI, timestamp (ms), message_id, outcome (<code>ok</code>/<code>blocked</code>/<code>error</code>).</li>
+      <li><strong>Rate limiting.</strong> Commands MUST be throttled per role per source RURI (see §2 role table).</li>
+      <li><strong>Timeout enforcement.</strong> Control sessions expire per session TTL (see §2). Explicit renewal MUST be required before timeout; implicit renewal MUST NOT occur.</li>
+      <li><strong>SAFETY priority bypass.</strong> Messages with <code>Priority.SAFETY</code> MUST skip rate-limiting queues and be processed before any other message.</li>
+      <li><strong>Prompt injection defense.</strong> Implementations that forward NL instructions to an LLM MUST scan for injection patterns before calling the model. A <code>ScanVerdict.BLOCK</code> result MUST return an error Thought without calling the model.</li>
     </ol>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ── 7. Federation ────────────────────────────────────────────────────── -->
   <section id="federation">
     <h2>7. Federation</h2>
     <p>RCAN is <strong>federated like email</strong>, not centralized like a platform:</p>
-    
+
     <ul>
       <li><code>rcan://continuon.cloud/...</code> — Managed service</li>
       <li><code>rcan://my-local-server.lan/...</code> — Self-hosted</li>
       <li><code>rcan://robotics-co-op.org/...</code> — Community run</li>
     </ul>
-    
+
     <blockquote>
-      <p><strong>The Right to Redirect:</strong> An Owner (Level 4) can always change the robot's upstream registry.</p>
+      <p><strong>The Right to Redirect:</strong> An OWNER (level 4) can always change the robot's upstream registry without losing local discovery.</p>
     </blockquote>
     <blockquote>
-      <p><strong>Local Supremacy:</strong> Even if the cloud registry deletes your ID, local discovery (<code>_rcan._tcp.local</code>) always works.</p>
+      <p><strong>Local Supremacy:</strong> Even if the cloud registry deletes your ID, <code>_rcan._tcp.local</code> discovery always works.</p>
     </blockquote>
   </section>
-  
-  <div class="not-prose mt-12">
+
+  <hr />
+
+  <!-- ── 8. Config ────────────────────────────────────────────────────────── -->
+  <section id="config">
+    <h2>8. Robot Configuration (RCAN File)</h2>
+    <p>A <strong>RCAN config file</strong> (extension <code>.rcan.yaml</code>) is the primary artifact
+    that describes a robot. Implementations MUST validate configs against the JSON Schema
+    published at <code>https://rcan.dev/schema/rcan.schema.json</code> before starting any runtime.</p>
+
+    <h3>Required top-level keys</h3>
+    <table>
+      <thead>
+        <tr><th>Key</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rcan_version</code></td><td>string (semver)</td><td>Spec version this config targets</td></tr>
+        <tr><td><code>metadata</code></td><td>object</td><td>Identity: robot_name, robot_uuid, author, license</td></tr>
+        <tr><td><code>agent</code></td><td>object</td><td>LLM provider, model, latency budget, safety flags</td></tr>
+        <tr><td><code>physics</code></td><td>object</td><td>Kinematic type, DoF, chassis dimensions</td></tr>
+        <tr><td><code>drivers</code></td><td>array (≥1)</td><td>Hardware driver configurations</td></tr>
+        <tr><td><code>network</code></td><td>object</td><td>Telemetry and remote access flags</td></tr>
+        <tr><td><code>rcan_protocol</code></td><td>object</td><td>Port, capabilities, mDNS, JWT flags</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Reference example</h3>
+    <div class="not-prose">
+      <CodeWindow code={rcanConfig} language="yaml" title="alex.rcan.yaml" />
+    </div>
+
+    <p>The full JSON Schema (with all optional blocks: <code>tiered_brain</code>, <code>reactive</code>, <code>learner</code>,
+    <code>camera</code>, <code>audio</code>, <code>channels</code>, <code>swarm</code>, <code>ros2</code>, <code>provider_fallback</code>) is
+    published at <a href="https://rcan.dev/schema/rcan.schema.json">rcan.dev/schema/rcan.schema.json</a>.</p>
+  </section>
+
+  <hr />
+
+  <!-- ── 9. Capabilities ──────────────────────────────────────────────────── -->
+  <section id="capabilities">
+    <h2>9. Capabilities</h2>
+    <p>Capabilities are advertised in <code>rcan_protocol.capabilities</code> and in mDNS TXT records.
+    They control which RCAN message types are accepted and what scope is required.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={capabilityTable} language="markdown" title="standard-capabilities.md" />
+    </div>
+
+    <p>Implementations MAY declare custom capabilities using reverse-domain notation:
+    <code>com.acme.gripper</code>. Custom capabilities MUST require at least <code>control</code> scope.</p>
+
+    <h3>Auto-detection rules</h3>
+    <ul>
+      <li>Any driver with <code>protocol: pca9685</code> or <code>protocol: dynamixel</code> → <strong>nav</strong> + <strong>teleop</strong></li>
+      <li>A <code>drivers</code> entry with <code>protocol: dynamixel</code> and kinematics → <strong>arm</strong></li>
+      <li><code>camera</code> block present → <strong>vision</strong></li>
+      <li><code>agent</code> block present → <strong>chat</strong></li>
+      <li>Always declared → <strong>status</strong></li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <!-- ── 10. Nav ──────────────────────────────────────────────────────────── -->
+  <section id="nav">
+    <h2>10. Autonomous Navigation</h2>
+    <p>The <code>nav</code> capability exposes a simple dead-reckoning waypoint API. No SLAM or odometry
+    hardware is required; timing is derived from the <code>physics</code> block.</p>
+
+    <h3>Physics prerequisites</h3>
+    <p>The <code>physics</code> block MUST include these fields for dead-reckoning navigation:</p>
+    <pre><code>physics:
+  wheel_circumference_m:  0.21     # metres per full wheel rotation
+  turn_time_per_deg_s:    0.008    # seconds to turn one degree at speed=1.0</code></pre>
+
+    <h3>Waypoint API</h3>
+    <div class="not-prose">
+      <CodeWindow code={waypointRequest} language="json" title="nav-waypoint.json" />
+    </div>
+
+    <h3>Execution model</h3>
+    <ol>
+      <li>Turn to <code>heading_deg</code> (relative to current facing) — blocks until complete</li>
+      <li>Drive forward <code>distance_m</code> at <code>speed</code> — blocks until complete</li>
+      <li>Explicitly stop motors (<code>driver.stop()</code>) in a <code>finally</code> block</li>
+    </ol>
+    <p>SAFETY: if an e-stop is triggered mid-nav, the <code>finally</code> block guarantees motor stop regardless.</p>
+
+    <h3>Concurrent nav constraint</h3>
+    <p>Only one nav job may run at a time. A new <code>POST /api/nav/waypoint</code> while a job is
+    running MUST return <code>409 Conflict</code>.</p>
+  </section>
+
+  <hr />
+
+  <!-- ── 11. Behaviors ────────────────────────────────────────────────────── -->
+  <section id="behaviors">
+    <h2>11. Behavior Scripts</h2>
+    <p>Behavior scripts are YAML files that define named sequences of robot steps.
+    They provide repeatable, auditable automation without custom code.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={behaviorYaml} language="yaml" title="patrol_loop.behavior.yaml" />
+    </div>
+
+    <h3>Standard step types</h3>
+    <table>
+      <thead>
+        <tr><th>Type</th><th>Required fields</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>waypoint</code></td><td><code>distance_m</code>, <code>heading_deg</code></td><td>Dead-reckoning move (§10)</td></tr>
+        <tr><td><code>wait</code></td><td><code>seconds</code></td><td>Pause execution</td></tr>
+        <tr><td><code>think</code></td><td><code>instruction</code></td><td>Send NL prompt to brain; result available as <code>last_thought</code></td></tr>
+        <tr><td><code>speak</code></td><td><code>text</code></td><td>TTS output via audio system</td></tr>
+        <tr><td><code>stop</code></td><td>—</td><td>Motor e-stop; also terminates behavior</td></tr>
+        <tr><td><code>command</code></td><td><code>action</code> (dict)</td><td>Send raw action dict directly to driver</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Behavior API</h3>
+    <pre><code>POST /api/behavior/run    {"{ "}path: "behaviors/patrol.yaml", behavior: "patrol_loop"{"} "}
+POST /api/behavior/stop
+GET  /api/behavior/status → {"{ "}running, current_step, behavior_name{"}"}</code></pre>
+
+    <p>Only one behavior may run at a time. Running a new behavior MUST stop the current one first.</p>
+  </section>
+
+  <hr />
+
+  <!-- ── 12. Sensing ──────────────────────────────────────────────────────── -->
+  <section id="sensing">
+    <h2>12. Depth &amp; Sensing</h2>
+    <p>Robots with stereo depth cameras (e.g. Intel OAK-D, RealSense) SHOULD implement the
+    depth sensing API. Implementations without depth hardware MUST return
+    <code>{"{"}"available": false{"}"}</code>.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={obstacleZones} language="json" title="obstacle-zones.json" />
+    </div>
+
+    <h3>Zone definition</h3>
+    <p>The depth frame is divided into three equal vertical thirds:</p>
+    <ul>
+      <li><strong>left_cm</strong> — minimum depth in columns 0–W/3</li>
+      <li><strong>center_cm</strong> — minimum depth in columns W/3–2W/3</li>
+      <li><strong>right_cm</strong> — minimum depth in columns 2W/3–W</li>
+      <li><strong>nearest_cm</strong> — minimum across all three zones</li>
+    </ul>
+
+    <p>The depth overlay image (<code>GET /api/depth/frame</code>) MUST use the JET colormap
+    (blue=far, red=near) blended over the RGB frame.</p>
+
+    <h3>Safety integration</h3>
+    <p>Implementations SHOULD integrate obstacle zone readings into the COMMAND pipeline:
+    a <code>nearest_cm</code> below the configured <code>agent.min_obstacle_m * 100</code> value MUST
+    trigger an e-stop before the motor command is dispatched.</p>
+  </section>
+
+  <hr />
+
+  <!-- ── 13. Telemetry ────────────────────────────────────────────────────── -->
+  <section id="telemetry">
+    <h2>13. Telemetry Streaming</h2>
+    <p>Implementations MUST expose a WebSocket endpoint at <code>/ws/telemetry</code> that pushes
+    robot state at a configurable rate (default: 5 Hz).</p>
+
+    <div class="not-prose">
+      <CodeWindow code={telemetryWs} language="json" title="telemetry-message.json" />
+    </div>
+
+    <h3>Authentication</h3>
+    <p>The WebSocket endpoint SHOULD accept a <code>token</code> query parameter
+    (<code>wss://robot:8000/ws/telemetry?token=&lt;jwt&gt;</code>).
+    Unauthenticated connections MUST be rejected if <code>rcan_protocol.enable_jwt: true</code>.</p>
+
+    <h3>Field requirements</h3>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ts</code></td><td>MUST</td><td>int (Unix ms)</td><td>Server timestamp</td></tr>
+        <tr><td><code>loop_latency_ms</code></td><td>MUST</td><td>number</td><td>Last perception-action loop duration</td></tr>
+        <tr><td><code>loop_count</code></td><td>MUST</td><td>int</td><td>Total loop iterations since start</td></tr>
+        <tr><td><code>provider</code></td><td>SHOULD</td><td>string</td><td>Active LLM provider name</td></tr>
+        <tr><td><code>using_fallback</code></td><td>SHOULD</td><td>bool</td><td>Whether the fallback provider is active</td></tr>
+        <tr><td><code>battery_v</code></td><td>SHOULD</td><td>number | null</td><td>Battery voltage; null if not available</td></tr>
+        <tr><td><code>obstacles</code></td><td>SHOULD</td><td>object | null</td><td>See §12 obstacle zone schema</td></tr>
+        <tr><td><code>paused</code></td><td>MUST</td><td>bool</td><td>Whether perception-action loop is paused</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── 14. Providers ────────────────────────────────────────────────────── -->
+  <section id="providers">
+    <h2>14. Provider Management</h2>
+    <p>An RCAN robot runtime manages one or more LLM "brains" and MUST handle provider
+    failures gracefully. Two fallback strategies are defined:</p>
+
+    <h3>Quota fallback (<code>provider_fallback</code>)</h3>
+    <p>When the primary provider returns a quota or billing error (HTTP 402/429 or
+    keywords: <em>credits exhausted</em>, <em>rate limit</em>, <em>quota</em>), the runtime MUST:</p>
+    <ol>
+      <li>Switch transparently to the configured <code>provider_fallback</code> provider</li>
+      <li>Record the switch timestamp</li>
+      <li>Alert the operator via the configured <code>alert_channel</code></li>
+      <li>After <code>quota_cooldown_s</code>, attempt to restore the primary on the next request</li>
+    </ol>
+
+    <h3>Offline fallback (<code>offline_fallback</code>)</h3>
+    <p>When the runtime detects internet loss (HTTP reachability check), it MUST switch
+    to a local provider (Ollama, llama.cpp, MLX) automatically. The switch back to cloud
+    occurs after connectivity is restored.</p>
+
+    <h3>RCAN config blocks</h3>
+    <pre><code>provider_fallback:
+  enabled:          true
+  provider:         "ollama"        # target fallback provider
+  model:            "llama3.2:3b"
+  quota_cooldown_s: 3600            # seconds before retrying primary
+  alert_channel:    "telegram"      # channel to notify on switch
+
+offline_fallback:
+  enabled:         true
+  provider:        "ollama"
+  model:           "llama3.2:3b"
+  check_interval_s: 30
+  alert_channel:   "telegram"</code></pre>
+
+    <h3>Health check interface</h3>
+    <p>All provider adapters MUST implement:</p>
+    <pre><code>health_check() → {"{"}  "ok": bool, "latency_ms": float, "error": str | null  {"}"}</code></pre>
+    <p>The runtime SHOULD call <code>health_check()</code> on the fallback provider at startup
+    and surface the result at <code>GET /api/provider/health</code>.</p>
+  </section>
+
+  <hr />
+
+  <!-- ── 15. Swarm ────────────────────────────────────────────────────────── -->
+  <section id="swarm">
+    <h2>15. Swarm Coordination</h2>
+    <p>A <strong>swarm</strong> is a named set of RCAN robots that can be queried and commanded
+    together. Swarm membership is declared in a <code>swarm.yaml</code> node registry.</p>
+
+    <h3>Node registry format</h3>
+    <div class="not-prose">
+      <CodeWindow code={swarmConfig} language="yaml" title="swarm.yaml" />
+    </div>
+
+    <h3>Swarm operations</h3>
+    <div class="not-prose">
+      <CodeWindow code={swarmBroadcast} language="json" title="swarm-broadcast.json" />
+    </div>
+
+    <h3>Required swarm endpoints</h3>
+    <table>
+      <thead>
+        <tr><th>Endpoint</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>GET  /api/status</code></td><td>Per-node health (includes <code>ruri</code>, <code>version</code>, <code>caps</code>)</td></tr>
+        <tr><td><code>POST /api/command</code> + <code>X-Swarm-Broadcast: true</code></td><td>Fan-out command to all peers</td></tr>
+        <tr><td><code>POST /api/stop</code></td><td>Immediate e-stop; MUST respond within 500 ms</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Swarm safety rule</h3>
+    <p>A swarm broadcast MUST NOT override a node's local e-stop state. If a node is in
+    e-stop, it MUST acknowledge the broadcast but MUST NOT execute the command.</p>
+  </section>
+
+  <div class="not-prose mt-12 flex gap-4">
     <a href="/conformance/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Next: Conformance Tests →
+      Conformance Tests →
+    </a>
+    <a href="/spec/v1.0/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      View v1.0.0 Archive →
     </a>
   </div>
 </DocsLayout>
