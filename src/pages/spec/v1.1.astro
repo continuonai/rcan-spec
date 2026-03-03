@@ -3,7 +3,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 import CodeWindow from '../../components/CodeWindow.astro';
 
 const protobufCode = `message RCANMessage {
-  string version        = 1;   // "1.2.0"
+  string version        = 1;   // "1.1.0"
   string message_id     = 2;   // UUID v4
   string source_ruri    = 3;   // Sender RURI
   string target_ruri    = 4;   // Recipient RURI or "broadcast"
@@ -85,7 +85,7 @@ const ruriRegex = `# Canonical RURI
 # Local shorthand  (authority contains dots, no path segments for identity)
 ^rcan://([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)\.([a-z0-9]{4,36})(/[a-z][a-z0-9/-]*)?$`;
 
-const rcanConfig = `rcan_version: "1.2.0"
+const rcanConfig = `rcan_version: "1.1.0"
 
 metadata:
   robot_name:   "Alex"
@@ -239,58 +239,6 @@ nodes:
     tags:  [rpi5, camera, i2c, rover]
     added: "2026-02-21"`;
 
-const agentGatesConfig = `agent:
-  confidence_gates:
-    - scope: control
-      min_confidence: 0.5
-      on_fail: escalate   # escalate | block | allow
-    - scope: nav
-      min_confidence: 0.7
-      on_fail: block
-    - scope: admin
-      min_confidence: 0.95
-      on_fail: block
-  hitl_gates:
-    - action_types: [arm_deploy]
-      require_auth: true
-      auth_timeout_ms: 30000
-      on_timeout: block   # block | allow
-      notify: [whatsapp]`;
-
-const aiAuditRecord = `{
-  "principal": "operator@rcan://local.rcan/opencastor/rover/abc123",
-  "ruri": "rcan://local.rcan/opencastor/rover/abc123",
-  "timestamp_ms": 1740721482934,
-  "message_id": "a3f7c1d9",
-  "event": "COMMAND",
-  "outcome": "ok",
-  "ai": {
-    "provider": "anthropic",
-    "model": "claude-sonnet-4-6",
-    "model_version": "2026-02",
-    "layer": "planner",
-    "confidence": 0.87,
-    "inference_latency_ms": 1240,
-    "thought_id": "th_8f3a2c...",
-    "escalated": false
-  }
-}`;
-
-const thoughtLogResponse = `GET /api/thoughts/<thought_id>
-→ {
-    "id": "th_8f3a2c...",
-    "timestamp_ms": 1740721482100,
-    "provider": "anthropic",
-    "model": "claude-sonnet-4-6",
-    "layer": "planner",
-    "instruction": "Move toward the open doorway",
-    "context_snapshot": { "...": "..." },
-    "action": { "type": "move", "linear_x": 0.4 },
-    "confidence": 0.87,
-    "reasoning": "<omitted — requires config scope>",
-    "escalated_from": null
-  }`;
-
 const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
 // Implementors SHOULD forward to swarm peers when X-Swarm-Broadcast: true
 {
@@ -304,20 +252,17 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
 // castor swarm status [--json]`;
 ---
 
-<DocsLayout title="Specification v1.2.0" description="RCAN Protocol Specification v1.2.0 Draft — robot addressing, auth, config schema, autonomous actions, sensing, telemetry, swarm, and AI accountability.">
+<DocsLayout title="Specification v1.1.0" description="RCAN Protocol Specification v1.1.0 Draft — robot addressing, auth, config schema, autonomous actions, sensing, telemetry, and swarm.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">RCAN Protocol Specification</h1>
   </div>
   <div class="flex gap-2 mb-8">
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      Version 1.2.0
+      Version 1.1.0
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
       Draft
     </span>
-    <a href="/spec/v1.1/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
-      View v1.1.0 →
-    </a>
     <a href="/spec/v1.0/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       View v1.0.0 →
     </a>
@@ -340,8 +285,7 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
       <li><a href="#sensing"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">12.</span> Depth &amp; Sensing</a></li>
       <li><a href="#telemetry"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.</span> Telemetry Streaming</a></li>
       <li><a href="#providers"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.</span> Provider Management</a></li>
-      <li><a href="#swarm"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">15.</span> Swarm Coordination</a></li>
-      <li><a href="#ai-accountability" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">16.</span> AI Accountability</a></li>
+      <li><a href="#swarm"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">15.</span> Swarm Coordination</a></li>
     </ol>
   </div>
 
@@ -439,10 +383,6 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
         <tr><td><code>viewer</code></td><td>GUEST (1)</td><td>status</td></tr>
       </tbody>
     </table>
-
-    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
-      <p class="text-sm"><strong class="text-yellow-400">Authorization note (v1.2):</strong> <code>AUTHORIZE</code> messages MUST be issued by principals with <strong>OWNER (level 4)</strong> or <strong>CREATOR (level 5)</strong> role. Any <code>AUTHORIZE</code> attempt from a principal with a lower role MUST be audited and rejected with an <code>ERROR</code> response. See §16.3 for Human-in-the-Loop gate behavior.</p>
-    </div>
   </section>
 
   <hr />
@@ -471,8 +411,6 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
         <tr><td><code>HANDOFF</code></td><td>control</td><td><code>target_ruri</code>, <code>reason</code></td></tr>
         <tr><td><code>ACK</code></td><td>—</td><td><code>ref_id</code>, <code>ok</code></td></tr>
         <tr><td><code>ERROR</code></td><td>—</td><td><code>code</code>, <code>message</code>, <code>ref_id</code></td></tr>
-        <tr><td><code>AUTHORIZE</code></td><td>control</td><td><code>ref_message_id</code> (str), <code>decision</code> (<code>"approve"</code>|<code>"deny"</code>)</td></tr>
-        <tr><td><code>PENDING_AUTH</code></td><td>none</td><td><code>pending_id</code> (str), <code>action_type</code> (str), <code>description</code> (str), <code>timeout_remaining_ms</code> (int)</td></tr>
       </tbody>
     </table>
   </section>
@@ -600,14 +538,6 @@ Reply: {"{"}  "access_token": "...", "token_type": "bearer", "role": "operator" 
     <p>The full JSON Schema (with all optional blocks: <code>tiered_brain</code>, <code>reactive</code>, <code>learner</code>,
     <code>camera</code>, <code>audio</code>, <code>channels</code>, <code>swarm</code>, <code>ros2</code>, <code>provider_fallback</code>) is
     published at <a href="https://rcan.dev/schema/rcan.schema.json">rcan.dev/schema/rcan.schema.json</a>.</p>
-
-    <h3>Agent AI gate configuration (v1.2)</h3>
-    <p>The <code>agent</code> block accepts two optional keys introduced in v1.2 for AI-driven robots:
-    <code>confidence_gates</code> and <code>hitl_gates</code>. Both are arrays of gate objects evaluated at
-    command dispatch time. See §16 for full behavioral specification.</p>
-    <div class="not-prose">
-      <CodeWindow code={agentGatesConfig} language="yaml" title="agent-gates.rcan.yaml" />
-    </div>
   </section>
 
   <hr />
@@ -848,156 +778,9 @@ offline_fallback:
     e-stop, it MUST acknowledge the broadcast but MUST NOT execute the command.</p>
   </section>
 
-  <hr />
-
-  <!-- ── 16. AI Accountability ─────────────────────────────────────────────── -->
-  <section id="ai-accountability">
-    <h2>16. AI Accountability</h2>
-    <p>As RCAN robots become AI-driven rather than rule-driven, the reasoning layer becomes a
-    first-class safety surface. §6 defines what was commanded; this section defines requirements
-    for recording <em>how</em> a command was produced, gating dispatch on model confidence, and
-    requiring human authorization for high-risk actions.</p>
-
-    <p>All features in this section are backwards-compatible with v1.1 implementations.
-    New audit fields are SHOULD; gate behavior is opt-in via config.</p>
-
-    <hr />
-
-    <!-- §16.1 -->
-    <h3 id="ai-model-identity">16.1 Model Identity in Audit Records</h3>
-    <p>If a <code>COMMAND</code> message was produced by an AI inference call, implementations
-    SHOULD include an <code>ai</code> block in the audit record alongside the existing §6 fields.</p>
-
-    <h4>Schema</h4>
-    <table>
-      <thead>
-        <tr><th>Field</th><th>Requirement</th><th>Type</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>ai.provider</code></td><td>MUST</td><td>string</td><td>Non-empty string identifying the LLM provider (e.g. <code>"anthropic"</code>, <code>"openai"</code>, <code>"ollama"</code>)</td></tr>
-        <tr><td><code>ai.model</code></td><td>MUST</td><td>string</td><td>Model identifier as returned by or configured for the provider</td></tr>
-        <tr><td><code>ai.model_version</code></td><td>SHOULD</td><td>string</td><td>Model version or snapshot date (e.g. <code>"2026-02"</code>)</td></tr>
-        <tr><td><code>ai.layer</code></td><td>SHOULD</td><td>string</td><td>One of <code>reactive</code>, <code>fast</code>, or <code>planner</code>; for multi-agent systems the originating agent name is acceptable</td></tr>
-        <tr><td><code>ai.confidence</code></td><td>SHOULD</td><td>float [0.0–1.0]</td><td>Model's self-reported or harness-computed confidence. If unavailable, implementations MUST <strong>omit</strong> the field rather than defaulting to 1.0</td></tr>
-        <tr><td><code>ai.inference_latency_ms</code></td><td>SHOULD</td><td>number</td><td>Wall-clock time for the inference call in milliseconds</td></tr>
-        <tr><td><code>ai.thought_id</code></td><td>SHOULD</td><td>string</td><td>Unique ID of the Thought object that produced this command, enabling correlation with full reasoning logs (see §16.4)</td></tr>
-        <tr><td><code>ai.escalated</code></td><td>MUST if present</td><td>bool</td><td>MUST be <code>true</code> if the command was produced after automatic escalation from a lower brain layer; MUST be <code>false</code> otherwise (do not omit)</td></tr>
-      </tbody>
-    </table>
-
-    <h4>Example extended audit record</h4>
-    <div class="not-prose">
-      <CodeWindow code={aiAuditRecord} language="json" title="audit-record-v1.2.json" />
-    </div>
-
-    <hr />
-
-    <!-- §16.2 -->
-    <h3 id="confidence-gates">16.2 Confidence Gates</h3>
-    <p>Implementations MAY declare confidence gates under <code>agent.confidence_gates</code> in the
-    <code>.rcan.yaml</code> config file. A gate is a protocol-level constraint that blocks or escalates
-    low-confidence commands before they reach the driver layer.</p>
-
-    <h4>Gate evaluation</h4>
-    <ol>
-      <li>Before dispatching any <code>COMMAND</code> with a gated scope, the runtime MUST evaluate the
-      corresponding gate.</li>
-      <li>If <code>ai.confidence</code> is present and below <code>min_confidence</code>, the gate fails.</li>
-      <li>If <code>ai.confidence</code> is absent and a gate is declared for that scope, the gate
-      defaults to the <code>on_fail</code> behavior (treat missing confidence as a gate miss).</li>
-    </ol>
-
-    <h4>on_fail behaviors</h4>
-    <table>
-      <thead>
-        <tr><th>Value</th><th>Behavior</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code>block</code></td>
-          <td>Command MUST NOT be dispatched. An <code>ERROR</code> response with code <code>CONFIDENCE_GATE_FAIL</code> MUST be returned to the originating principal.</td>
-        </tr>
-        <tr>
-          <td><code>escalate</code></td>
-          <td>Command MUST be re-submitted to the next higher brain layer before dispatch. If no higher layer is available, behavior is equivalent to <code>block</code>.</td>
-        </tr>
-        <tr>
-          <td><code>allow</code></td>
-          <td>Command proceeds. The gate miss MUST be noted in the audit record with <code>"gate_bypassed": true</code>.</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <hr />
-
-    <!-- §16.3 -->
-    <h3 id="hitl-gates">16.3 Human-in-the-Loop Gates</h3>
-    <p>Implementations MAY declare Human-in-the-Loop (HiTL) gates under <code>agent.hitl_gates</code>
-    in the <code>.rcan.yaml</code> config file. A HiTL gate requires explicit human authorization
-    before a matched command is dispatched.</p>
-
-    <h4>Gate trigger sequence</h4>
-    <p>When <code>require_auth: true</code> is declared and an incoming command's action type matches
-    an entry in <code>action_types</code>:</p>
-    <ol>
-      <li>The implementation MUST NOT dispatch the command immediately.</li>
-      <li>The implementation MUST emit a <code>PENDING_AUTH</code> message to all channels listed in
-      <code>notify</code>, including the originating <code>message_id</code>, the <code>action_type</code>, a
-      human-readable description, and the <code>auth_timeout_ms</code>.</li>
-      <li>The implementation MUST await an <code>AUTHORIZE</code> message from a principal with
-      OWNER (level 4) or CREATOR (level 5) role within <code>auth_timeout_ms</code> milliseconds.</li>
-      <li>On <code>decision: approve</code> — the command is dispatched and both the original
-      command and the <code>AUTHORIZE</code> message are logged in the audit chain.</li>
-      <li>On <code>decision: deny</code> or timeout expiry — the command is dropped, an <code>ERROR</code>
-      is returned to the originating principal, and the event is audited.</li>
-    </ol>
-
-    <h4>on_timeout behaviors</h4>
-    <table>
-      <thead>
-        <tr><th>Value</th><th>Behavior</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>block</code></td><td>Command is dropped; ERROR returned; event audited.</td></tr>
-        <tr><td><code>allow</code></td><td>Command is dispatched after timeout with <code>"hitl_timeout_bypass": true</code> in the audit record.</td></tr>
-      </tbody>
-    </table>
-
-    <p>All gate events (trigger, approve, deny, timeout) MUST be written to the audit log
-    with the original <code>message_id</code>, the authorizing principal (if any), and a timestamp.</p>
-
-    <p><strong>Role enforcement:</strong> <code>AUTHORIZE</code> messages from principals below OWNER role MUST be
-    rejected. A rejected <code>AUTHORIZE</code> attempt MUST be audited (see §2).</p>
-
-    <hr />
-
-    <!-- §16.4 -->
-    <h3 id="thought-log">16.4 Thought Log</h3>
-    <p>Implementations SHOULD expose a queryable Thought log to enable full reasoning
-    auditability and correlation with command audit records.</p>
-
-    <h4>Endpoint</h4>
-    <div class="not-prose">
-      <CodeWindow code={thoughtLogResponse} language="json" title="thought-log-response.json" />
-    </div>
-
-    <h4>Access control</h4>
-    <ul>
-      <li>The endpoint MUST require at minimum <code>status</code> scope to read any Thought record.</li>
-      <li>The <code>reasoning</code> field MUST be omitted from the response unless the caller holds
-      <code>config</code> scope (OWNER or higher). This prevents prompt extraction by lower-privilege
-      principals who have operational access but not configuration access.</li>
-      <li>Implementations that do not expose the Thought log MUST return <code>404</code> or
-      <code>501 Not Implemented</code> at this path.</li>
-    </ul>
-  </section>
-
   <div class="not-prose mt-12 flex gap-4">
     <a href="/conformance/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
       Conformance Tests →
-    </a>
-    <a href="/spec/v1.1/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
-      View v1.1.0 Archive →
     </a>
     <a href="/spec/v1.0/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
       View v1.0.0 Archive →
