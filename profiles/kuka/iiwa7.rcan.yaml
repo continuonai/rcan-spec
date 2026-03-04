@@ -1,0 +1,122 @@
+# RCAN v1.2 Profile — KUKA LBR iiwa 7 R800
+# Bridge: kuka_sunrise (KUKA Sunrise OS / iiwa_ros2)
+#   Primary: iiwa_ros2 (ROS 2 Humble+) — github.com/ICube-Robotics/iiwa_ros2
+#   Alternative: FRI (Fast Robot Interface) C++ library via KUKA Sunrise OS
+#   Sunrise OS runs on the robot controller (KRC5); a separate PC runs ROS 2.
+#   FRI port: 30200 (UDP); configure in Sunrise Workbench before use.
+# Spec: rcan.dev/spec §8
+
+rcan_version: '1.2'
+ruri: rcan://local.rcan/kuka/iiwa7/{device_id}
+
+robot:
+  manufacturer: KUKA
+  model: LBR iiwa 7 R800
+  type: collaborative_arm
+  dof: 7           # redundant DOF; enables null-space posture optimization
+  payload_kg: 7
+  reach_mm: 800
+  # Controller: KUKA KRC5 running KUKA Sunrise OS 1.17+
+  # Typical deployment: automotive assembly, sealing, deburring, testing
+  serial_pattern: '{device_id}'
+
+capabilities:
+  motion:
+    - joint_space
+    - cartesian_linear
+    - cartesian_spline
+    - impedance_control        # joint & Cartesian impedance (iiwa specialty)
+    - null_space_control       # 7-DOF redundancy
+    - gravity_compensation
+    - force_torque_control
+    - collaborative_motion     # low-stiffness compliance for HRC
+  sensing:
+    - joint_position
+    - joint_velocity
+    - joint_torque             # integrated joint torque sensing (7 axes)
+    - tcp_force_torque         # derived + optional ATI sensor via flange
+    - joint_temperatures
+    - collision_detection
+  io:
+    - krc5_digital_inputs_16
+    - krc5_digital_outputs_16
+    - krc5_analog_inputs_4
+    - krc5_analog_outputs_4
+    - media_flange_io          # optional KUKA media flange
+  safety:
+    - iso_10218_1
+    - iso_10218_2
+    - joint_torque_monitoring
+    - cartesian_force_limit
+    - speed_monitoring
+    - safe_operational_stop
+    - safe_stop_1
+    - safe_stop_2
+    - emergency_stop
+
+safety:
+  # 500 mm: appropriate for automotive cells where human operators occasionally
+  # enter the work envelope. Reduce with proper risk assessment and fencing.
+  estop_distance_mm: 500
+  local_safety_wins: true
+  # 0.6 = 60% rated speed — reasonable for partially-fenced automotive cells.
+  # iiwa 7 max joint speed: 1.483–1.745 rad/s depending on axis.
+  max_speed_override: 0.6
+  # Cartesian speed limit at 0.6 override (rated ~1500 mm/s)
+  max_tcp_speed_mm_s: 900
+  # Torque monitoring thresholds (Nm); iiwa 7 rated: A1-A4=176Nm, A5-A7=110Nm
+  # Conservative at 70% rated
+  max_joint_torques_nm: [123, 123, 123, 123, 77, 77, 77]
+  # Cartesian force limit for collaborative tasks (ISO/TS 15066)
+  max_tcp_force_n: 150
+  # FRI heartbeat timeout: if ROS 2 node stops sending, controller safe-stops
+  fri_heartbeat_timeout_ms: 100
+
+agent:
+  confidence_gates:
+    - scope: control
+      # Automotive industrial arm: high threshold required for production motions.
+      min_confidence: 0.90
+      on_fail: escalate
+    - scope: admin
+      # Configuration changes: near-certain confidence required.
+      min_confidence: 0.97
+      on_fail: block
+  hitl_gates:
+    # Recommended for first-article programs or novel paths.
+    # Example (uncomment to activate):
+    # - action_types: [program_deploy, path_change]
+    #   require_auth: true
+    #   auth_timeout_ms: 30000
+    #   on_timeout: block
+    #   notify: [whatsapp]
+    []
+
+bridge:
+  type: kuka_sunrise
+  # Option A: iiwa_ros2 (recommended for new deployments)
+  ros_driver: iiwa_ros2
+  ros_domain_id: 0
+  namespace: /iiwa
+  fri_client_ip: 192.168.1.200   # IP of the PC running the FRI client
+  fri_port: 30200
+  # Option B: Raw FRI (C++ only, no ROS 2)
+  # fri_library: kuka_fri
+  # fri_version: '1.15'
+  notes: >
+    Option A — iiwa_ros2 (preferred):
+      1. Install iiwa_ros2: github.com/ICube-Robotics/iiwa_ros2
+         (Tested with ROS 2 Humble + Sunrise OS 1.17)
+      2. Deploy the FRI Java application to the controller via Sunrise Workbench.
+         File: iiwa_ros2/iiwa_driver/ros2_Java/ROSSmartServo.java
+      3. Configure fri_client_ip in Sunrise Workbench to match the PC running ROS 2.
+      4. Launch: ros2 launch iiwa_bringup iiwa.launch.py
+           robot_controller:=iiwa_impedance_controller
+      5. Action server: /iiwa/joint_trajectory_controller/follow_joint_trajectory
+
+    Option B — MoveIt 2:
+      ros2 launch iiwa_moveit2 iiwa_moveit.launch.py
+
+    Safety: FRI packets MUST arrive within fri_heartbeat_timeout_ms or the
+    controller triggers a safe operational stop. Ensure low-latency Ethernet
+    (avoid WiFi) between ROS 2 PC and KRC5 controller.

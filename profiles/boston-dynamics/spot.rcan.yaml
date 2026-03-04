@@ -1,0 +1,113 @@
+# RCAN v1.2 Profile — Boston Dynamics Spot
+# Bridge: spot_sdk (Boston Dynamics Spot SDK — REST / gRPC)
+#   Install: pip install bosdyn-client bosdyn-mission bosdyn-choreography-client
+#   SDK docs: dev.bostondynamics.com
+#   Spot runs its own onboard computer; all commands go via the Spot API
+#   over the robot's WiFi AP or Ethernet payload port (192.168.80.3 default).
+#   An E-Stop service MUST be registered before autonomous operation.
+# Spec: rcan.dev/spec §8
+
+rcan_version: '1.2'
+ruri: rcan://local.rcan/boston-dynamics/spot/{device_id}
+
+robot:
+  manufacturer: Boston Dynamics
+  model: Spot
+  type: mobile_quadruped
+  dof: 12        # 3 DOF per leg × 4 legs
+  # NOTE: payload_kg = robot body mass; additional payloads: up to 14 kg
+  payload_kg: 14
+  # No fixed reach_mm for quadruped body. Arm attachment adds ~1000 mm reach.
+  # Uncomment if the Spot Arm payload is fitted:
+  # arm_payload:
+  #   fitted: true
+  #   dof: 6
+  #   payload_kg: 4       # additional graspable payload on top of arm mass
+  #   reach_mm: 1100
+
+capabilities:
+  motion:
+    - walk
+    - stair_climbing
+    - sit
+    - stand
+    - self_righting
+    - arm_reach          # if Spot Arm is equipped
+    - arm_carry
+    - gripper_open_close # if Spot Arm is equipped
+    - choreography       # Spot choreography license required
+    - autowalk           # recorded mission replay
+    - graphnav           # map-based autonomous navigation
+  sensing:
+    - stereo_cameras_5   # 5 stereo pairs: front, back, left, right, frontleft/right
+    - fisheye_cameras    # wide-angle body cameras
+    - depth_sensors
+    - imu
+    - lidar              # if Spot LIDAR payload fitted
+    - spot_cam           # if Spot CAM payload fitted
+    - arm_rgb_camera     # if Spot Arm is equipped
+    - arm_depth_camera   # if Spot Arm is equipped
+  io:
+    - payload_port_ethernet
+    - payload_port_usb
+    - gpio_payload
+  safety:
+    - emergency_stop_client  # mandatory E-Stop client registration
+    - force_estop
+    - lease_system           # single active lease prevents command conflicts
+    - self_collision_avoidance
+    - foothold_planning
+    - obstacle_avoidance_body
+
+safety:
+  # Spot operates in human-shared environments; 800 mm provides margin for
+  # the robot's footprint (~580 mm) plus leg swing and reaction distance.
+  estop_distance_mm: 800
+  local_safety_wins: true
+  # 0.5 = 50% of rated walk speed (max ~1.6 m/s → effective 0.8 m/s).
+  # Appropriate for indoor shared spaces; raise to 1.0 in open outdoor areas.
+  max_speed_override: 0.5
+  max_walk_speed_mps: 0.8    # at 0.5 override; rated max 1.6 m/s
+  # E-Stop MUST be registered; RCAN bridge should register a software E-Stop
+  # endpoint and maintain a heartbeat. Loss of heartbeat → Spot safe-stops.
+  estop_heartbeat_interval_ms: 500
+  estop_timeout_ms: 3000
+
+agent:
+  confidence_gates:
+    - scope: control
+      # Quadruped locomotion: medium threshold — lower than industrial arm
+      # because Spot's onboard autonomy handles low-level obstacle avoidance.
+      min_confidence: 0.75
+      on_fail: escalate
+    - scope: admin
+      # Admin actions (E-Stop release, lease takeover): require high confidence
+      min_confidence: 0.95
+      on_fail: block
+  hitl_gates:
+    # Strongly recommended for stair climbing, outdoor operation, arm deployment.
+    # Example (uncomment to activate):
+    # - action_types: [stair_climb, outdoor_traverse, arm_deploy]
+    #   require_auth: true
+    #   auth_timeout_ms: 20000
+    #   on_timeout: block
+    #   notify: [whatsapp]
+    []
+
+bridge:
+  type: spot_sdk
+  hostname: 192.168.80.3     # default Spot IP via robot WiFi AP
+  username: admin            # Spot web console username
+  # password: stored in environment variable SPOT_PASSWORD (never in config)
+  client_name: rcan-spot-bridge
+  notes: >
+    1. pip install bosdyn-client bosdyn-mission bosdyn-choreography-client
+       (SDK ≥ 4.0 recommended for Spot firmware 4.x)
+    2. Connect to Spot WiFi AP (SpotXXXXXX) or Ethernet payload port.
+    3. Authenticate: sdk.create_robot(hostname).authenticate(user, pass)
+    4. MANDATORY: Register an E-Stop endpoint before any autonomous command.
+       Use bosdyn.client.estop.EstopEndpoint; maintain heartbeat thread.
+    5. Acquire a lease via LeaseClient before sending mobility commands.
+    6. For ROS 2 integration instead: github.com/boston-dynamics/spot_ros2
+       ros2 launch spot_driver spot_driver.launch.py hostname:=192.168.80.3
+    7. Spot CAM, LIDAR, and Arm payloads each have separate SDK clients.

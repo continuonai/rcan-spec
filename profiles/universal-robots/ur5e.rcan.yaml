@@ -1,0 +1,87 @@
+# RCAN v1.2 Profile — Universal Robots UR5e
+# Bridge: ur_rtde (Real-Time Data Exchange)
+#   Install: pip install ur-rtde  (Python 3.8+)
+#   Enable RTDE on the teach pendant: Settings → System → RTDE
+#   PolyScope 5.x required (tested on 5.9+)
+#   Robot must be in Remote Control mode before RTDE commands are accepted.
+#   The UR5e is the most-deployed UR model; typical uses include pick-and-place,
+#   screwdriving, dispensing, testing, and light assembly.
+# Spec: rcan.dev/spec §8
+
+rcan_version: '1.2'
+ruri: rcan://local.rcan/universal-robots/ur5e/{device_id}
+
+robot:
+  manufacturer: Universal Robots
+  model: UR5e
+  type: collaborative_arm
+  dof: 6
+  payload_kg: 5
+  reach_mm: 850
+  serial_pattern: '{device_id}'
+
+capabilities:
+  motion:
+    - joint_space
+    - cartesian_linear
+    - cartesian_circular
+    - force_torque_control
+    - freedrive
+  sensing:
+    - joint_position
+    - joint_velocity
+    - joint_current
+    - tcp_force_torque       # built-in 6-axis F/T sensor (e-Series)
+    - joint_temperatures
+  io:
+    - digital_inputs_16
+    - digital_outputs_16
+    - analog_inputs_2
+    - analog_outputs_2
+    - tool_io
+  safety:
+    - iso_10218_1
+    - iso_10218_2
+    - safety_planes
+    - joint_limits
+    - speed_limits
+    - force_limits
+    - emergency_stop
+    - safeguard_stop
+
+safety:
+  # 400 mm default: appropriate for open collaborative cells.
+  # Decrease only after site-specific risk assessment per ISO/TS 15066.
+  estop_distance_mm: 400
+  local_safety_wins: true
+  # 0.5 = 50% rated speed (~1000 mm/s TCP); safe for HRC tasks.
+  # Set to 1.0 only in fully fenced/guarded cells.
+  max_speed_override: 0.5
+  # UR5e rated max TCP speed: 1000 mm/s at payload ≤ 5 kg
+  max_tcp_speed_mm_s: 500
+  # Collaborative force limit (ISO/TS 15066 quasi-static, body region: hand)
+  max_tcp_force_n: 110
+  protective_stop_distance_mm: 250
+
+agent:
+  confidence_gates:
+    - scope: control
+      min_confidence: 0.90
+      on_fail: escalate
+    - scope: admin
+      min_confidence: 0.98
+      on_fail: block
+  hitl_gates: []   # configure per deployment; see ur10e profile for example
+
+bridge:
+  type: ur_rtde
+  host: 192.168.1.101    # replace with robot controller IP
+  rtde_port: 30004
+  dashboard_port: 29999
+  notes: >
+    Same RTDE setup as UR10e. Install ur-rtde (pip install ur-rtde ≥ 1.5.6).
+    UR5e commonly runs with Universal_Robots_ROS2_Driver as an alternative
+    bridge; set bridge.type to ros2 and use the ur_robot_driver ROS 2 package
+    if ROS 2 integration is preferred. Both bridges are valid for RCAN.
+    For ROS 2: ros2 launch ur_robot_driver ur_control.launch.py
+      ur_type:=ur5e robot_ip:=<IP> use_mock_hardware:=false

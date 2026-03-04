@@ -1,0 +1,99 @@
+# RCAN v1.2 Profile — Franka Research 3 (FR3)
+# Bridge: ros2 (franka_ros2 / libfranka)
+#   Packages: franka_ros2 (Humble/Iron), libfranka ≥ 0.13.0
+#   Install: https://frankaemika.github.io/docs/franka_ros2.html
+#   Control PC must run real-time kernel (PREEMPT-RT) at ≥ 1 kHz.
+#   Desk web interface: https://<robot-ip> (default: 192.168.1.10)
+#   Activate FCI (Franka Control Interface) in Desk before ros2 launch.
+# Spec: rcan.dev/spec §8
+
+rcan_version: '1.2'
+ruri: rcan://local.rcan/franka-robotics/franka-research-3/{device_id}
+
+robot:
+  manufacturer: Franka Robotics
+  model: Franka Research 3
+  type: collaborative_arm
+  dof: 7          # redundant DOF enables null-space control
+  payload_kg: 3
+  reach_mm: 855
+  # NOTE: FR3 evolved from the Franka Panda (FCI-compatible); if you have
+  # a legacy Panda with updated firmware, it is mostly profile-compatible.
+  serial_pattern: '{device_id}'
+
+capabilities:
+  motion:
+    - joint_space
+    - cartesian_linear
+    - cartesian_impedance
+    - joint_impedance
+    - null_space_control     # 7-DOF advantage: redundancy resolution
+    - gravity_compensation   # zero-gravity mode / guiding mode
+    - force_torque_control
+  sensing:
+    - joint_position
+    - joint_velocity
+    - joint_torque           # direct joint-torque sensing (7 axes)
+    - tcp_force_torque       # derived from joint torques; no separate sensor
+    - joint_contact_detection
+    - collision_detection
+  io:
+    - flange_digital_inputs_2
+    - flange_digital_outputs_2
+    - flange_analog_inputs_2
+  safety:
+    - joint_torque_limits
+    - cartesian_velocity_limits
+    - cartesian_force_limits
+    - collision_detection
+    - contact_detection
+    - emergency_stop
+    - guiding_mode
+
+safety:
+  # FR3 is primarily a research arm; 300 mm is appropriate for lab environments
+  # where a human operator is often present and motions are exploratory.
+  estop_distance_mm: 300
+  local_safety_wins: true
+  # 0.3 = 30% rated speed — conservative for open research labs.
+  # Raise to 0.6–0.8 in structured experiments; never exceed 1.0.
+  max_speed_override: 0.3
+  # FR3 max joint velocity: 2.62 rad/s; max Cartesian: 1700 mm/s
+  max_tcp_speed_mm_s: 400
+  # FR3 contact thresholds (Franka Desk: Safety → Contact Thresholds)
+  # Lower = more sensitive collision detection
+  collision_threshold_scale: 0.5   # 0.0–1.0; 0.5 = medium sensitivity
+  # Torque limits per joint (Nm): FR3 rated [87, 87, 87, 87, 12, 12, 12]
+  # Default RCAN profile uses 60% of rated values for safety margin
+  max_joint_torques_nm: [52, 52, 52, 52, 7, 7, 7]
+
+agent:
+  confidence_gates:
+    - scope: control
+      # Research arm: slightly lower threshold than industrial; tuning encouraged.
+      min_confidence: 0.85
+      on_fail: escalate
+    - scope: admin
+      min_confidence: 0.97
+      on_fail: block
+  hitl_gates: []   # strongly recommended for novel experiment programs
+
+bridge:
+  type: ros2
+  ros_domain_id: 0           # set to match your ROS 2 domain
+  namespace: /fr3
+  launch_package: franka_bringup
+  launch_file: franka.launch.py
+  launch_args:
+    robot_ip: 192.168.1.10   # replace with your FR3 IP
+    arm_id: fr3
+  notes: >
+    1. Install libfranka ≥ 0.13.0 from source (requires CMake, Eigen).
+    2. Install franka_ros2: colcon build --packages-up-to franka_bringup
+    3. Control PC MUST run a real-time kernel (PREEMPT-RT recommended).
+       Test: uname -r should show "rt" or "PREEMPT_RT".
+    4. Activate FCI in Desk (https://<robot-ip>) before launching ROS 2.
+    5. Launch: ros2 launch franka_bringup franka.launch.py
+         robot_ip:=192.168.1.10 arm_id:=fr3
+    6. Action servers exposed: /fr3/joint_trajectory_controller/follow_joint_trajectory
+    7. For MoveIt 2 integration: ros2 launch franka_moveit_config moveit.launch.py

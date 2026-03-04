@@ -2,156 +2,280 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite - Validate your implementation against the specification.">
-  <h1>Conformance Test Suite</h1>
-  <p>A conforming RCAN implementation MUST pass all tests in this section.</p>
-  
+<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite v1.2 — L1 Core, L2 Safety, L3 AI Accountability.">
+
+  <h1>Conformance Test Suite <span style="font-size:0.55em;color:var(--color-text-muted);font-weight:400;">v1.2</span></h1>
+  <p>A conforming RCAN implementation <strong>MUST</strong> pass all tests at the level it claims. Levels are cumulative — an <strong>L3</strong> implementation must also pass <strong>L1</strong> and <strong>L2</strong>.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:2rem 0;">
+    <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Level 1</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#fff;">L1 Core</div>
+      <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.4rem;">RURI · mDNS · RBAC · Schema · §6 Audit</div>
+    </div>
+    <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Level 2</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#fff;">L2 Safety</div>
+      <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.4rem;">Safe-stop · Injection defense · HMAC audit chain · §16.2 Confidence gates</div>
+    </div>
+    <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Level 3</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#fff;">L3 AI Accountability</div>
+      <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.4rem;">§16.1 Model identity · §16.3 HiTL gates · §16.4 Thought log · Offline chain</div>
+    </div>
+  </div>
+
   <hr />
-  
+
+  <!-- ─── L1 CORE ─────────────────────────────────────────────────── -->
   <section>
-    <h2>1. RURI Validation Tests</h2>
-    
+    <h2>L1 — Core</h2>
+    <p>Every RCAN implementation must pass these baseline tests.</p>
+
     <table>
       <thead>
-        <tr><th>Test ID</th><th>Input</th><th>Expected</th><th>Description</th></tr>
+        <tr><th>Test ID</th><th>Name</th><th>Area</th><th>Expected</th></tr>
       </thead>
       <tbody>
-        <tr><td>RURI-001</td><td><code>rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6</code></td><td>✅ VALID</td><td>Standard RURI</td></tr>
-        <tr><td>RURI-002</td><td><code>rcan://local.rcan/unitree/go2/a1b2c3d4:9000/teleop</code></td><td>✅ VALID</td><td>With port and capability</td></tr>
-        <tr><td>RURI-003</td><td><code>rcan://my-server.lan/acme/bot-x1/12345678-1234-1234-1234-123456789abc</code></td><td>✅ VALID</td><td>Full UUID</td></tr>
-        <tr><td>RURI-004</td><td><code>https://example.com/robot</code></td><td>❌ INVALID</td><td>Wrong scheme</td></tr>
-        <tr><td>RURI-005</td><td><code>rcan://UPPERCASE/test/test/12345678</code></td><td>❌ INVALID</td><td>Uppercase not allowed</td></tr>
-        <tr><td>RURI-006</td><td><code>rcan://a/b/c/1234567</code></td><td>❌ INVALID</td><td>Device ID too short</td></tr>
-        <tr><td>RURI-007</td><td><code>rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6/Arm</code></td><td>❌ INVALID</td><td>Capability must be lowercase</td></tr>
-        <tr><td>RURI-008</td><td><code>rcan://</code></td><td>❌ INVALID</td><td>Empty components</td></tr>
+        <tr>
+          <td><code>L1-RURI-001</code></td>
+          <td>RURI format — valid standard form</td>
+          <td>RURI</td>
+          <td>✅ VALID</td>
+        </tr>
+        <tr>
+          <td><code>L1-RURI-002</code></td>
+          <td>RURI format — missing device-id segment</td>
+          <td>RURI</td>
+          <td>❌ INVALID · <code>INVALID_RURI</code></td>
+        </tr>
+        <tr>
+          <td><code>L1-RURI-003</code></td>
+          <td>RURI format — with port and capability</td>
+          <td>RURI</td>
+          <td>✅ VALID</td>
+        </tr>
+        <tr>
+          <td><code>L1-MDNS-001</code></td>
+          <td>mDNS service type must be <code>_rcan._tcp</code></td>
+          <td>Discovery</td>
+          <td>✅ Advertised correctly with required TXT keys</td>
+        </tr>
+        <tr>
+          <td><code>L1-RBAC-001</code></td>
+          <td>GUEST cannot issue COMMAND with <code>control</code> scope</td>
+          <td>RBAC</td>
+          <td>❌ DENIED · HTTP 403 · <code>INSUFFICIENT_PRIVILEGES</code></td>
+        </tr>
+        <tr>
+          <td><code>L1-AUDIT-001</code></td>
+          <td>§6 Audit entry must contain all required fields</td>
+          <td>Audit</td>
+          <td>✅ <code>principal ruri timestamp_ms message_id event outcome</code></td>
+        </tr>
+        <tr>
+          <td><code>L1-SCHEMA-001</code></td>
+          <td>Malformed message (missing payload) rejected before dispatch</td>
+          <td>Schema</td>
+          <td>❌ HTTP 400 / 422 · <code>SCHEMA_VALIDATION_FAILED</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>RURI Pattern</h3>
+    <pre><code>rcan://&lt;registry&gt;/&lt;manufacturer&gt;/&lt;model&gt;/&lt;device-id&gt;
+         ↑ lowercase hostname    ↑ ≥ 8 chars, lowercase + hyphens</code></pre>
+
+    <table>
+      <thead><tr><th>Input</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>rcan://local.rcan/opencastor/rover/abc12345</code></td><td>✅ VALID</td></tr>
+        <tr><td><code>rcan://local.rcan/unitree/go2/a1b2c3d4:9000/teleop</code></td><td>✅ VALID (with port + capability)</td></tr>
+        <tr><td><code>rcan://local.rcan/opencastor/rover</code></td><td>❌ missing device-id</td></tr>
+        <tr><td><code>https://example.com/robot</code></td><td>❌ wrong scheme</td></tr>
+        <tr><td><code>rcan://UPPERCASE/mfr/mdl/12345678</code></td><td>❌ uppercase not allowed</td></tr>
+        <tr><td><code>rcan://local.rcan/mfr/mdl/short</code></td><td>❌ device-id too short (&lt;8 chars)</td></tr>
       </tbody>
     </table>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ─── L2 SAFETY ─────────────────────────────────────────────── -->
   <section>
-    <h2>2. Role Hierarchy Tests</h2>
-    
+    <h2>L2 — Safety</h2>
+    <p>Builds on L1. Covers safety-critical behaviours from §14–§16.2 of the spec.</p>
+
     <table>
       <thead>
-        <tr><th>Test ID</th><th>Role</th><th>Required</th><th>Expected</th><th>Description</th></tr>
+        <tr><th>Test ID</th><th>Name</th><th>Area</th><th>Expected</th></tr>
       </thead>
       <tbody>
-        <tr><td>ROLE-001</td><td>OWNER</td><td>GUEST</td><td>✅ ALLOW</td><td>Higher role can access lower</td></tr>
-        <tr><td>ROLE-002</td><td>USER</td><td>OWNER</td><td>❌ DENY</td><td>Lower role cannot access higher</td></tr>
-        <tr><td>ROLE-003</td><td>LEASEE</td><td>LEASEE</td><td>✅ ALLOW</td><td>Same role can access</td></tr>
-        <tr><td>ROLE-004</td><td>CREATOR</td><td>OWNER</td><td>✅ ALLOW</td><td>Creator can access all</td></tr>
-        <tr><td>ROLE-005</td><td>GUEST</td><td>USER</td><td>❌ DENY</td><td>Guest has minimal access</td></tr>
+        <tr>
+          <td><code>L2-SAFE-001</code></td>
+          <td>COMMAND rejected when <code>estop_active=true</code></td>
+          <td>Safe-stop</td>
+          <td>❌ REJECTED · <code>COMMAND_REJECTED / estop_active</code></td>
+        </tr>
+        <tr>
+          <td><code>L2-SAFE-002</code></td>
+          <td>Heartbeat timeout triggers safe-stop</td>
+          <td>Network loss</td>
+          <td>State → <code>safe_stop</code> · audit: <code>NETWORK_LOSS_SAFE_STOP</code></td>
+        </tr>
+        <tr>
+          <td><code>L2-INJECT-001</code></td>
+          <td>Payload containing "ignore previous instructions" is blocked</td>
+          <td>Injection defense</td>
+          <td>❌ BLOCKED · <code>COMMAND_REJECTED / prompt_injection</code></td>
+        </tr>
+        <tr>
+          <td><code>L2-HMAC-001</code></td>
+          <td>Tampered audit record breaks HMAC chain</td>
+          <td>Audit integrity</td>
+          <td>Chain invalid from tampered record onward</td>
+        </tr>
+        <tr>
+          <td><code>L2-CONF-001</code></td>
+          <td>Confidence=0.3 blocked when gate <code>min_confidence=0.5 on_fail=block</code></td>
+          <td>§16.2 Confidence gate</td>
+          <td>❌ REJECTED · <code>COMMAND_REJECTED / confidence_below_gate</code></td>
+        </tr>
+        <tr>
+          <td><code>L2-CONF-002</code></td>
+          <td>Confidence=0.3 escalates when gate <code>on_fail=escalate</code></td>
+          <td>§16.2 Confidence gate</td>
+          <td>Not dispatched → placed in HiTL queue</td>
+        </tr>
       </tbody>
     </table>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ─── L3 AI ACCOUNTABILITY ──────────────────────────────────── -->
   <section>
-    <h2>3. Authentication Tests</h2>
-    
+    <h2>L3 — AI Accountability</h2>
+    <p>Builds on L1 + L2. Covers §16 (AI Governance) of the spec.</p>
+
     <table>
       <thead>
-        <tr><th>Test ID</th><th>Scenario</th><th>Expected</th><th>Description</th></tr>
+        <tr><th>Test ID</th><th>Name</th><th>Area</th><th>Expected</th></tr>
       </thead>
       <tbody>
-        <tr><td>AUTH-001</td><td>Valid credential, available role</td><td>✅ GRANTED</td><td>Normal auth flow</td></tr>
-        <tr><td>AUTH-002</td><td>Invalid credential</td><td>❌ DENIED (INVALID_CREDENTIALS)</td><td>Bad password</td></tr>
-        <tr><td>AUTH-003</td><td>Valid credential, robot busy</td><td>❌ DENIED (ROBOT_BUSY)</td><td>Another controller active</td></tr>
-        <tr><td>AUTH-004</td><td>Request CREATOR, max role OWNER</td><td>✅ GRANTED as OWNER</td><td>Role downgrade</td></tr>
-        <tr><td>AUTH-005</td><td>Expired JWT</td><td>❌ DENIED (TOKEN_EXPIRED)</td><td>Token validation</td></tr>
-        <tr><td>AUTH-006</td><td>Offline mode, cached token valid</td><td>✅ GRANTED (OFFLINE)</td><td>Resilience test</td></tr>
+        <tr>
+          <td><code>L3-AI-001</code></td>
+          <td>AI COMMAND audit must include <code>ai.provider</code> <code>ai.model</code> <code>ai.confidence</code></td>
+          <td>§16.1 Model identity</td>
+          <td>All three fields present in audit entry</td>
+        </tr>
+        <tr>
+          <td><code>L3-AI-002</code></td>
+          <td>Audit missing <code>ai.model</code> is a conformance failure</td>
+          <td>§16.1 Model identity</td>
+          <td>❌ Non-conformant · <code>AUDIT_INCOMPLETE_AI_IDENTITY</code></td>
+        </tr>
+        <tr>
+          <td><code>L3-HITL-001</code></td>
+          <td>HiTL gate: gated <code>action_type</code> must not dispatch immediately</td>
+          <td>§16.3 HiTL gates</td>
+          <td>Not dispatched → <code>queued_for_hitl=true</code></td>
+        </tr>
+        <tr>
+          <td><code>L3-HITL-002</code></td>
+          <td>AUTHORIZE from OWNER allows dispatch; from GUEST is rejected</td>
+          <td>§16.3 HiTL authorization</td>
+          <td>OWNER → dispatch ✅ · GUEST → HTTP 403 ❌</td>
+        </tr>
+        <tr>
+          <td><code>L3-THOUGHT-001</code></td>
+          <td>Thought log: <code>reasoning</code> absent without <code>config</code> scope</td>
+          <td>§16.4 Thought log</td>
+          <td>Response contains <code>confidence</code>, excludes <code>reasoning</code></td>
+        </tr>
+        <tr>
+          <td><code>L3-CHAIN-001</code></td>
+          <td>Exported JSONL + chain secret verifies offline</td>
+          <td>Offline chain verify</td>
+          <td>Chain valid, no network required</td>
+        </tr>
       </tbody>
     </table>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ─── RUNNING THE TESTS ─────────────────────────────────────── -->
   <section>
-    <h2>4. Safety Invariant Tests</h2>
-    
-    <table>
-      <thead>
-        <tr><th>Test ID</th><th>Scenario</th><th>Expected</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>SAFE-001</td><td>SAFETY priority message</td><td>Response &lt; 100ms</td><td>Priority processing</td></tr>
-        <tr><td>SAFE-002</td><td>Network partition during command</td><td>Safe-stop triggered</td><td>Graceful degradation</td></tr>
-        <tr><td>SAFE-003</td><td>Remote command bypasses local limit</td><td>❌ REJECTED</td><td>Local safety wins</td></tr>
-        <tr><td>SAFE-004</td><td>Any command execution</td><td>Audit log entry created</td><td>Logging required</td></tr>
-      </tbody>
-    </table>
+    <h2>Running the Tests</h2>
+
+    <h3>L1 Live Checker</h3>
+    <p>
+      Run <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/check_l1.py"><code>check_l1.py</code></a> against your running RCAN endpoint:
+    </p>
+
+    <pre><code class="language-bash"># Basic check
+python3 scripts/conformance/check_l1.py --host 127.0.0.1 --port 8080
+
+# With auth token and verbose output
+python3 scripts/conformance/check_l1.py \
+  --host 192.168.1.42 \
+  --port 8080 \
+  --token &lt;bearer-token&gt; \
+  --verbose</code></pre>
+
+    <p>The script prints a per-test PASS / FAIL / SKIP table and a summary conformance badge. Exit code 0 = all passed.</p>
+
+    <h3>Machine-Readable Test Cases</h3>
+    <p>
+      The full test suite is in
+      <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/rcan-conformance-v1.2.json"><code>scripts/conformance/rcan-conformance-v1.2.json</code></a>.
+      Drive your own harness against it:
+    </p>
+
+    <pre><code class="language-python">import json
+
+with open("scripts/conformance/rcan-conformance-v1.2.json") as f:
+    suite = json.load(f)
+
+for level, tests in suite["levels"].items():
+    for t in tests:
+        print(t["id"], t["name"])
+        # run t["input"] against your implementation
+        # compare result to t["expect"]</code></pre>
+
+    <h3>Conformance Badges</h3>
+    <pre><code>L1 CORE       ✅ RCAN Conformant v1.2
+L2 SAFETY     ✅ RCAN Safety Conformant v1.2
+L3 AI-ACCT    ✅ RCAN AI-Accountable v1.2</code></pre>
   </section>
-  
+
   <hr />
-  
+
+  <!-- ─── ERROR CODES ───────────────────────────────────────────── -->
   <section>
-    <h2>5. Error Codes</h2>
-    
+    <h2>Relevant Error Codes</h2>
     <table>
       <thead>
         <tr><th>Code</th><th>Name</th><th>Description</th></tr>
       </thead>
       <tbody>
         <tr><td>1001</td><td><code>INVALID_RURI</code></td><td>Malformed RURI string</td></tr>
-        <tr><td>1002</td><td><code>UNKNOWN_ROBOT</code></td><td>Robot not found in registry</td></tr>
-        <tr><td>1003</td><td><code>ROBOT_OFFLINE</code></td><td>Robot unreachable</td></tr>
-        <tr><td>2001</td><td><code>INVALID_CREDENTIALS</code></td><td>Auth credentials rejected</td></tr>
         <tr><td>2002</td><td><code>INSUFFICIENT_PRIVILEGES</code></td><td>Role too low for operation</td></tr>
-        <tr><td>2003</td><td><code>TOKEN_EXPIRED</code></td><td>JWT has expired</td></tr>
-        <tr><td>2004</td><td><code>TOKEN_REVOKED</code></td><td>JWT was revoked</td></tr>
-        <tr><td>2005</td><td><code>RATE_LIMITED</code></td><td>Too many requests</td></tr>
-        <tr><td>3001</td><td><code>ROBOT_BUSY</code></td><td>Robot controlled by another user</td></tr>
-        <tr><td>3002</td><td><code>COMMAND_TIMEOUT</code></td><td>Command execution timed out</td></tr>
-        <tr><td>3003</td><td><code>COMMAND_REJECTED</code></td><td>Command failed safety check</td></tr>
-        <tr><td>3004</td><td><code>CAPABILITY_UNAVAILABLE</code></td><td>Requested capability not present</td></tr>
-        <tr><td>4001</td><td><code>SAFETY_VIOLATION</code></td><td>Action would violate safety constraints</td></tr>
+        <tr><td>3003</td><td><code>COMMAND_REJECTED</code></td><td>Command failed safety / gate check</td></tr>
+        <tr><td>4001</td><td><code>SAFETY_VIOLATION</code></td><td>Action violates safety constraints</td></tr>
         <tr><td>4002</td><td><code>EMERGENCY_STOP</code></td><td>Robot in emergency stop state</td></tr>
+        <tr><td>5001</td><td><code>SCHEMA_VALIDATION_FAILED</code></td><td>Message failed JSON schema check</td></tr>
+        <tr><td>5002</td><td><code>AUDIT_INCOMPLETE_AI_IDENTITY</code></td><td>AI audit entry missing model identity fields</td></tr>
       </tbody>
     </table>
   </section>
-  
+
   <hr />
-  
-  <section>
-    <h2>6. Python Test Runner</h2>
-    <p>Run the conformance tests with pytest:</p>
-    
-    <pre><code class="language-python">"""RCAN Conformance Test Suite"""
-import pytest
-from rcan import RURI, Role
 
-class TestRURIValidation:
-    @pytest.mark.parametrize("ruri,expected", [
-        ("rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6", True),
-        ("rcan://local.rcan/unitree/go2/a1b2c3d4:9000/teleop", True),
-        ("https://example.com/robot", False),
-        ("rcan://UPPERCASE/test/test/12345678", False),
-        ("rcan://a/b/c/1234567", False),
-    ])
-    def test_ruri_validation(self, ruri: str, expected: bool):
-        assert RURI.is_valid(ruri) == expected
+  <p>
+    <a href="/implementations/">→ Reference Implementations</a> &nbsp;·&nbsp;
+    <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/">View test files on GitHub</a>
+  </p>
 
-class TestRoleHierarchy:
-    @pytest.mark.parametrize("role,required,expected", [
-        (Role.OWNER, Role.GUEST, True),
-        (Role.USER, Role.OWNER, False),
-        (Role.CREATOR, Role.OWNER, True),
-    ])
-    def test_role_access(self, role: Role, required: Role, expected: bool):
-        assert role.can_access(required) == expected
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])</code></pre>
-    
-    <pre><code class="language-bash">pip install pytest
-python -m pytest test_rcan_conformance.py -v</code></pre>
-  </section>
-  
-  <hr />
-  
-  <p><a href="/implementations/">→ Next: Reference Implementations</a></p>
 </BaseLayout>
-

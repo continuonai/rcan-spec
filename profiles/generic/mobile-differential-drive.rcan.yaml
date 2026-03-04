@@ -1,0 +1,113 @@
+# RCAN v1.2 Profile — Generic Mobile Differential-Drive Robot
+# Bridge: ros2_nav (ROS 2 Navigation Stack / Nav2)
+#   Compatible platforms: TurtleBot 3/4, Clearpath Husky, custom ROS 2 robots,
+#   Raspberry Pi-based rovers (e.g. OpenCastor Pi robot).
+#   Requires: ROS 2 Humble+ with Nav2, ros2_control, robot_localization.
+# Spec: rcan.dev/spec §8
+
+rcan_version: '1.2'
+ruri: rcan://local.rcan/generic/differential-drive/{device_id}
+
+robot:
+  manufacturer: generic
+  model: mobile-differential-drive
+  type: mobile_differential
+  dof: 2       # 2 independent drive wheels
+  # No payload_kg or reach_mm for mobile base (omit per spec for mobile type)
+
+capabilities:
+  motion:
+    - differential_drive
+    - point_to_point_nav       # Nav2 goal-pose navigation
+    - waypoint_following       # Nav2 waypoint follower plugin
+    - in_place_rotation
+    - cmd_vel                  # raw /cmd_vel for teleop
+  sensing:
+    - wheel_encoders
+    - imu
+    - lidar_2d                 # e.g. RPLIDAR A2/A3, Slamtec, LDS-01
+    - rgb_camera               # optional; common on Pi-based robots
+    - depth_camera             # optional; Intel RealSense / OAK-D
+  io: []        # platform-specific; add GPIO, relay, or arm IO as needed
+  safety:
+    - obstacle_avoidance       # Nav2 costmap + DWB/TEB local planner
+    - velocity_smoother        # Nav2 velocity_smoother node
+    - collision_monitor        # Nav2 collision_monitor (Humble+)
+    - software_estop
+
+safety:
+  # 300 mm from nearest detected obstacle before issuing software stop.
+  # Appropriate for indoor offices and labs; raise to 500 mm in warehouses.
+  estop_distance_mm: 300
+  local_safety_wins: true
+  # 0.5 = 50% of configured max_vel_x in Nav2 params.
+  # At 0.5, typical TurtleBot 3: ~0.11 m/s; Clearpath Husky: ~0.5 m/s.
+  max_speed_override: 0.5
+  # Absolute cap regardless of Nav2 params (m/s); adjust for your platform.
+  max_linear_speed_mps: 0.5
+  max_angular_speed_radps: 1.0
+  # Nav2 collision_monitor: stop if obstacle within this range (metres)
+  collision_monitor_stop_m: 0.25
+  collision_monitor_slowdown_m: 0.50
+
+agent:
+  confidence_gates:
+    - scope: control
+      # Mobile base in shared spaces: moderate threshold.
+      # Raise to 0.85 for autonomous warehouse operation.
+      min_confidence: 0.70
+      on_fail: escalate
+    - scope: admin
+      min_confidence: 0.92
+      on_fail: block
+  hitl_gates:
+    # Recommended for operations in dynamic or crowded environments.
+    # Example (uncomment to activate):
+    # - action_types: [nav_goal, waypoint_mission]
+    #   require_auth: true
+    #   auth_timeout_ms: 15000
+    #   on_timeout: block
+    #   notify: [whatsapp]
+    []
+
+bridge:
+  type: ros2_nav
+  ros_domain_id: 0
+  namespace: /robot          # change to /tb3, /husky, etc. as appropriate
+  cmd_vel_topic: /cmd_vel
+  odom_topic: /odom
+  scan_topic: /scan
+  nav2_action: /navigate_to_pose
+  waypoint_action: /follow_waypoints
+  map_frame: map
+  base_frame: base_link
+  notes: >
+    This profile targets any ROS 2 differential-drive robot running Nav2.
+
+    Minimal bring-up (TurtleBot 3 example):
+      export TURTLEBOT3_MODEL=burger
+      ros2 launch turtlebot3_bringup robot.launch.py
+      ros2 launch nav2_bringup bringup_launch.py \
+        use_sim_time:=false map:=/path/to/map.yaml
+
+    For a custom Raspberry Pi robot (OpenCastor rover):
+      1. Run the RCAN OpenCastor runtime: python -m opencastor.rcan
+         (reads this profile; publishes /cmd_vel and subscribes to telemetry)
+      2. Launch Nav2 with a robot-specific param file.
+      3. Fill in {device_id} with the robot's 8-char hex ID or UUID.
+
+    For TurtleBot 4 (ROS 2 native):
+      ros2 launch turtlebot4_navigation nav2.launch.py
+
+    For Clearpath Husky:
+      ros2 launch husky_navigation husky_nav2.launch.py
+
+    Bridge libraries needed:
+      - nav2_bringup (sudo apt install ros-humble-nav2-bringup)
+      - robot_localization (EKF for odom fusion)
+      - ros2_control + diff_drive_controller
+
+    RCAN-specific topics the bridge should relay:
+      /rcan/cmd_vel    → /cmd_vel
+      /rcan/estop      → software e-stop publisher
+      /rcan/status     ← aggregated telemetry (battery, odom, scan)

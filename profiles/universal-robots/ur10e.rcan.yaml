@@ -1,0 +1,98 @@
+# RCAN v1.2 Profile — Universal Robots UR10e
+# Bridge: ur_rtde (Real-Time Data Exchange)
+#   Install: pip install ur-rtde  (Python 3.8+)
+#   Enable RTDE on the teach pendant: Settings → System → RTDE
+#   Default port: 30004 (RTDE), 29999 (Dashboard), 30002 (Secondary)
+#   PolyScope 5.x required; tested on 5.11+
+#   Robot must be in Remote Control mode before RTDE commands are accepted.
+# Spec: rcan.dev/spec §8
+
+rcan_version: '1.2'
+ruri: rcan://local.rcan/universal-robots/ur10e/{device_id}
+
+robot:
+  manufacturer: Universal Robots
+  model: UR10e
+  type: collaborative_arm
+  dof: 6
+  payload_kg: 10
+  reach_mm: 1300
+  serial_pattern: '{device_id}'   # fill with robot serial from PolyScope
+
+capabilities:
+  motion:
+    - joint_space
+    - cartesian_linear
+    - cartesian_circular
+    - force_torque_control
+    - freedrive
+  sensing:
+    - joint_position
+    - joint_velocity
+    - joint_current
+    - tcp_force_torque       # built-in F/T sensor (e-Series)
+    - joint_temperatures
+  io:
+    - digital_inputs_16
+    - digital_outputs_16
+    - analog_inputs_2
+    - analog_outputs_2
+    - tool_io
+  safety:
+    - iso_10218_1
+    - iso_10218_2
+    - safety_planes
+    - joint_limits
+    - speed_limits
+    - force_limits
+    - emergency_stop
+    - safeguard_stop
+
+safety:
+  # Conservative default: 500 mm keep-out from nearest obstacle.
+  # Reduce to 200 mm only in fully fenced cells with no human co-workers.
+  estop_distance_mm: 500
+  local_safety_wins: true
+  # 0.5 = 50% of rated speed — appropriate for collaborative (non-fenced) cells.
+  # Raise to 1.0 ONLY inside a fully fenced workcell after risk assessment.
+  max_speed_override: 0.5
+  # UR10e rated maximum TCP speed: 1000 mm/s; at 0.5 override: 500 mm/s
+  max_tcp_speed_mm_s: 500
+  # Maximum TCP force before protective stop (ISO/TS 15066 transient limit: 230 N)
+  max_tcp_force_n: 150
+  # Safety-rated monitored stop distance (must match PolyScope safety config)
+  protective_stop_distance_mm: 300
+
+agent:
+  confidence_gates:
+    - scope: control
+      # Industrial arm: high confidence required before any joint motion
+      min_confidence: 0.90
+      on_fail: escalate
+    - scope: admin
+      # Safety-critical config changes: block without near-certain confidence
+      min_confidence: 0.98
+      on_fail: block
+  hitl_gates:
+    # Operators SHOULD configure HiTL for unattended or novel motions.
+    # Example (uncomment to activate):
+    # - action_types: [arm_deploy, program_run]
+    #   require_auth: true
+    #   auth_timeout_ms: 30000
+    #   on_timeout: block
+    #   notify: [whatsapp]
+    []
+
+bridge:
+  type: ur_rtde
+  host: 192.168.1.100    # replace with robot controller IP
+  rtde_port: 30004
+  dashboard_port: 29999
+  recipe_file: config/ur10e_rtde_recipe.xml   # optional; omit for defaults
+  notes: >
+    Install ur-rtde (pip install ur-rtde ≥ 1.5.6).
+    Set the controller to Remote Control mode via the teach pendant.
+    Firewall: allow TCP 29999, 30002, 30004 from this host.
+    For PolyScope 5.x, enable RTDE under Settings → System → RTDE.
+    A RTDE recipe specifies which signals to stream; defaults cover
+    joint positions, velocities, TCP pose, and F/T readings.
