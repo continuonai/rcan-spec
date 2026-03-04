@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/config.json",
+  "title": "CONFIG Message",
+  "description": "RCAN message type 2. Applies a partial configuration update (JSON Merge Patch, RFC 7396) to a robot's live .rcan.yaml parameters. Requires role_level >= 4 (admin).",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "principal_id",
+    "role_level",
+    "config_patch",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 2,
+      "description": "Identifies this as a CONFIG message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Target robot's RURI."
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identity of the sender. Must hold role_level >= 4."
+    },
+    "role_level": {
+      "type": "integer",
+      "minimum": 4,
+      "maximum": 5,
+      "description": "Must be 4 (admin) or 5 (safety-override) to modify configuration."
+    },
+    "config_patch": {
+      "type": "object",
+      "description": "Partial configuration update using JSON Merge Patch semantics (RFC 7396). Keys mirror the .rcan.yaml top-level structure.",
+      "additionalProperties": true,
+      "minProperties": 1
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the message was created."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this message."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 2,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "principal_id": "user:fleet-admin@example.com",
+      "role_level": 4,
+      "config_patch": {
+        "safety": {
+          "max_linear_speed_mps": 0.3,
+          "estop_distance_mm": 400
+        },
+        "agent": {
+          "confidence_gates": [
+            {
+              "scope": "control",
+              "min_confidence": 0.80,
+              "on_fail": "escalate"
+            }
+          ]
+        }
+      },
+      "timestamp_ms": 1741100005000,
+      "message_id": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+    }
+  ]
+}

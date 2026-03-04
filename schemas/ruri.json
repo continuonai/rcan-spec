@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/ruri.json",
+  "title": "RURI",
+  "description": "Robot Uniform Resource Identifier. Encodes the authoritative registry, manufacturer, model, and device identity in a single URI. Optionally includes a port and capability sub-path. See rcan.dev/spec §3 and the Federation Protocol.",
+  "type": "string",
+  "pattern": "^rcan://[a-z0-9][a-z0-9.-]*[a-z0-9]/[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*/[0-9a-f-]{8,36}(:[0-9]+)?(/[a-z][a-z0-9/-]*)?$",
+  "minLength": 20,
+  "examples": [
+    "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+    "rcan://robots.acme-corp.com/acme/patrol-bot/a1b2c3d4e5f6",
+    "rcan://local.rcan/generic/differential-drive/00000001",
+    "rcan://registry.example.com:9000/universal-robots/ur10e/ur10e-0042-aabb",
+    "rcan://rcan.dev/franka-robotics/fr3/fr3-00ff11ee22dd/gripper"
+  ]
+}

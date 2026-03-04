@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/authorize.json",
+  "title": "AUTHORIZE Message",
+  "description": "RCAN message type 9. Human-in-the-Loop (HiTL) authorisation response (§16). Sent by a human operator to approve or reject a pending AI action that was gated by a hitl_gates rule. References the thought_id emitted in the corresponding PENDING_AUTH message.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "thought_id",
+    "principal_id",
+    "decision",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 9,
+      "description": "Identifies this as an AUTHORIZE message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Target robot's RURI — must match the PENDING_AUTH it is responding to."
+    },
+    "thought_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Identifier of the AI reasoning trace being approved or rejected. Matches the thought_id in the originating PENDING_AUTH message."
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identity of the human operator making this authorisation decision."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["APPROVE", "REJECT"],
+      "description": "APPROVE allows the original command to proceed. REJECT discards it."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the operator made the decision."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this AUTHORIZE message."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 9,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "thought_id": "thought_abc123def456",
+      "principal_id": "user:supervisor@fleet.example.com",
+      "decision": "APPROVE",
+      "timestamp_ms": 1741100055000,
+      "message_id": "4bf2a3b4-c5d6-7890-efab-901234567890"
+    },
+    {
+      "message_type": 9,
+      "ruri": "rcan://local.rcan/generic/differential-drive/00000001",
+      "thought_id": "thought_xyz789ghi012",
+      "principal_id": "user:craig@example.com",
+      "decision": "REJECT",
+      "timestamp_ms": 1741100080000,
+      "message_id": "5ca3b4c5-d6e7-8901-fabc-012345678901"
+    }
+  ]
+}
