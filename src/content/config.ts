@@ -49,6 +49,9 @@ const robotsCollection = defineCollection({
       verified: z.boolean().default(false),
     })).optional(),
 
+    // Verification
+    verification_status: z.enum(["unverified", "community", "manufacturer_claimed", "manufacturer_verified"]).default("unverified"),
+
     // RCAN integration
     ruri: z.string().nullable().optional(),
 
