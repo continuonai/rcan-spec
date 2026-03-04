@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/safety.json",
+  "title": "SAFETY Message",
+  "description": "RCAN message type 6. Highest-priority message class. Immediately halts or resumes a robot's motion. STOP performs a controlled stop; ESTOP cuts motion actuators immediately; RESUME clears a prior stop and allows motion to continue. Safety messages bypass all confidence gates and HiTL queues.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "safety_event",
+    "reason",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 6,
+      "description": "Identifies this as a SAFETY message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Target robot's RURI."
+    },
+    "safety_event": {
+      "type": "string",
+      "enum": ["STOP", "ESTOP", "RESUME"],
+      "description": "STOP = controlled deceleration to rest. ESTOP = immediate actuator cut. RESUME = clear stop, return to prior state."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Human-readable explanation of why the safety event was triggered. Required for audit trail."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the safety event was issued."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this safety message for audit and deduplication."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 6,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "safety_event": "ESTOP",
+      "reason": "Obstacle detected within 150 mm — collision_monitor threshold exceeded.",
+      "timestamp_ms": 1741100040000,
+      "message_id": "18c9d0e1-f2a3-4567-bcde-678901234567"
+    },
+    {
+      "message_type": 6,
+      "ruri": "rcan://local.rcan/generic/differential-drive/00000001",
+      "safety_event": "STOP",
+      "reason": "Operator requested controlled stop via HiTL interface.",
+      "timestamp_ms": 1741100045000,
+      "message_id": "29d0e1f2-a3b4-5678-cdef-789012345678"
+    },
+    {
+      "message_type": 6,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "safety_event": "RESUME",
+      "reason": "Obstacle cleared; operator confirmed safe to proceed.",
+      "timestamp_ms": 1741100060000,
+      "message_id": "3ae1f2a3-b4c5-6789-defa-890123456789"
+    }
+  ]
+}

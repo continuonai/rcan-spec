@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/command.json",
+  "title": "COMMAND Message",
+  "description": "RCAN message type 1. Sent by an AI brain or authorised principal to instruct a robot to execute an action. Requires a valid session_token and role_level sufficient for the requested scope.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "principal_id",
+    "role_level",
+    "scope",
+    "action",
+    "timestamp_ms",
+    "message_id",
+    "priority",
+    "session_token"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 1,
+      "description": "Identifies this as a COMMAND message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Target robot's RURI."
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identity of the sender — a user UUID, AI agent ID, or service account name."
+    },
+    "role_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Authorisation level of the principal. 1 = observer, 2 = operator, 3 = supervisor, 4 = admin, 5 = safety-override."
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["observe", "control", "configure", "admin", "safety"],
+      "description": "Capability scope that this command requires."
+    },
+    "action": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Machine-readable action identifier, e.g. 'nav_goal', 'set_velocity', 'open_gripper'."
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Action-specific parameters. Schema varies by action.",
+      "additionalProperties": true
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the message was created."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this message for deduplication and audit."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["NORMAL", "SAFETY", "EMERGENCY"],
+      "description": "Dispatch priority. EMERGENCY bypasses queue ordering."
+    },
+    "session_token": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 512,
+      "description": "Opaque bearer token issued by an AUTH exchange. Must be current and valid."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 1,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "principal_id": "agent:openai:gpt-4o-mini",
+      "role_level": 2,
+      "scope": "control",
+      "action": "nav_goal",
+      "parameters": {
+        "x": 3.5,
+        "y": -1.2,
+        "yaw_deg": 90
+      },
+      "timestamp_ms": 1741100000000,
+      "message_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "priority": "NORMAL",
+      "session_token": "tok_abc123xyz"
+    },
+    {
+      "message_type": 1,
+      "ruri": "rcan://local.rcan/generic/differential-drive/00000001",
+      "principal_id": "user:craig@example.com",
+      "role_level": 5,
+      "scope": "safety",
+      "action": "emergency_stop",
+      "parameters": {},
+      "timestamp_ms": 1741100001234,
+      "message_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "priority": "EMERGENCY",
+      "session_token": "tok_safety_xyz789"
+    }
+  ]
+}

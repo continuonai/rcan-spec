@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/pending_auth.json",
+  "title": "PENDING_AUTH Message",
+  "description": "RCAN message type 10. Human-in-the-Loop (HiTL) gate notification (§16). Emitted by the RCAN runtime when an AI-generated COMMAND is held pending human authorisation because it matched a hitl_gates rule. The human operator must respond with an AUTHORIZE message before the gated command expires.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "thought_id",
+    "original_command",
+    "confidence",
+    "model_id",
+    "requires_auth_from_role",
+    "expires_at_ms",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 10,
+      "description": "Identifies this as a PENDING_AUTH message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Target robot's RURI — the robot that would execute the gated command."
+    },
+    "thought_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Unique identifier for the AI reasoning trace that produced the original_command. Must be echoed in the responding AUTHORIZE message."
+    },
+    "original_command": {
+      "$ref": "https://rcan.dev/schemas/messages/command.json",
+      "description": "The full COMMAND message that is being held for human review."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "The AI model's self-reported confidence score (0–1) for the proposed action. Values below the configured confidence_gate threshold triggered this HiTL review."
+    },
+    "model_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Identifier of the AI model that generated the original command, e.g. 'openai/gpt-4o-mini' or 'anthropic/claude-sonnet-4'."
+    },
+    "requires_auth_from_role": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Minimum role_level a human operator must hold to authorise this action."
+    },
+    "expires_at_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds by which an AUTHORIZE message must arrive. If not received in time, the original_command is discarded per the hitl_gates on_timeout policy."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the PENDING_AUTH was emitted."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this PENDING_AUTH message."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 10,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "thought_id": "thought_abc123def456",
+      "original_command": {
+        "message_type": 1,
+        "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+        "principal_id": "agent:anthropic:claude-sonnet-4",
+        "role_level": 2,
+        "scope": "control",
+        "action": "nav_goal",
+        "parameters": { "x": 12.0, "y": 5.0, "yaw_deg": 0 },
+        "timestamp_ms": 1741100050000,
+        "message_id": "6db4c5d6-e7f8-9012-abcd-123456789012",
+        "priority": "NORMAL",
+        "session_token": "tok_abc123xyz"
+      },
+      "confidence": 0.62,
+      "model_id": "anthropic/claude-sonnet-4",
+      "requires_auth_from_role": 3,
+      "expires_at_ms": 1741100065000,
+      "timestamp_ms": 1741100050500,
+      "message_id": "7ec5d6e7-f8a9-0123-bcde-234567890123"
+    }
+  ]
+}
