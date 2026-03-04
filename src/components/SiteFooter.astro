@@ -1,12 +1,78 @@
-<footer class="border-t border-white/5 bg-bg-alt/50 py-12 mt-20">
-  <div class="max-w-7xl mx-auto px-6 text-center">
-    <div class="flex items-center justify-center gap-2 mb-4 text-2xl font-bold text-text">
-      <span>⚡</span>
-      <span>RCAN</span>
+<footer class="border-t border-white/5 bg-bg-alt/50 py-16 mt-20">
+  <div class="max-w-7xl mx-auto px-6">
+    <!-- Logo + tagline -->
+    <div class="mb-12">
+      <a href="/" class="flex items-center gap-2 font-bold text-xl text-text hover:text-accent transition-colors w-fit mb-3">
+        <span class="text-2xl">⚡</span>
+        <span>RCAN</span>
+      </a>
+      <p class="text-text-muted text-sm max-w-xs leading-relaxed">
+        The open standard for robot identity, safety, and AI accountability. Federated. Auditable. Hardware-agnostic.
+      </p>
     </div>
-    <p class="text-text-muted mb-2">Robot Communication & Addressing Network</p>
-    <p class="text-sm text-text-muted/60">
-      © 2026 ContinuonAI. Licensed under <a href="https://creativecommons.org/licenses/by/4.0/" class="text-accent hover:underline" rel="noopener noreferrer">CC BY 4.0</a>
-    </p>
+
+    <!-- Link grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+      <!-- Protocol -->
+      <div>
+        <h4 class="text-xs font-semibold uppercase tracking-widest text-text-muted/50 mb-4">Protocol</h4>
+        <ul class="space-y-2.5">
+          <li><a href="/spec/" class="text-sm text-text-muted hover:text-accent transition-colors">Spec v1.2</a></li>
+          <li><a href="/conformance/" class="text-sm text-text-muted hover:text-accent transition-colors">Conformance</a></li>
+          <li><a href="/schemas/" class="text-sm text-text-muted hover:text-accent transition-colors">Schemas</a></li>
+          <li><a href="/spec/versioning/" class="text-sm text-text-muted hover:text-accent transition-colors">Versioning</a></li>
+          <li><a href="/spec/v1.1/" class="text-sm text-text-muted/50 hover:text-accent transition-colors">Archived v1.1</a></li>
+          <li><a href="/spec/v1.0/" class="text-sm text-text-muted/50 hover:text-accent transition-colors">Archived v1.0</a></li>
+        </ul>
+      </div>
+
+      <!-- Registry -->
+      <div>
+        <h4 class="text-xs font-semibold uppercase tracking-widest text-text-muted/50 mb-4">Registry</h4>
+        <ul class="space-y-2.5">
+          <li><a href="/registry/" class="text-sm text-text-muted hover:text-accent transition-colors">Browse Robots</a></li>
+          <li><a href="/registry/submit/" class="text-sm text-text-muted hover:text-accent transition-colors">Register</a></li>
+          <li><a href="/registry/verification/" class="text-sm text-text-muted hover:text-accent transition-colors">Verification</a></li>
+          <li><a href="/registry/auto-register/" class="text-sm text-text-muted hover:text-accent transition-colors">Auto-Register</a></li>
+          <li><a href="/pricing/" class="text-sm text-text-muted hover:text-accent transition-colors">Pricing</a></li>
+        </ul>
+      </div>
+
+      <!-- Resources -->
+      <div>
+        <h4 class="text-xs font-semibold uppercase tracking-widest text-text-muted/50 mb-4">Resources</h4>
+        <ul class="space-y-2.5">
+          <li><a href="/docs/" class="text-sm text-text-muted hover:text-accent transition-colors">Docs</a></li>
+          <li><a href="/api/" class="text-sm text-text-muted hover:text-accent transition-colors">API Reference</a></li>
+          <li><a href="/implementations/" class="text-sm text-text-muted hover:text-accent transition-colors">Implementations</a></li>
+          <li><a href="https://craigmerry.com/blog/2026-01-02-we-need-an-icann-for-robotics/" target="_blank" rel="noopener noreferrer" class="text-sm text-text-muted hover:text-accent transition-colors">Blog</a></li>
+          <li><a href="/security/" class="text-sm text-text-muted hover:text-accent transition-colors">Security</a></li>
+        </ul>
+      </div>
+
+      <!-- Organization -->
+      <div>
+        <h4 class="text-xs font-semibold uppercase tracking-widest text-text-muted/50 mb-4">Organization</h4>
+        <ul class="space-y-2.5">
+          <li><a href="/governance/" class="text-sm text-text-muted hover:text-accent transition-colors">Governance</a></li>
+          <li><a href="/federation/" class="text-sm text-text-muted hover:text-accent transition-colors">Federation</a></li>
+          <li><a href="https://github.com/continuonai/rcan-spec" target="_blank" rel="noopener noreferrer" class="text-sm text-text-muted hover:text-accent transition-colors">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <p class="text-sm text-text-muted/60 text-center md:text-left">
+        © 2026 ContinuonAI / Robot Registry Foundation (proposed). Licensed under
+        <a href="https://creativecommons.org/licenses/by/4.0/" class="text-accent hover:underline" rel="noopener noreferrer">CC BY 4.0</a>.
+      </p>
+      <div class="flex items-center gap-4">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+          v1.2 Stable
+        </span>
+      </div>
+    </div>
   </div>
 </footer>
