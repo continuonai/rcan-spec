@@ -3,6 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroSection from '../components/HeroSection.astro';
 import FeatureGrid from '../components/FeatureGrid.astro';
 import CodeWindow from '../components/CodeWindow.astro';
+import { getCollection } from 'astro:content';
+const robots = await getCollection('robots');
+const robotCount = robots.length;
 ---
 
 <BaseLayout title="RCAN Protocol" description="RCAN - Robot Communication & Addressing Network. An open protocol for addressing, discovering, and authenticating robotic agents.">
@@ -60,8 +63,8 @@ import CodeWindow from '../components/CodeWindow.astro';
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6 text-center hover:border-accent/30 transition-all">
-          <div class="text-4xl font-bold text-accent mb-2">10</div>
-          <div class="text-sm text-text-muted">Robots registered</div>
+          <div class="text-4xl font-bold text-accent mb-2">{robotCount > 0 ? robotCount : 'Open'}</div>
+          <div class="text-sm text-text-muted">{robotCount > 0 ? 'Robots registered' : 'Registration now open'}</div>
         </div>
         <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6 text-center hover:border-accent/30 transition-all">
           <div class="text-4xl font-bold text-accent mb-2">4</div>

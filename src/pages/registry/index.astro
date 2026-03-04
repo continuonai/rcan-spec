@@ -30,7 +30,7 @@ const statuses = ['active', 'retired', 'prototype', 'concept'];
     </div>
   </div>
 
-  <div class="search-section">
+  {robots.length > 0 && <div class="search-section">
     <div class="search-box">
       <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="8"></circle>
@@ -68,25 +68,38 @@ const statuses = ['active', 'retired', 'prototype', 'concept'];
     </div>
   </div>
 
-  <div id="results-count" class="results-count">
-    Showing <span id="visible-count">{robots.length}</span> of {robots.length} robots
-  </div>
+  </div>}
 
-  <div class="robot-grid" id="robot-grid">
-    {sortedRobots.map(robot => (
-      <RobotCard 
-        rrn={robot.data.rrn}
-        name={robot.data.name}
-        manufacturer={robot.data.manufacturer}
-        model={robot.data.model}
-        description={robot.data.description}
-        image={robot.data.image}
-        status={robot.data.status}
-        tags={robot.data.tags}
-        verification_status={robot.data.verification_status}
-      />
-    ))}
-  </div>
+  {robots.length > 0 && <div id="results-count" class="results-count">
+    Showing <span id="visible-count">{robots.length}</span> of {robots.length} robots
+  </div>}
+
+  {robots.length === 0 ? (
+    <div class="empty-registry">
+      <div class="empty-icon">🤖</div>
+      <h2>The registry is open</h2>
+      <p>No robots registered yet. Be the first to add yours.</p>
+      <div class="empty-actions">
+        <a href="/registry/submit/" class="btn-primary">Register a Robot</a>
+        <a href="/registry/auto-register/" class="btn-secondary">Auto-Register via RURI</a>
+      </div>
+    </div>
+  ) : (
+    <div class="robot-grid" id="robot-grid">
+      {sortedRobots.map(robot => (
+        <RobotCard 
+          rrn={robot.data.rrn}
+          name={robot.data.name}
+          manufacturer={robot.data.manufacturer}
+          model={robot.data.model}
+          description={robot.data.description}
+          status={robot.data.status}
+          tags={robot.data.tags}
+          verification_status={robot.data.verification_status}
+        />
+      ))}
+    </div>
+  )}
 
   <div id="no-results" class="no-results" style="display: none;">
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -316,6 +329,62 @@ const statuses = ['active', 'retired', 'prototype', 'concept'];
     gap: 1.5rem;
     margin-bottom: 3rem;
   }
+
+  .empty-registry {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--color-text-muted);
+  }
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.4;
+  }
+
+  .empty-registry h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+  }
+
+  .empty-registry p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .empty-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    padding: 0.75rem 1.75rem;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-weight: 700;
+    border-radius: 9999px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+
+  .btn-secondary {
+    padding: 0.75rem 1.75rem;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    border-radius: 9999px;
+    text-decoration: none;
+    transition: border-color 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--color-accent); color: var(--color-accent); }
 
   .no-results {
     flex-direction: column;
