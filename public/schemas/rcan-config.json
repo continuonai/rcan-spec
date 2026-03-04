@@ -1,0 +1,397 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/rcan-config.json",
+  "title": "RCAN Configuration (.rcan.yaml)",
+  "description": "JSON Schema representation of the .rcan.yaml robot configuration file. Defines robot identity, AI brain settings, safety limits, security policy, bridge configuration, and messaging surfaces.",
+  "type": "object",
+  "required": [
+    "rcan_version",
+    "ruri",
+    "robot",
+    "safety"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "rcan_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "RCAN spec version this config targets, e.g. '1.2'."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Globally unique RURI for this robot. {device_id} is a template placeholder resolved at runtime."
+    },
+
+    "robot": {
+      "type": "object",
+      "description": "Robot identity and physical characteristics.",
+      "required": ["manufacturer", "model", "type"],
+      "additionalProperties": true,
+      "properties": {
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Manufacturer slug, e.g. 'boston-dynamics', 'generic'."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable display name for this robot."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model slug, e.g. 'spot', 'mobile-differential-drive'."
+        },
+        "type": {
+          "type": "string",
+          "description": "Robot type descriptor, e.g. 'mobile_differential', 'arm', 'quadruped'."
+        },
+        "dof": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Degrees of freedom."
+        },
+        "payload_kg": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum payload in kilograms (arms/manipulators)."
+        },
+        "reach_mm": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum reach in millimetres (arms/manipulators)."
+        }
+      }
+    },
+
+    "brain": {
+      "type": "object",
+      "description": "AI brain configuration. Defines which LLM provider and model the RCAN runtime uses for command generation and reasoning.",
+      "additionalProperties": true,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "google", "mistral", "local", "none"],
+          "description": "AI provider name."
+        },
+        "model": {
+          "type": "string",
+          "description": "Primary model identifier, e.g. 'gpt-4o-mini', 'claude-sonnet-4'."
+        },
+        "fast_brain": {
+          "type": "string",
+          "description": "Faster/cheaper model used for low-latency decisions, e.g. 'gpt-4o-mini'."
+        },
+        "api_key_env": {
+          "type": "string",
+          "description": "Environment variable name holding the provider API key."
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens per inference call."
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature for the model."
+        }
+      }
+    },
+
+    "capabilities": {
+      "type": "object",
+      "description": "Declared robot capabilities by category.",
+      "additionalProperties": true,
+      "properties": {
+        "motion": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sensing": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "io": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "safety": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "safety": {
+      "type": "object",
+      "description": "Safety envelope parameters. These values are enforced by the RCAN runtime and cannot be overridden by AI-generated commands.",
+      "required": [],
+      "additionalProperties": true,
+      "properties": {
+        "max_linear_speed_mps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Absolute maximum forward speed in m/s."
+        },
+        "max_angular_speed_radps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Absolute maximum rotational speed in rad/s."
+        },
+        "max_linear_x": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Alias: maximum linear velocity on X axis in m/s (ROS convention)."
+        },
+        "max_angular_z": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Alias: maximum angular velocity on Z axis in rad/s (ROS convention)."
+        },
+        "emergency_stop_distance": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Distance in metres at which an automatic ESTOP is triggered."
+        },
+        "estop_distance_mm": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Alias: emergency stop distance in millimetres."
+        },
+        "local_safety_wins": {
+          "type": "boolean",
+          "description": "If true, local sensor-based safety overrides any network command."
+        },
+        "max_speed_override": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of configured max speed applied as a global cap (0–1)."
+        },
+        "collision_monitor_stop_m": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Nav2 collision_monitor hard stop distance in metres."
+        },
+        "collision_monitor_slowdown_m": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Nav2 collision_monitor slowdown distance in metres."
+        }
+      }
+    },
+
+    "agent": {
+      "type": "object",
+      "description": "AI agent security policy: confidence gates and HiTL gates.",
+      "additionalProperties": true,
+      "properties": {
+        "confidence_gates": {
+          "type": "array",
+          "description": "Per-scope confidence thresholds. If the AI model's confidence falls below min_confidence for a given scope, on_fail is applied.",
+          "items": {
+            "type": "object",
+            "required": ["scope", "min_confidence", "on_fail"],
+            "additionalProperties": false,
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": ["observe", "control", "configure", "admin", "safety"]
+              },
+              "min_confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "on_fail": {
+                "type": "string",
+                "enum": ["escalate", "block", "log"]
+              }
+            }
+          }
+        },
+        "hitl_gates": {
+          "type": "array",
+          "description": "Human-in-the-loop gate rules. Matching commands are held as PENDING_AUTH until a human operator responds.",
+          "items": {
+            "type": "object",
+            "required": ["require_auth"],
+            "additionalProperties": true,
+            "properties": {
+              "action_types": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "List of action identifiers that trigger this gate."
+              },
+              "require_auth": {
+                "type": "boolean"
+              },
+              "auth_timeout_ms": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "on_timeout": {
+                "type": "string",
+                "enum": ["block", "allow", "escalate"]
+              },
+              "notify": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Notification surfaces, e.g. ['whatsapp', 'slack']."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "security": {
+      "type": "object",
+      "description": "QuantumLink-Sim commitment and cryptographic security settings.",
+      "additionalProperties": true,
+      "properties": {
+        "commitment": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "key_mode": {
+              "type": "string",
+              "enum": ["classical", "quantum", "hybrid"]
+            },
+            "qber_threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Maximum acceptable QBER before rejecting a key exchange."
+            }
+          }
+        }
+      }
+    },
+
+    "bridge": {
+      "type": "object",
+      "description": "Robot bridge/middleware configuration (e.g. ROS 2, MQTT, direct serial).",
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Bridge type identifier, e.g. 'ros2_nav', 'mqtt', 'direct'."
+        },
+        "ros_domain_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 232
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "cmd_vel_topic": {
+          "type": "string"
+        },
+        "odom_topic": {
+          "type": "string"
+        },
+        "scan_topic": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+
+    "messaging": {
+      "type": "object",
+      "description": "External messaging surface configuration for HiTL notifications.",
+      "additionalProperties": true,
+      "properties": {
+        "whatsapp": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "recipient": { "type": "string" }
+          }
+        },
+        "slack": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "channel": { "type": "string" },
+            "webhook_url": { "type": "string", "format": "uri" }
+          }
+        }
+      }
+    }
+  },
+
+  "examples": [
+    {
+      "rcan_version": "1.2",
+      "ruri": "rcan://local.rcan/generic/differential-drive/00000001",
+      "robot": {
+        "manufacturer": "generic",
+        "name": "OpenCastor Rover",
+        "model": "mobile-differential-drive",
+        "type": "mobile_differential",
+        "dof": 2
+      },
+      "brain": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4",
+        "fast_brain": "claude-haiku-3",
+        "api_key_env": "ANTHROPIC_API_KEY"
+      },
+      "safety": {
+        "max_linear_speed_mps": 0.5,
+        "max_angular_speed_radps": 1.0,
+        "estop_distance_mm": 300,
+        "local_safety_wins": true,
+        "max_speed_override": 0.5,
+        "collision_monitor_stop_m": 0.25,
+        "collision_monitor_slowdown_m": 0.5
+      },
+      "agent": {
+        "confidence_gates": [
+          { "scope": "control", "min_confidence": 0.70, "on_fail": "escalate" },
+          { "scope": "admin",   "min_confidence": 0.92, "on_fail": "block" }
+        ],
+        "hitl_gates": [
+          {
+            "action_types": ["nav_goal", "waypoint_mission"],
+            "require_auth": true,
+            "auth_timeout_ms": 15000,
+            "on_timeout": "block",
+            "notify": ["whatsapp"]
+          }
+        ]
+      },
+      "security": {
+        "commitment": {
+          "enabled": true,
+          "key_mode": "hybrid",
+          "qber_threshold": 0.11
+        }
+      },
+      "bridge": {
+        "type": "ros2_nav",
+        "ros_domain_id": 0,
+        "namespace": "/robot",
+        "cmd_vel_topic": "/cmd_vel",
+        "odom_topic": "/odom",
+        "scan_topic": "/scan"
+      },
+      "messaging": {
+        "whatsapp": {
+          "enabled": true,
+          "recipient": "+1-555-0100"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/heartbeat.json",
+  "title": "HEARTBEAT Message",
+  "description": "RCAN message type 5. Periodic liveness probe sent between a robot and its connected brain or bridge. Used to detect connection loss and measure round-trip latency.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "timestamp_ms",
+    "message_id",
+    "latency_budget_ms"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 5,
+      "description": "Identifies this as a HEARTBEAT message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "RURI of the entity sending the heartbeat."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the heartbeat was emitted."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 for this heartbeat. The receiver echoes this ID in its HEARTBEAT_ACK."
+    },
+    "latency_budget_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum acceptable round-trip time in milliseconds. If a HEARTBEAT_ACK is not received within this window, the connection is considered stale."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 5,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "timestamp_ms": 1741100030000,
+      "message_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+      "latency_budget_ms": 500
+    },
+    {
+      "message_type": 5,
+      "ruri": "rcan://local.rcan/generic/differential-drive/00000001",
+      "timestamp_ms": 1741100060000,
+      "message_id": "07b8c9d0-e1f2-3456-abcd-567890123456",
+      "latency_budget_ms": 1000
+    }
+  ]
+}

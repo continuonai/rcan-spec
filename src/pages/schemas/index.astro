@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const messageSchemas = [
+  { file: 'command.json',      type: 1,  name: 'COMMAND',       desc: 'Robot command with action, scope, parameters, priority, and session token' },
+  { file: 'config.json',       type: 2,  name: 'CONFIG',        desc: 'Configuration patch message; minimum role level 4 (OWNER) enforced' },
+  { file: 'status.json',       type: 3,  name: 'STATUS',        desc: 'Robot status report with state, battery, and telemetry sub-object' },
+  { file: 'auth.json',         type: 4,  name: 'AUTH',          desc: 'Authentication message carrying session token and expiry' },
+  { file: 'heartbeat.json',    type: 5,  name: 'HEARTBEAT',     desc: 'Keepalive with latency budget declaration' },
+  { file: 'safety.json',       type: 6,  name: 'SAFETY',        desc: 'Highest-priority safety event — STOP, ESTOP, or RESUME' },
+  { file: 'authorize.json',    type: 9,  name: 'AUTHORIZE',     desc: '§16 HiTL — approve or reject a pending AI command (OWNER+ only)' },
+  { file: 'pending_auth.json', type: 10, name: 'PENDING_AUTH',  desc: '§16 HiTL gate — AI command awaiting human authorization' },
+];
+
+const coreSchemas = [
+  { file: 'ruri.json',         name: 'RURI',                desc: 'Robot Universal Resource Identifier — regex pattern and structure validation' },
+  { file: 'commitment.json',   name: 'Commitment Record',   desc: 'QuantumLink-Sim commitment record with classical/quantum/hybrid modes and AI block' },
+  { file: 'rcan-config.json',  name: 'RCAN Config (.rcan.yaml)', desc: 'Full .rcan.yaml configuration file — robot identity, brain, safety, security, messaging' },
+];
+
+const apiSchemas = [
+  { file: 'registry-api.openapi.yaml', name: 'Registry API (OpenAPI 3.1)', desc: 'Full OpenAPI 3.1 spec for all /api/v1/ endpoints — compatible with Swagger UI, Redoc, Stoplight' },
+];
+---
+
+<BaseLayout title="Schemas — RCAN Protocol" description="Machine-readable JSON Schema (draft-07) definitions for all RCAN message types, RURI format, commitment records, and config. OpenAPI 3.1 spec for the registry API.">
+
+  <div class="py-16 border-b border-white/5 mb-12">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-text-muted mb-6">
+      <span class="w-2 h-2 rounded-full bg-accent"></span>
+      Machine-readable definitions
+    </div>
+    <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">RCAN Schemas</h1>
+    <p class="text-xl text-text-muted max-w-2xl leading-relaxed mb-6">
+      JSON Schema (draft-07) definitions for every RCAN message type, RURI format, commitment records,
+      and the full <code class="text-accent text-base">.rcan.yaml</code> config structure.
+      Use these to validate implementations, generate types, and build conformant tooling.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="/schemas/registry-api.openapi.yaml" class="inline-flex items-center gap-2 px-4 py-2 bg-accent text-bg font-semibold text-sm rounded-lg hover:bg-accent-hover transition-colors">
+        ⬇ OpenAPI 3.1 Spec
+      </a>
+      <a href="https://github.com/continuonai/rcan-spec/tree/master/schemas" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-text-muted text-sm rounded-lg hover:bg-white/10 transition-colors">
+        View on GitHub →
+      </a>
+    </div>
+  </div>
+
+  <!-- Message Schemas -->
+  <section class="mb-16">
+    <h2 class="text-2xl font-bold mb-2">Message Schemas</h2>
+    <p class="text-text-muted mb-8">One JSON Schema file per RCAN message type. All use <code class="text-accent text-sm">$schema: draft-07</code>, include realistic examples, and enforce <code class="text-accent text-sm">additionalProperties: false</code>.</p>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b border-white/10 text-left">
+            <th class="pb-3 pr-6 text-text-muted font-medium">Type #</th>
+            <th class="pb-3 pr-6 text-text-muted font-medium">Name</th>
+            <th class="pb-3 pr-6 text-text-muted font-medium hidden md:table-cell">Description</th>
+            <th class="pb-3 text-text-muted font-medium">Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          {messageSchemas.map(s => (
+            <tr class="border-b border-white/5 hover:bg-white/2 transition-colors">
+              <td class="py-3 pr-6">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-mono text-xs text-accent">{s.type}</span>
+              </td>
+              <td class="py-3 pr-6 font-mono font-semibold text-text">{s.name}</td>
+              <td class="py-3 pr-6 text-text-muted hidden md:table-cell">{s.desc}</td>
+              <td class="py-3">
+                <a href={`/schemas/messages/${s.file}`} class="inline-flex items-center gap-1 text-accent hover:text-accent-hover text-xs font-medium transition-colors" download>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  {s.file}
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Core Schemas -->
+  <section class="mb-16">
+    <h2 class="text-2xl font-bold mb-2">Core Schemas</h2>
+    <p class="text-text-muted mb-8">RURI format validation, QuantumLink-Sim commitment records, and the full <code class="text-accent text-sm">.rcan.yaml</code> config structure.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {coreSchemas.map(s => (
+        <div class="bg-bg-alt/30 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-colors">
+          <h3 class="font-mono font-semibold text-text mb-2">{s.name}</h3>
+          <p class="text-text-muted text-sm mb-4 leading-relaxed">{s.desc}</p>
+          <a href={`/schemas/${s.file}`} class="inline-flex items-center gap-1.5 text-accent hover:text-accent-hover text-sm font-medium transition-colors" download>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            {s.file}
+          </a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- API Schema -->
+  <section class="mb-16">
+    <h2 class="text-2xl font-bold mb-2">Registry API</h2>
+    <p class="text-text-muted mb-8">OpenAPI 3.1 specification for all <code class="text-accent text-sm">/api/v1/</code> endpoints. Import into Swagger UI, Redoc, Stoplight, or any OpenAPI-compatible tool to auto-generate SDKs and client libraries.</p>
+
+    <div class="bg-bg-alt/30 border border-accent/20 rounded-xl p-6">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h3 class="font-semibold text-text mb-1">registry-api.openapi.yaml</h3>
+          <p class="text-text-muted text-sm">540 lines · 5 endpoints · Full Robot schema with all sub-schemas · Error responses documented</p>
+          <p class="text-text-muted/60 text-xs mt-2">Endpoints: GET /api/v1.json · /api/v1/robots.json · /api/v1/robots/{'{rrn}'}.json · /api/v1/ruri/{'{ruri}'}.json · /api/v1/verify/{'{rrn}'}.json</p>
+        </div>
+        <a href="/schemas/registry-api.openapi.yaml" class="inline-flex items-center gap-2 px-4 py-2 bg-accent text-bg font-semibold text-sm rounded-lg hover:bg-accent-hover transition-colors shrink-0" download>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download YAML
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage -->
+  <section class="mb-16">
+    <h2 class="text-2xl font-bold mb-6">Usage</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-bg-alt/30 border border-white/10 rounded-xl p-6">
+        <h3 class="font-semibold text-text mb-3 flex items-center gap-2">
+          <span class="text-lg">🐍</span> Python (jsonschema)
+        </h3>
+        <pre class="text-xs text-accent/80 font-mono overflow-x-auto leading-relaxed"><code>{`import json, requests
+from jsonschema import validate
+
+schema = requests.get(
+  "https://rcan.dev/schemas/messages/command.json"
+).json()
+
+msg = {
+  "message_type": 1,
+  "ruri": "rcan://rcan.dev/acme/arm/abc123",
+  "principal_id": "user@example.com",
+  "role_level": 2,
+  "scope": "arm",
+  "action": "move",
+  "parameters": {"x": 0.1},
+  "timestamp_ms": 1234567890000,
+  "message_id": "msg-001",
+  "priority": "NORMAL"
+}
+validate(instance=msg, schema=schema)
+print("Valid COMMAND message")`}</code></pre>
+      </div>
+      <div class="bg-bg-alt/30 border border-white/10 rounded-xl p-6">
+        <h3 class="font-semibold text-text mb-3 flex items-center gap-2">
+          <span class="text-lg">🟨</span> Node.js (ajv)
+        </h3>
+        <pre class="text-xs text-accent/80 font-mono overflow-x-auto leading-relaxed"><code>{`import Ajv from 'ajv';
+import fetch from 'node-fetch';
+
+const ajv = new Ajv();
+const schema = await fetch(
+  'https://rcan.dev/schemas/messages/command.json'
+).then(r => r.json());
+
+const validate = ajv.compile(schema);
+const valid = validate(msg);
+if (!valid) console.error(validate.errors);
+else console.log('Valid COMMAND message');`}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Links -->
+  <div class="border-t border-white/5 pt-8 flex flex-wrap gap-4 text-sm text-text-muted">
+    <a href="/spec/" class="hover:text-accent transition-colors">← RCAN Spec v1.2</a>
+    <a href="/conformance/" class="hover:text-accent transition-colors">Conformance Suite →</a>
+    <a href="/api/" class="hover:text-accent transition-colors">API Reference →</a>
+    <a href="https://github.com/continuonai/rcan-spec/tree/master/schemas" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">GitHub →</a>
+  </div>
+
+</BaseLayout>

@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/status.json",
+  "title": "STATUS Message",
+  "description": "RCAN message type 3. Published by a robot or bridge to report its current operational state, battery, and optional sensor telemetry.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "state",
+    "battery_pct",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 3,
+      "description": "Identifies this as a STATUS message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Publishing robot's RURI."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "moving",
+        "executing",
+        "charging",
+        "estop",
+        "fault",
+        "initialising",
+        "offline"
+      ],
+      "description": "High-level operational state of the robot."
+    },
+    "battery_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Battery state of charge as a percentage (0–100). Use null if the robot has no battery sensor."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the status was sampled."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this status report."
+    },
+    "telemetry": {
+      "type": "object",
+      "description": "Optional platform-specific sensor readings and pose data.",
+      "additionalProperties": true,
+      "properties": {
+        "pose": {
+          "type": "object",
+          "description": "Current pose in the robot's reference frame.",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number" },
+            "yaw_deg": { "type": "number" }
+          }
+        },
+        "linear_velocity_mps": {
+          "type": "number",
+          "description": "Current forward velocity in m/s."
+        },
+        "angular_velocity_radps": {
+          "type": "number",
+          "description": "Current rotational velocity in rad/s."
+        },
+        "cpu_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Onboard compute CPU utilisation percentage."
+        },
+        "temperature_c": {
+          "type": "number",
+          "description": "Core/CPU temperature in degrees Celsius."
+        },
+        "wifi_rssi_dbm": {
+          "type": "number",
+          "description": "WiFi signal strength in dBm."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "message_type": 3,
+      "ruri": "rcan://rcan.dev/boston-dynamics/spot/bd-spot-001a2b3c",
+      "state": "moving",
+      "battery_pct": 78.5,
+      "timestamp_ms": 1741100010000,
+      "message_id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+      "telemetry": {
+        "pose": { "x": 3.1, "y": -0.9, "z": 0.0, "yaw_deg": 87.4 },
+        "linear_velocity_mps": 0.45,
+        "angular_velocity_radps": 0.05,
+        "cpu_pct": 32.1,
+        "temperature_c": 48.2,
+        "wifi_rssi_dbm": -62
+      }
+    },
+    {
+      "message_type": 3,
+      "ruri": "rcan://local.rcan/generic/differential-drive/00000001",
+      "state": "idle",
+      "battery_pct": 95,
+      "timestamp_ms": 1741100020000,
+      "message_id": "e5f6a7b8-c9d0-1234-efab-345678901234"
+    }
+  ]
+}
