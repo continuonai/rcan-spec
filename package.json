@@ -13,11 +13,11 @@
     "sync-ruri:dry": "npx ts-node scripts/sync-ruri.ts --dry-run"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.6.0",
+    "@astrojs/sitemap": "^3.7.0",
     "@astrojs/tailwind": "^5.1.5",
     "@types/qrcode": "^1.5.6",
     "@types/three": "^0.182.0",
-    "astro": "^4.16.19",
+    "astro": "^5.18.0",
     "qrcode": "^1.5.4",
     "tailwindcss": "^3.4.19",
     "three": "^0.182.0",
@@ -26,5 +26,15 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "astro@<5.14.3": ">=5.14.3",
+      "astro@>=2.16.0 <5.15.5": ">=5.15.5",
+      "astro@<=5.15.6": ">=5.15.8",
+      "astro@<5.15.9": ">=5.15.9",
+      "astro@<5.15.8": ">=5.15.8"
+    }
   }
 }
