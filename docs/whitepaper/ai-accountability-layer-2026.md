@@ -4,14 +4,14 @@
 **Prepared by:** RCAN Working Group / continuonai  
 **Target audience:** ISO/TC 299 WG3, A3 standards committee, CEN/CENELEC JTC 21, robot safety engineers, conformity assessment bodies  
 **RCAN specification:** v1.1 — [rcan.dev/spec](https://rcan.dev/spec) | [github.com/continuonai/rcan-spec](https://github.com/continuonai/rcan-spec)  
-**Reference implementation:** OpenCastor v2026.3.1.16 — [github.com/craigm26/OpenCastor](https://github.com/craigm26/OpenCastor)  
+**Reference implementation:** OpenCastor v2026.3.3.0 — [github.com/craigm26/OpenCastor](https://github.com/craigm26/OpenCastor)  
 **Date:** March 2026  
 
 ---
 
 ## Abstract
 
-The 2025 revision of ISO 10218-1 introduced cybersecurity requirements for industrial robots for the first time. These requirements address access control and audit logging at the system level but do not address the AI layer: which model produced a command, at what confidence level, under what authority, and whether human oversight was required before execution. As AI-driven robots move from research to industrial deployment, this gap creates liability and compliance risk — particularly under the EU AI Act's high-risk AI system requirements taking effect August 2026. This brief describes RCAN (Robot Communication and Addressing Network), an open protocol specification that defines AI accountability primitives at the protocol layer, and maps its provisions to ISO 10218-1:2025 cybersecurity requirements and EU AI Act Articles 12–14. RCAN is not a competing standard; it is designed for adoption by, or incorporation into, existing standards. It is open, independently implementable, and carries no product dependencies.
+The 2025 revision of ISO 10218-1 introduced cybersecurity requirements for industrial robots for the first time. These requirements address access control and audit logging at the system level but do not address the AI layer: which model produced a command, at what confidence level, under what authority, and whether human oversight was required before execution. As AI-driven robots move from research to industrial deployment, this gap creates liability and compliance risk — particularly under the EU AI Act's high-risk AI system requirements taking effect August 2026. This brief describes RCAN (Robot Communication and Addressing Network), an open protocol specification that defines AI accountability primitives at the protocol layer. Safety standards state conformity requirements — they do not prescribe how manufacturers achieve them. RCAN's role is to provide the communication infrastructure that makes conformity *verifiable*: a standardized, tamper-evident signal carrying model identity, confidence, and human-oversight state that a conformity assessment body can interrogate. This brief describes how RCAN's provisions relate to the accountability and logging requirements in ISO 10218-1:2025 and EU AI Act Articles 12–14, not as a compliance recipe, but as infrastructure that makes those requirements demonstrable. RCAN is not a competing standard; it is designed for adoption by, or incorporation into, existing standards. It is open, independently implementable, and carries no product dependencies.
 
 ---
 
@@ -185,7 +185,7 @@ The reference implementation demonstrates that RCAN compliance is achievable on 
 
 *Legend: ✅ = Addressed, ❌ = Not addressed, 🔶 = Partial / supporting evidence only*
 
-This table illustrates that RCAN, ISO 10218-1:2025, the EU AI Act, and IEC 62443 each address different domains. Full compliance for an AI-driven industrial robot requires all four frameworks to be applied in combination. RCAN fills the AI accountability layer that each of the other frameworks leaves open.
+This table illustrates that RCAN, ISO 10218-1:2025, the EU AI Act, and IEC 62443 each address different domains. Conformity assessment for an AI-driven industrial robot will draw on all four frameworks. RCAN fills the AI accountability layer that each of the other frameworks leaves open — providing the verifiable signal that makes the accountability requirements in those standards demonstrable.
 
 ---
 
@@ -201,7 +201,7 @@ The current specification (v1.1) is a working draft. It has been published openl
 
 - **A3 standards committee / ANSI/A3 R15.06**: The US national adoption of ISO 10218-1 and -2 presents the same AI accountability gap. RCAN's §16 provisions are equally applicable to R15.06. We invite the A3 committee to consider parallel adoption.
 
-- **CEN/CENELEC JTC 21** (AI standards in Europe): RCAN's EU AI Act mappings (Articles 12, 13, 14) are intended to inform JTC 21's work on harmonized technical standards supporting the AI Act for robotic systems. We invite JTC 21 to evaluate RCAN's provisions as candidate technical requirements for AI Act compliance in the robotics domain.
+- **CEN/CENELEC JTC 21** (AI standards in Europe): RCAN's EU AI Act mappings (Articles 12, 13, 14) are intended to inform JTC 21's work on harmonized technical standards supporting the AI Act for robotic systems. We invite JTC 21 to evaluate RCAN's provisions as candidate technical requirements that enable AI Act conformity assessment in the robotics domain.
 
 RCAN welcomes contributions, technical objections, and proposal for modifications via the public GitHub repository at [github.com/continuonai/rcan-spec](https://github.com/continuonai/rcan-spec).
 
