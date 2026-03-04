@@ -54,68 +54,74 @@ const mobileLinks = [
       </a>
 
       <!-- Spec dropdown -->
-      <div class="relative group/spec">
-        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1">
+      <div class="relative" data-dropdown>
+        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1" data-dropdown-trigger>
           Spec
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200 group-hover/spec:rotate-180">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-        <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-52 opacity-0 pointer-events-none group-hover/spec:opacity-100 group-hover/spec:pointer-events-auto transition-all duration-200 bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
-          <div class="p-1">
-            {specLinks.map((link, i) => (
-              <a
-                href={link.href}
-                class={`block px-3 py-2 text-sm rounded-lg hover:bg-white/5 hover:text-accent transition-colors ${i === 2 ? 'border-b border-white/5 mb-1 pb-3' : ''} ${link.label.startsWith('Archived') ? 'text-text-muted/60 text-xs' : 'text-text-muted'}`}
-              >
-                {link.label}
-              </a>
-            ))}
+        <div class="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-52 hidden" data-dropdown-menu>
+          <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-1">
+              {specLinks.map((link, i) => (
+                <a
+                  href={link.href}
+                  class={`block px-3 py-2 text-sm rounded-lg hover:bg-white/5 hover:text-accent transition-colors ${i === 2 ? 'border-b border-white/5 mb-1 pb-3' : ''} ${link.label.startsWith('Archived') ? 'text-text-muted/60 text-xs' : 'text-text-muted'}`}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Protocol dropdown -->
-      <div class="relative group/proto">
-        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1">
+      <div class="relative" data-dropdown>
+        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1" data-dropdown-trigger>
           Protocol
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200 group-hover/proto:rotate-180">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-        <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-48 opacity-0 pointer-events-none group-hover/proto:opacity-100 group-hover/proto:pointer-events-auto transition-all duration-200 bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
-          <div class="p-1">
-            {protocolLinks.map(link => (
-              <a href={link.href} class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
-                {link.label}
-              </a>
-            ))}
+        <div class="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 hidden" data-dropdown-menu>
+          <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-1">
+              {protocolLinks.map(link => (
+                <a href={link.href} class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
+                  {link.label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Registry dropdown -->
-      <div class="relative group/reg">
-        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1">
+      <div class="relative" data-dropdown>
+        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1" data-dropdown-trigger>
           Registry
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200 group-hover/reg:rotate-180">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-        <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-52 opacity-0 pointer-events-none group-hover/reg:opacity-100 group-hover/reg:pointer-events-auto transition-all duration-200 bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
-          <div class="p-1">
-            {registryLinks.map(link => (
-              <a href={link.href} class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
-                {link.label}
-              </a>
-            ))}
+        <div class="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-52 hidden" data-dropdown-menu>
+          <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-1">
+              {registryLinks.map(link => (
+                <a href={link.href} class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
+                  {link.label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Registration -->
       <a href="/pricing/" class="text-sm font-medium text-text-muted hover:text-accent transition-colors">
-        Pricing
+        Registration
       </a>
 
       <!-- GitHub -->
@@ -156,13 +162,50 @@ const mobileLinks = [
 </header>
 
 <script>
-  const header = document.getElementById('site-header');
+  // Mobile nav toggle
   const toggle = document.getElementById('nav-toggle');
   const menu = document.getElementById('mobile-menu');
-
   toggle?.addEventListener('click', () => {
     menu?.classList.toggle('translate-x-full');
     const isOpen = !menu?.classList.contains('translate-x-full');
     document.body.style.overflow = isOpen ? 'hidden' : '';
+  });
+
+  // Dropdown menus — JS-managed with close delay so cursor can travel to menu
+  document.querySelectorAll('[data-dropdown]').forEach(dropdown => {
+    const menuEl = dropdown.querySelector('[data-dropdown-menu]') as HTMLElement | null;
+    const arrow = dropdown.querySelector('[data-dropdown-arrow]') as HTMLElement | null;
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function open() {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+      menuEl?.classList.remove('hidden');
+      arrow?.classList.add('rotate-180');
+    }
+
+    function close() {
+      closeTimer = setTimeout(() => {
+        menuEl?.classList.add('hidden');
+        arrow?.classList.remove('rotate-180');
+      }, 150);
+    }
+
+    dropdown.addEventListener('mouseenter', open);
+    dropdown.addEventListener('mouseleave', close);
+    // Keep open while hovering the menu panel itself
+    menuEl?.addEventListener('mouseenter', () => {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    });
+    menuEl?.addEventListener('mouseleave', close);
+  });
+
+  // Close all dropdowns on outside click
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-dropdown]').forEach(dropdown => {
+      if (!dropdown.contains(e.target as Node)) {
+        dropdown.querySelector('[data-dropdown-menu]')?.classList.add('hidden');
+        dropdown.querySelector('[data-dropdown-arrow]')?.classList.remove('rotate-180');
+      }
+    });
   });
 </script>
