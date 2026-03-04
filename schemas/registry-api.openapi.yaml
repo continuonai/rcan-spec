@@ -1,0 +1,769 @@
+openapi: 3.1.0
+
+info:
+  title: RCAN Robot Registry API
+  version: "1.0"
+  description: |
+    The **RCAN (Robot Common Address Notation) Registry API** provides programmatic,
+    read-only access to the global robot registry at [rcan.dev](https://rcan.dev).
+
+    ## Features
+    - Browse and search the robot registry
+    - Look up robots by RRN (Robot Registration Number) or RURI
+    - Check verification status for any registered robot
+    - No authentication required — the API is public and read-only
+
+    ## Formats
+    All endpoints return `application/json`. Responses follow a consistent envelope:
+    ```json
+    { "success": true, "data": ..., "api_version": "1.0" }
+    ```
+
+    ## CORS
+    All endpoints include `Access-Control-Allow-Origin: *`. Browser-based clients
+    can call the API directly without a proxy.
+
+    ## Caching
+    Static responses carry `Cache-Control: public, max-age=3600`.
+  contact:
+    name: RCAN Project
+    url: https://rcan.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://rcan.dev/api/v1
+    description: Production
+
+externalDocs:
+  description: Human-readable API documentation
+  url: https://rcan.dev/api
+
+tags:
+  - name: Discovery
+    description: API metadata and endpoint directory
+  - name: Robots
+    description: List and look up registered robots
+  - name: RURI
+    description: Resolve RCAN URIs to robot entries
+  - name: Verification
+    description: Query robot verification status
+
+paths:
+
+  # ── Discovery ─────────────────────────────────────────────────────────────
+
+  /index.json:
+    get:
+      operationId: getApiDiscovery
+      summary: API discovery
+      description: |
+        Returns the current API version, the canonical base URL, total robot count,
+        and a directory of all available endpoints with short descriptions.
+      tags: [Discovery]
+      responses:
+        "200":
+          description: Successful discovery response
+          headers:
+            Access-Control-Allow-Origin:
+              schema: { type: string, example: "*" }
+            Cache-Control:
+              schema: { type: string, example: "public, max-age=3600" }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResponse'
+              example:
+                api_version: "1.0"
+                base_url: "https://rcan.dev/api/v1"
+                total_robots: 12
+                endpoints:
+                  - path: "/api/v1/robots.json"
+                    method: "GET"
+                    description: "List all registered robots …"
+
+  # ── Robots ─────────────────────────────────────────────────────────────────
+
+  /robots.json:
+    get:
+      operationId: listRobots
+      summary: List robots
+      description: |
+        Returns the full list of registered robots. Supports filtering by
+        `status`, `manufacturer`, and `tag`, full-text search with `q`, and
+        standard limit/offset pagination.
+
+        Results are sorted by RRN ascending. When no `limit` is supplied the
+        entire (filtered) collection is returned.
+      tags: [Robots]
+      parameters:
+        - name: status
+          in: query
+          description: Filter by operational status
+          required: false
+          schema:
+            type: string
+            enum: [active, retired, prototype, concept]
+          example: active
+        - name: manufacturer
+          in: query
+          description: Filter by manufacturer name (case-insensitive partial match)
+          required: false
+          schema:
+            type: string
+          example: ROBOTIS
+        - name: tag
+          in: query
+          description: Filter by tag (case-insensitive exact match)
+          required: false
+          schema:
+            type: string
+          example: ros2
+        - name: q
+          in: query
+          description: |
+            Full-text search across `name`, `manufacturer`, `description`, and
+            `tags` (case-insensitive substring match).
+          required: false
+          schema:
+            type: string
+          example: lidar
+        - name: limit
+          in: query
+          description: Maximum number of results to return. Omit for all results.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          example: 20
+        - name: offset
+          in: query
+          description: Number of results to skip (for cursor-style pagination)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+      responses:
+        "200":
+          description: Paginated robot list
+          headers:
+            Access-Control-Allow-Origin:
+              schema: { type: string, example: "*" }
+            Cache-Control:
+              schema: { type: string, example: "public, max-age=3600" }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RobotListResponse'
+
+  /robots/{rrn}.json:
+    get:
+      operationId: getRobotByRrn
+      summary: Get robot by RRN
+      description: |
+        Retrieves a single robot entry identified by its RRN
+        (Robot Registration Number).
+
+        RRNs follow the format `RRN-XXXXXXXX` where X is a zero-padded decimal
+        digit (e.g. `RRN-00000001`).
+      tags: [Robots]
+      parameters:
+        - name: rrn
+          in: path
+          required: true
+          description: Robot Registration Number
+          schema:
+            type: string
+            pattern: '^RRN-\d{8}$'
+          example: RRN-00000001
+      responses:
+        "200":
+          description: Robot found
+          headers:
+            Access-Control-Allow-Origin:
+              schema: { type: string, example: "*" }
+            Cache-Control:
+              schema: { type: string, example: "public, max-age=3600" }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RobotSingleResponse'
+        "404":
+          description: Robot not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RobotNotFoundResponse'
+              example:
+                success: false
+                error: "Robot not found"
+                rrn: "RRN-99999999"
+                api_version: "1.0"
+
+  # ── RURI ───────────────────────────────────────────────────────────────────
+
+  /ruri/{ruri}.json:
+    get:
+      operationId: resolveRuri
+      summary: Resolve RURI
+      description: |
+        Resolves a RCAN URI (RURI) to its registry entry.
+
+        The `ruri` path parameter must be **URL-encoded** so that the `://`
+        and internal slashes do not conflict with path parsing.
+
+        ### Building the URL
+
+        ```js
+        const ruri = 'rcan://rcan.dev/opencastor/rover/abcdef12';
+        const url  = `https://rcan.dev/api/v1/ruri/${encodeURIComponent(ruri)}.json`;
+        // → /api/v1/ruri/rcan%3A%2F%2Frcan.dev%2Fopencastor%2Frover%2Fabcdef12.json
+        ```
+
+        Only robots that have a `ruri` field set in their registry entry are
+        resolvable through this endpoint.
+      tags: [RURI]
+      parameters:
+        - name: ruri
+          in: path
+          required: true
+          description: URL-encoded RURI string (e.g. `rcan%3A%2F%2Frcan.dev%2Fmfr%2Fmdl%2Fid`)
+          schema:
+            type: string
+          example: "rcan%3A%2F%2Frcan.dev%2Fopencastor%2Frover%2Fabcdef12"
+      responses:
+        "200":
+          description: RURI resolved successfully
+          headers:
+            Access-Control-Allow-Origin:
+              schema: { type: string, example: "*" }
+            Cache-Control:
+              schema: { type: string, example: "public, max-age=3600" }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuriResolveResponse'
+        "404":
+          description: No robot found for this RURI
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuriNotFoundResponse'
+              example:
+                success: false
+                error: "No robot found for this RURI"
+                ruri: "rcan://rcan.dev/unknown/model/00000000"
+                api_version: "1.0"
+
+  # ── Verification ───────────────────────────────────────────────────────────
+
+  /verify/{rrn}.json:
+    get:
+      operationId: verifyRobot
+      summary: Get verification status
+      description: |
+        Returns the current verification status for the robot identified by `rrn`.
+
+        Verification levels are:
+        | Status | Meaning |
+        |---|---|
+        | `unverified` | No verification has been performed |
+        | `community` | Community members have confirmed the entry |
+        | `manufacturer_claimed` | Manufacturer has claimed the entry |
+        | `manufacturer_verified` | Manufacturer has been independently verified |
+      tags: [Verification]
+      parameters:
+        - name: rrn
+          in: path
+          required: true
+          description: Robot Registration Number
+          schema:
+            type: string
+            pattern: '^RRN-\d{8}$'
+          example: RRN-00000001
+      responses:
+        "200":
+          description: Verification status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResponse'
+        "400":
+          description: RRN parameter missing or malformed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "RRN parameter is required"
+        "404":
+          description: Robot not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "Robot not found"
+                rrn: "RRN-99999999"
+                api_version: "1.0"
+
+# ── Components ───────────────────────────────────────────────────────────────
+
+components:
+  schemas:
+
+    # ── Robot ─────────────────────────────────────────────────────────────
+
+    RobotSpecs:
+      type: object
+      description: Technical specification sub-object attached to a Robot entry
+      properties:
+        weight_kg:
+          type: number
+          description: Total weight in kilograms
+          exclusiveMinimum: 0
+          example: 1.0
+        dimensions:
+          type: string
+          description: Physical dimensions as a human-readable string
+          example: "138 x 178 x 192 mm"
+        max_speed_mps:
+          type: number
+          description: Maximum translational speed in metres per second
+          exclusiveMinimum: 0
+          example: 0.22
+        dof:
+          type: integer
+          description: Number of degrees of freedom
+          minimum: 1
+          example: 2
+        ros_version:
+          type: array
+          description: Supported ROS / ROS 2 distributions
+          items:
+            type: string
+          example: ["ROS 1", "ROS 2"]
+        sensors:
+          type: array
+          description: Onboard sensors
+          items:
+            type: string
+          example: ["LDS-01 LiDAR", "IMU", "Wheel Encoders"]
+        compute:
+          type: string
+          description: Primary compute platform
+          example: "Raspberry Pi 4"
+        payload_kg:
+          type: number
+          description: Maximum payload capacity in kilograms
+          exclusiveMinimum: 0
+          example: 15.0
+        battery_life_hours:
+          type: number
+          description: Estimated battery life under typical load (hours)
+          exclusiveMinimum: 0
+          example: 2.5
+        reach_mm:
+          type: number
+          description: Maximum arm reach in millimetres (manipulators)
+          exclusiveMinimum: 0
+          example: 600.0
+
+    RobotOwner:
+      type: object
+      description: Current owner of a robot
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          example: "Open Source Community"
+        type:
+          type: string
+          enum: [individual, company, research, community]
+          example: community
+        website:
+          type: string
+          format: uri
+          example: "https://example.org"
+
+    OwnershipHistoryEntry:
+      type: object
+      description: A single transfer record in a robot's ownership history
+      required: [owner_name, owner_type, acquired_date]
+      properties:
+        owner_name:
+          type: string
+          example: "ROBOTIS Inc."
+        owner_type:
+          type: string
+          enum: [individual, company, research, community]
+          example: company
+        owner_website:
+          type: string
+          format: uri
+          example: "https://www.robotis.com"
+        acquired_date:
+          type: string
+          format: date
+          description: ISO 8601 date when ownership was acquired
+          example: "2017-01-01"
+        transferred_date:
+          type: string
+          format: date
+          description: ISO 8601 date when ownership was transferred away (omitted if current owner)
+          example: "2022-06-15"
+        transfer_reason:
+          type: string
+          description: Human-readable reason for the transfer
+          example: "Sold to research lab"
+        verified:
+          type: boolean
+          description: Whether this ownership record has been verified
+          default: false
+          example: false
+
+    Robot:
+      type: object
+      description: |
+        A registered robot entry in the RCAN registry.
+        All required fields are guaranteed to be present; optional fields may be
+        absent (`null`) when no data has been provided.
+      required:
+        - rrn
+        - name
+        - manufacturer
+        - model
+        - description
+        - status
+        - verification_status
+        - tags
+      properties:
+        rrn:
+          type: string
+          description: Robot Registration Number — globally unique identifier
+          pattern: '^RRN-\d{8}$'
+          example: "RRN-00000001"
+        name:
+          type: string
+          description: Human-readable robot name
+          example: "TurtleBot 3 Burger"
+        manufacturer:
+          type: string
+          description: Organisation or individual that manufactured the robot
+          example: "ROBOTIS"
+        model:
+          type: string
+          description: Model identifier / slug
+          example: "turtlebot3_burger"
+        description:
+          type: string
+          description: Short free-text description of the robot
+          example: "A compact, affordable mobile robot for education and research."
+        image:
+          type: string
+          description: Relative or absolute URL to the robot's primary image
+          example: "/robots/turtlebot3-burger.svg"
+          nullable: true
+        production_year:
+          type: integer
+          description: Year the robot model was first produced
+          minimum: 1950
+          maximum: 2100
+          example: 2017
+          nullable: true
+        status:
+          type: string
+          description: Operational lifecycle status
+          enum: [active, retired, prototype, concept]
+          default: active
+          example: active
+        urdf_url:
+          type: string
+          format: uri
+          description: URL to the robot's URDF model file or repository
+          example: "https://github.com/ROBOTIS-GIT/turtlebot3/tree/main/turtlebot3_description"
+          nullable: true
+        github_url:
+          type: string
+          format: uri
+          description: Primary GitHub repository for this robot
+          example: "https://github.com/ROBOTIS-GIT/turtlebot3"
+          nullable: true
+        website:
+          type: string
+          format: uri
+          description: Official product or project website
+          example: "https://www.robotis.us/turtlebot-3/"
+          nullable: true
+        specs:
+          allOf:
+            - $ref: '#/components/schemas/RobotSpecs'
+          description: Technical specifications
+          nullable: true
+        owner:
+          allOf:
+            - $ref: '#/components/schemas/RobotOwner'
+          description: Current owner record
+          nullable: true
+        ownership_history:
+          type: array
+          description: Ordered list of ownership transfer records (oldest first)
+          items:
+            $ref: '#/components/schemas/OwnershipHistoryEntry'
+          nullable: true
+        ruri:
+          type: string
+          description: |
+            RCAN URI for this robot, e.g. `rcan://rcan.dev/manufacturer/model/device-id`.
+            `null` when no RURI has been assigned.
+          example: "rcan://rcan.dev/robotis/turtlebot3_burger/00000001"
+          nullable: true
+        verification_status:
+          type: string
+          description: Verification level for this registry entry
+          enum: [unverified, community, manufacturer_claimed, manufacturer_verified]
+          default: unverified
+          example: unverified
+        submitted_by:
+          type: string
+          description: Handle of the person who submitted the entry (e.g. `github:username`)
+          example: "github:continuonai"
+          nullable: true
+        submitted_date:
+          type: string
+          format: date
+          description: ISO 8601 date the entry was first submitted
+          example: "2026-01-04"
+          nullable: true
+        tags:
+          type: array
+          description: Free-form tags for categorisation and search
+          items:
+            type: string
+          default: []
+          example: ["education", "mobile", "ros2", "lidar"]
+
+    # ── Response envelopes ─────────────────────────────────────────────────
+
+    DiscoveryEndpoint:
+      type: object
+      description: A single entry in the endpoint directory returned by /api/v1/index.json
+      required: [path, method, description]
+      properties:
+        path:
+          type: string
+          example: "/api/v1/robots.json"
+        method:
+          type: string
+          enum: [GET, POST, PUT, PATCH, DELETE]
+          example: GET
+        description:
+          type: string
+          example: "List all registered robots …"
+
+    DiscoveryResponse:
+      type: object
+      required: [api_version, base_url, total_robots, endpoints]
+      properties:
+        api_version:
+          type: string
+          example: "1.0"
+        base_url:
+          type: string
+          format: uri
+          example: "https://rcan.dev/api/v1"
+        total_robots:
+          type: integer
+          description: Total number of robots currently in the registry
+          minimum: 0
+          example: 12
+        endpoints:
+          type: array
+          description: Directory of all available API endpoints
+          items:
+            $ref: '#/components/schemas/DiscoveryEndpoint'
+
+    RobotListMeta:
+      type: object
+      required: [total, count, offset]
+      properties:
+        total:
+          type: integer
+          description: Total robots matching the applied filters (before pagination)
+          minimum: 0
+          example: 42
+        count:
+          type: integer
+          description: Number of robots returned in this response (after pagination)
+          minimum: 0
+          example: 20
+        limit:
+          type: integer
+          description: The `limit` value used (null when no limit was requested)
+          nullable: true
+          example: 20
+        offset:
+          type: integer
+          description: The `offset` value used
+          minimum: 0
+          example: 0
+        api_version:
+          type: string
+          example: "1.0"
+        active_filters:
+          type: object
+          description: Echo of the filter parameters that were applied
+          properties:
+            status:
+              type: string
+              nullable: true
+              example: "active"
+            manufacturer:
+              type: string
+              nullable: true
+              example: null
+            tag:
+              type: string
+              nullable: true
+              example: null
+            q:
+              type: string
+              nullable: true
+              example: "lidar"
+
+    RobotListResponse:
+      type: object
+      required: [success, data, meta, api_version]
+      properties:
+        success:
+          type: boolean
+          example: true
+        api_version:
+          type: string
+          example: "1.0"
+        data:
+          type: array
+          description: Array of matching Robot objects
+          items:
+            $ref: '#/components/schemas/Robot'
+        meta:
+          $ref: '#/components/schemas/RobotListMeta'
+
+    RobotSingleResponse:
+      type: object
+      required: [success, data, api_version]
+      properties:
+        success:
+          type: boolean
+          example: true
+        api_version:
+          type: string
+          example: "1.0"
+        data:
+          $ref: '#/components/schemas/Robot'
+
+    RobotNotFoundResponse:
+      type: object
+      required: [success, error, rrn, api_version]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Robot not found"
+        rrn:
+          type: string
+          description: The RRN that was requested
+          example: "RRN-99999999"
+        api_version:
+          type: string
+          example: "1.0"
+
+    RuriResolveResponse:
+      type: object
+      required: [success, ruri, data, api_version]
+      properties:
+        success:
+          type: boolean
+          example: true
+        api_version:
+          type: string
+          example: "1.0"
+        ruri:
+          type: string
+          description: The resolved RURI (decoded)
+          example: "rcan://rcan.dev/opencastor/rover/abcdef12"
+        data:
+          $ref: '#/components/schemas/Robot'
+
+    RuriNotFoundResponse:
+      type: object
+      required: [success, error, ruri, api_version]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "No robot found for this RURI"
+        ruri:
+          type: string
+          description: The RURI that was requested (decoded)
+          example: "rcan://rcan.dev/unknown/model/00000000"
+        api_version:
+          type: string
+          example: "1.0"
+
+    VerificationResponse:
+      type: object
+      required: [success, rrn, verification_status, verification_date, verification_method, api_version]
+      properties:
+        success:
+          type: boolean
+          example: true
+        rrn:
+          type: string
+          pattern: '^RRN-\d{8}$'
+          example: "RRN-00000001"
+        verification_status:
+          type: string
+          enum: [unverified, community, manufacturer_claimed, manufacturer_verified]
+          example: unverified
+        verification_date:
+          type: string
+          format: date
+          description: Date of most recent verification (null until a verification is recorded)
+          nullable: true
+          example: null
+        verification_method:
+          type: string
+          description: Method used for verification (null until a verification is recorded)
+          nullable: true
+          example: null
+        api_version:
+          type: string
+          example: "1.0"
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "RRN parameter is required"
+        rrn:
+          type: string
+          description: RRN involved in the error (when applicable)
+          nullable: true
+        api_version:
+          type: string
+          example: "1.0"
