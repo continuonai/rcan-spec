@@ -1,0 +1,267 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Robot Registry Foundation — Governance Proposal" description="Proposal for independent governance of the root RCAN robot registry. Robot Registry Foundation draft charter — seeking co-founders and endorsements.">
+
+  <h1>Robot Registry Foundation <span style="font-size:0.55em;color:var(--color-text-muted);font-weight:400;">Governance Proposal</span></h1>
+  <p>A proposal for a neutral, independent, multi-stakeholder body to operate the root RCAN robot registry as permanent public infrastructure.</p>
+
+  <!-- ─── STATUS BANNER ─────────────────────────────────────────── -->
+  <div style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);border-radius:.75rem;padding:1rem 1.25rem;margin:1.5rem 0;display:flex;align-items:center;gap:.75rem;">
+    <span style="font-size:1.25rem;">⚠️</span>
+    <div>
+      <strong style="color:#fbbf24;">DRAFT PROPOSAL</strong>
+      <span style="color:var(--color-text-muted);margin-left:.5rem;">— Seeking co-founders and endorsements.</span>
+      <span style="display:inline-block;margin-left:.5rem;">
+        <a href="https://github.com/continuonai/rcan-spec/issues/13" style="color:#fbbf24;">Join the discussion on GitHub issue #13 →</a>
+      </span>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- ─── THE PROBLEM ───────────────────────────────────────────── -->
+  <section>
+    <h2>The Problem</h2>
+    <p>Robot identity infrastructure today has no independent authority. Three gaps make the current situation untenable:</p>
+
+    <ul>
+      <li>
+        <strong>Manufacturer-controlled registries with no interoperability.</strong>
+        Each manufacturer operates its own robot registry on its own terms. When a manufacturer changes its policies, exits the market, or is acquired, the identity records of deployed robots can disappear. There is no shared namespace and no guarantee that a robot's identity will remain resolvable over its operational lifetime.
+      </li>
+      <li>
+        <strong>No neutral dispute resolution.</strong>
+        There is currently no body to adjudicate conflicts over Robot Registry Number prefixes, manufacturer impersonation, or registry abuse. Legal action in national courts — slow, expensive, and jurisdictionally fragmented — is the only recourse.
+      </li>
+      <li>
+        <strong>No registry of last resort.</strong>
+        No entity has an explicit mandate to preserve the root registry and guarantee that deployed robots can always resolve their identity. Infrastructure that depends on any single commercial entity's survival is fragile by design — and incompatible with safety-critical applications.
+      </li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <!-- ─── MISSION ───────────────────────────────────────────────── -->
+  <section>
+    <h2>Mission</h2>
+    <p>
+      The <strong>Robot Registry Foundation (RRF)</strong> will operate the root RCAN robot registry as
+      <strong>neutral, independent, public infrastructure</strong> — analogous to IANA/ICANN for the domain name system,
+      or the Linux Foundation for open-source governance.
+    </p>
+    <p>
+      The RRF will serve as the <em>registry of last resort</em>, ensuring that robot identity infrastructure remains
+      available and trustworthy regardless of any single organization's commercial fate.
+    </p>
+  </section>
+
+  <hr />
+
+  <!-- ─── GOVERNANCE PRINCIPLES ─────────────────────────────────── -->
+  <section>
+    <h2>Governance Principles</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0;">
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:.5rem;">🏛️</div>
+        <div style="font-weight:700;margin-bottom:.35rem;">Multi-stakeholder representation</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">No single sector — industry, government, academia, or civil society — dominates governance.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:.5rem;">🔒</div>
+        <div style="font-weight:700;margin-bottom:.35rem;">No single-entity control</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">No corporation, government, or individual holds a majority of board seats or unilateral control over registry data.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:.5rem;">🌐</div>
+        <div style="font-weight:700;margin-bottom:.35rem;">Open membership</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Membership is open to any organization or individual committed to the mission. Tiers reflect contribution, not gatekeeping.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:.5rem;">📢</div>
+        <div style="font-weight:700;margin-bottom:.35rem;">Transparent decision-making</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Board votes, financial statements, and policy changes are published publicly. Major decisions include a 30-day public comment period.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:1.5rem;margin-bottom:.5rem;">💻</div>
+        <div style="font-weight:700;margin-bottom:.35rem;">Open source software requirement</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">All registry software is released under an OSI-approved open source license — ensuring the community can continue operations independently.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ─── BOARD COMPOSITION ─────────────────────────────────────── -->
+  <section>
+    <h2>Proposed Board Composition</h2>
+    <p>The founding board will consist of <strong>10 voting seats</strong> plus non-voting government observers.</p>
+
+    <table>
+      <thead>
+        <tr><th>Seats</th><th>Constituency</th><th>Selection</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2</td>
+          <td>Robot manufacturers</td>
+          <td>Elected by manufacturer member organizations; rotating 2-year terms; no single manufacturer may hold both seats</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Safety standards bodies</td>
+          <td>Designated by <strong>ISO/TC 299</strong> (1 seat) and <strong>A3 — Association for Advancing Automation</strong> (1 seat)</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Academic / research institutions</td>
+          <td>Elected by academic member organizations</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Civil society</td>
+          <td>Elected by contributor-tier members</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Foundation general</td>
+          <td>Elected at large by all member classes combined</td>
+        </tr>
+        <tr>
+          <td style="color:var(--color-text-muted,#888);">—</td>
+          <td>Government observers <em style="font-size:.85rem;color:var(--color-text-muted,#888);">(non-voting)</em></td>
+          <td>Open to national standards bodies and regulatory agencies (NIST, EU Commission, BSI, etc.)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:.875rem;color:var(--color-text-muted,#888);margin-top:.75rem;">
+      Simple majority (6/10) for operational decisions · Supermajority (8/10) for charter amendments, policy changes, or dissolution.
+    </p>
+  </section>
+
+  <hr />
+
+  <!-- ─── MEMBERSHIP TIERS ───────────────────────────────────────── -->
+  <section>
+    <h2>Membership Tiers</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0;">
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.15);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Tier 1</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Founding Members</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Organizations co-creating this charter. Permanent recognition + board election seat. 3-year minimum commitment.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.15);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Tier 2</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Supporting Members</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Organizations operating RCAN registries or deploying RCAN-identified robots. Annual dues (sliding scale). Elects board seats.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.15);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Tier 3</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Contributors</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Individuals contributing to spec, registry software, or documentation. No financial obligation. Elects civil society board seat.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ─── REGISTRY OF LAST RESORT ────────────────────────────────── -->
+  <section>
+    <h2>Registry of Last Resort</h2>
+    <p>
+      The RRF's core operational guarantee is <strong>continuity of the root registry</strong> — independent of any single
+      organization's survival, including the RRF itself.
+    </p>
+    <ul>
+      <li><strong>Data escrow:</strong> Weekly cryptographically signed snapshots deposited with at least two independent escrow agents (e.g., Software Heritage Foundation, Internet Archive).</li>
+      <li><strong>Software escrow:</strong> The complete registry software stack is escrowed alongside data. Any organization can reconstruct and operate a functionally equivalent root registry.</li>
+      <li><strong>Succession plan:</strong> A named successor organization assumes operations if the RRF dissolves without an alternative arrangement.</li>
+      <li><strong>No data hostage:</strong> Registry data shall never be used as collateral or transferred to a for-profit entity without member consent.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <!-- ─── EU AI ACT ─────────────────────────────────────────────── -->
+  <section>
+    <h2>EU AI Act Relevance</h2>
+    <p>
+      The EU AI Act (Regulation 2024/1689) <strong>Art. 49</strong> requires providers of high-risk AI systems to register
+      in the EU database before market placement. Autonomous robots under <strong>Annex III</strong> — particularly those
+      operating in critical infrastructure or in physical proximity to persons — are likely to qualify.
+    </p>
+    <p>
+      The RRF is a candidate <strong>independent registration body</strong> accepted across jurisdictions, reducing compliance
+      burden for global robot deployments. RCAN's RRNs and RURIs provide the technical identity layer regulators require:
+      a unique persistent identifier per robot, a structured namespace for rapid regulatory lookup, and an audit chain
+      linking physical robot to registered identity.
+    </p>
+
+    <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;margin-top:1rem;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">Regulatory mapping</div>
+      <table style="margin:0;">
+        <thead>
+          <tr><th>Regulation</th><th>Relevance</th><th>RCAN/RRF role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EU AI Act Art. 49</td><td>High-risk AI registration requirement</td><td>RRF as candidate independent registration body</td></tr>
+          <tr><td>EU AI Act Annex III</td><td>Autonomous robots in critical infrastructure</td><td>RRN as persistent regulatory identifier</td></tr>
+          <tr><td>ISO/TC 299</td><td>Robotics safety standards</td><td>Standards body board seat + formal liaison</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ─── HOW TO GET INVOLVED ───────────────────────────────────── -->
+  <section>
+    <h2>How to Get Involved</h2>
+    <p>The Robot Registry Foundation does not yet exist as a legal entity. We are actively seeking co-founders and endorsers.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0;">
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-weight:700;margin-bottom:.4rem;">🤝 Co-found the RRF</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Comment on <a href="https://github.com/continuonai/rcan-spec/issues/13">issue #13</a> with your organization name and primary interest. No financial commitment required at this stage.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-weight:700;margin-bottom:.4rem;">📣 Endorse the proposal</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Post a statement of organizational endorsement on <a href="https://github.com/continuonai/rcan-spec/issues/13">issue #13</a>. Public endorsements help demonstrate community demand.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-weight:700;margin-bottom:.4rem;">📝 Contribute to the charter</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">Open a pull request against <code>docs/governance/</code> with proposed amendments. The charter is a living document.</div>
+      </div>
+      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
+        <div style="font-weight:700;margin-bottom:.4rem;">🏛️ Standards body liaison</div>
+        <div style="font-size:.85rem;color:var(--color-text-muted,#888);">If you represent a national standards body or regulatory agency, contact the RCAN maintainers directly to discuss a formal liaison arrangement.</div>
+      </div>
+    </div>
+
+    <p style="margin-top:1.5rem;text-align:center;">
+      <a href="https://github.com/continuonai/rcan-spec/issues/13"
+         style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;font-weight:700;padding:.75rem 2rem;border-radius:.5rem;text-decoration:none;font-size:1rem;">
+        → Join the discussion on GitHub issue #13
+      </a>
+    </p>
+
+    <p style="font-size:.875rem;color:var(--color-text-muted,#888);margin-top:1rem;">
+      We are particularly seeking input from robot manufacturers implementing RCAN, national standards bodies and regulatory agencies,
+      academic robotics departments, and civil society organizations working on AI accountability and public safety.
+    </p>
+  </section>
+
+  <hr />
+
+  <p>
+    <a href="/governance/robot-registry-foundation/">→ Read the full draft charter</a> &nbsp;·&nbsp;
+    <a href="https://github.com/continuonai/rcan-spec/blob/main/docs/governance/robot-registry-foundation.md">View on GitHub</a> &nbsp;·&nbsp;
+    <a href="/spec/">← Back to RCAN Spec</a>
+  </p>
+
+</BaseLayout>
