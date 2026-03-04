@@ -7,82 +7,75 @@ const tiers = [
     subtitle: 'Community',
     price: '$0',
     period: 'forever',
-    highlight: false,
-    badge: '⬜',
+    highlight: true,
+    badge: '🟡',
+    comingSoon: false,
     features: [
       'Up to 3 RRNs',
       'Community verification badge (🟡)',
       'Public registry listing',
       'API access — read-only, 100 req/day',
+      'QR code per robot',
     ],
     cta: 'Register for Free',
     ctaHref: '/registry/submit/',
-    ctaStyle: 'outline',
   },
   {
     name: 'Maker',
-    subtitle: '',
-    price: '$9',
-    period: '/year',
+    subtitle: 'For individual builders',
+    price: null,
+    period: null,
     highlight: false,
     badge: '🟡',
+    comingSoon: true,
     features: [
-      'Up to 25 RRNs',
-      'Community verification',
-      'QR code generation',
-      'API access — 1,000 req/day',
+      'More RRNs per account',
+      'Higher API rate limits',
       'Email support',
     ],
-    cta: 'Get Started',
-    ctaHref: '/registry/submit/',
-    ctaStyle: 'outline',
+    cta: 'Coming Soon',
+    ctaHref: null,
   },
   {
     name: 'Manufacturer',
-    subtitle: '',
-    price: '$299',
-    period: '/year',
-    highlight: true,
+    subtitle: 'For hardware companies',
+    price: null,
+    period: null,
+    highlight: false,
     badge: '🔵',
+    comingSoon: true,
     features: [
       'Unlimited RRNs',
       'Manufacturer-claimed verification (🔵)',
       'DNS TXT verification tool',
-      'API access — 10,000 req/day',
-      'Dedicated onboarding',
-      'Priority support',
+      'Higher API rate limits',
+      'Onboarding support',
     ],
-    cta: 'Contact Us',
-    ctaHref: 'mailto:hello@continuon.ai?subject=RCAN+Manufacturer+Plan',
-    ctaStyle: 'outline',
+    cta: 'Coming Soon',
+    ctaHref: null,
   },
   {
     name: 'Enterprise',
-    subtitle: '',
-    price: '$999',
-    period: '/year',
+    subtitle: 'For fleets & regulated deployments',
+    price: null,
+    period: null,
     highlight: false,
     badge: '✅',
+    comingSoon: true,
     features: [
       'Unlimited RRNs',
       'Manufacturer-verified tier (✅)',
       'Signed attestation review',
       'Live RURI endpoint monitoring',
       'EU AI Act Art. 49 registration support',
-      'SLA — 99.9% uptime',
-      'Custom API rate limits',
+      'SLA + custom API limits',
     ],
-    cta: 'Contact Us',
-    ctaHref: 'mailto:hello@continuon.ai?subject=RCAN+Enterprise+Plan',
-    ctaStyle: 'outline',
+    cta: 'Coming Soon',
+    ctaHref: null,
   },
 ];
 
 const faqs = [
-  {
-    q: 'Why charge for robot registration?',
-    a: 'Maintaining a globally distributed, always-on registry with verification tooling, API infrastructure, and legal entity support has real costs. Fees keep the registry independent, sustainable, and free from ad-based or data-sale business models. The Free tier ensures the registry is always accessible to the community.'
-  },
   {
     q: 'What is an RRN?',
     a: 'An RRN (Robot Registration Number) is a globally unique identifier assigned to a specific robot or robot model. Like a VIN for cars or an ISBN for books, an RRN provides a canonical, machine-readable reference that links to the robot\'s provenance, manufacturer, specifications, and ownership history.'
@@ -98,7 +91,7 @@ const faqs = [
 ];
 ---
 
-<BaseLayout title="Pricing — RCAN Robot Registry" description="Simple, transparent pricing for robot registration. Like domain registration for robots. Free community tier, Maker, Manufacturer, and Enterprise plans.">
+<BaseLayout title="Registration — RCAN Robot Registry" description="Register your robot for free during early access. Paid tiers for manufacturers and enterprise deployments coming soon.">
   
   <!-- Hero -->
   <div class="text-center py-20 border-b border-white/5">
@@ -110,8 +103,8 @@ const faqs = [
       Register Your Robot
     </h1>
     <p class="text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
-      Simple, transparent pricing — like domain registration for robots.
-      Choose the tier that fits your scale.
+      Registration is free while the registry is in early access.
+      Paid tiers for manufacturers, fleets, and enterprise deployments are coming — pricing will be set when the Robot Registry Foundation governance is established.
     </p>
   </div>
 
@@ -120,23 +113,30 @@ const faqs = [
     <div class="max-w-7xl mx-auto px-6">
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {tiers.map(tier => (
-          <div class={`relative flex flex-col rounded-2xl border p-8 transition-all duration-300 hover:-translate-y-1 ${tier.highlight ? 'border-accent/50 bg-accent/5 shadow-[0_0_40px_-10px_rgba(34,211,238,0.3)]' : 'border-white/10 bg-bg-alt/30 hover:border-white/20'}`}>
-            {tier.highlight && (
+          <div class={`relative flex flex-col rounded-2xl border p-8 transition-all duration-300 ${tier.comingSoon ? 'opacity-60 border-white/5 bg-bg-alt/20' : 'hover:-translate-y-1 border-accent/50 bg-accent/5 shadow-[0_0_40px_-10px_rgba(34,211,238,0.3)]'}`}>
+            {!tier.comingSoon && (
               <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-accent text-bg text-xs font-bold rounded-full shadow-lg whitespace-nowrap">
-                Most Popular
+                Available Now
               </div>
             )}
-            
+            {tier.comingSoon && (
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-white/10 text-text-muted text-xs font-medium rounded-full whitespace-nowrap border border-white/10">
+                Coming Soon
+              </div>
+            )}
+
             <!-- Header -->
             <div class="mb-6">
               <div class="flex items-center gap-2 mb-2">
                 <span class="text-2xl">{tier.badge}</span>
-                <h3 class="text-xl font-bold text-text">{tier.name}</h3>
-                {tier.subtitle && <span class="text-xs text-text-muted bg-white/5 px-2 py-0.5 rounded-full">{tier.subtitle}</span>}
+                <h3 class={`text-xl font-bold ${tier.comingSoon ? 'text-text-muted' : 'text-text'}`}>{tier.name}</h3>
               </div>
+              {tier.subtitle && <p class="text-xs text-text-muted mb-3">{tier.subtitle}</p>}
               <div class="flex items-baseline gap-1">
-                <span class={`text-4xl font-bold ${tier.highlight ? 'text-accent' : 'text-text'}`}>{tier.price}</span>
-                <span class="text-text-muted text-sm">{tier.period}</span>
+                {tier.comingSoon
+                  ? <span class="text-sm text-text-muted italic">Pricing TBD</span>
+                  : <><span class="text-4xl font-bold text-accent">{tier.price}</span><span class="text-text-muted text-sm">{tier.period}</span></>
+                }
               </div>
             </div>
 
@@ -144,19 +144,17 @@ const faqs = [
             <ul class="space-y-3 flex-grow mb-8">
               {tier.features.map(feat => (
                 <li class="flex items-start gap-2.5 text-sm text-text-muted">
-                  <svg xmlns="http://www.w3.org/2000/svg" class={`w-4 h-4 mt-0.5 flex-shrink-0 ${tier.highlight ? 'text-accent' : 'text-green-400'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" class={`w-4 h-4 mt-0.5 flex-shrink-0 ${tier.comingSoon ? 'text-white/20' : 'text-accent'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   {feat}
                 </li>
               ))}
             </ul>
 
             <!-- CTA -->
-            <a
-              href={tier.ctaHref}
-              class={`block text-center py-3 px-6 rounded-xl font-semibold text-sm transition-all duration-200 ${tier.highlight ? 'bg-accent text-bg hover:bg-accent-hover shadow-[0_0_20px_-5px_var(--color-accent)]' : 'bg-white/5 text-text border border-white/10 hover:bg-white/10 hover:border-white/20'}`}
-            >
-              {tier.cta}
-            </a>
+            {tier.comingSoon
+              ? <div class="block text-center py-3 px-6 rounded-xl font-semibold text-sm bg-white/5 text-text-muted border border-white/5 cursor-not-allowed select-none">Coming Soon</div>
+              : <a href={tier.ctaHref} class="block text-center py-3 px-6 rounded-xl font-semibold text-sm transition-all duration-200 bg-accent text-bg hover:bg-accent-hover shadow-[0_0_20px_-5px_var(--color-accent)]">{tier.cta}</a>
+            }
           </div>
         ))}
       </div>
