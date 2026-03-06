@@ -249,28 +249,32 @@ function isActive(href: string) {
     </button>
   </div>
 
-  <!-- Mobile Nav Overlay — hidden by default, toggled via JS -->
-  <div
-    id="mobile-menu"
-    class="fixed left-0 right-0 bottom-0 top-16 bg-[#0a0a0f]/97 backdrop-blur-xl border-t border-white/5 flex-col p-6 gap-1 overflow-y-auto z-[9999] hidden"
-  >
-    {mobileLinks.map(link => (
-      <a
-        href={link.href}
-        target={link.external ? "_blank" : undefined}
-        rel={link.external ? "noopener noreferrer" : undefined}
-        class:list={[
-          "text-base font-medium transition-colors py-2.5 border-b border-white/5",
-          link.label.startsWith('—') ? 'pl-5 text-sm text-text-muted/70' : 'text-text-muted',
-          isActive(link.href) && !link.external ? 'text-accent' : 'hover:text-accent',
-          link.label === 'Quickstart' ? 'text-emerald-400' : ''
-        ]}
-      >
-        {link.label}
-      </a>
-    ))}
-  </div>
 </header>
+
+<!-- Mobile Nav Overlay: sits OUTSIDE <header> so backdrop-filter stacking context cannot trap it -->
+<div
+  id="mobile-menu"
+  class="fixed left-0 right-0 bottom-0 top-16 bg-[#0a0a0f] border-t border-white/5 flex-col p-6 gap-1 overflow-y-auto z-[9999] hidden"
+  style="overscroll-behavior: contain;"
+>
+  {mobileLinks.map(link => (
+    <a
+      href={link.href}
+      target={link.external ? "_blank" : undefined}
+      rel={link.external ? "noopener noreferrer" : undefined}
+      class:list={[
+        "text-base font-medium transition-colors py-3 border-b border-white/5 block",
+        link.label.startsWith('—') ? 'pl-5 text-sm text-text-muted/70' : 'text-text-muted',
+        isActive(link.href) && !link.external ? 'text-accent' : 'hover:text-accent',
+        link.label === 'Quickstart' ? 'text-emerald-400' : ''
+      ]}
+    >
+      {link.label}
+    </a>
+  ))}
+  <!-- Bottom padding so last item isn't clipped by browser chrome -->
+  <div class="h-8 flex-shrink-0"></div>
+</div>
 
 <script>
   // Mobile nav toggle
