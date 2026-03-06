@@ -54,8 +54,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rcan-py, rcan-ts]
     if: always()
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write sdk-status.json
         run: |
