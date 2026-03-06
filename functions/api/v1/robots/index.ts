@@ -18,6 +18,100 @@ interface Env {
   RCAN_ADMIN_TOKEN?: string;      // for admin operations
 }
 
+// ── Webhook delivery (fire-and-forget via context.waitUntil) ──────────────────
+
+/**
+ * Deliver a record-change event to all registered webhooks for a namespace prefix.
+ * Called with context.waitUntil() so it doesn't block the response.
+ */
+async function deliverWebhooks(
+  env: Env,
+  rrn: string,
+  record: unknown
+): Promise<void> {
+  // Extract namespace prefix from RRN (e.g. "BD" from "RRN-BD-000000000001")
+  const prefix = rrn.match(/^RRN-([A-Z0-9]{2,8})-/)?.[1] ?? null;
+  if (!prefix) return; // root RRNs don't have delegated webhooks
+
+  let webhooks: Array<Record<string, unknown>>;
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT id, webhook_url FROM webhooks
+       WHERE node_prefix = ? AND failure_count < 5`
+    )
+      .bind(prefix)
+      .all();
+    webhooks = results as Array<Record<string, unknown>>;
+  } catch {
+    return; // webhooks table may not exist yet
+  }
+
+  for (const webhook of webhooks) {
+    try {
+      const payload = JSON.stringify({
+        event: "record.updated",
+        rrn,
+        record,
+        timestamp: new Date().toISOString(),
+      });
+      const res = await fetch(String(webhook.webhook_url), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-RCAN-Delivery": "webhook/1.0",
+        },
+        body: payload,
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await env.DB.prepare(
+        `UPDATE webhooks SET last_delivered_at = datetime('now'), failure_count = 0 WHERE id = ?`
+      )
+        .bind(webhook.id)
+        .run();
+    } catch {
+      await env.DB.prepare(
+        `UPDATE webhooks SET failure_count = failure_count + 1 WHERE id = ?`
+      )
+        .bind(webhook.id)
+        .run();
+    }
+  }
+}
+
+// ── Admin auth check (D1 api_keys table, falls back to env var) ───────────────
+
+async function verifyGlobalAdminAuth(
+  token: string,
+  env: Env
+): Promise<boolean> {
+  try {
+    const keyHash = await sha256(token);
+    const now = new Date().toISOString();
+    const activeKey = await env.DB.prepare(
+      `SELECT id FROM api_keys
+       WHERE key_hash = ? AND active_from <= ? AND revoked_at IS NULL`
+    )
+      .bind(keyHash, now)
+      .first();
+
+    if (activeKey) return true;
+
+    const count = await env.DB.prepare(
+      `SELECT COUNT(*) as c FROM api_keys WHERE revoked_at IS NULL`
+    ).first<{ c: number }>();
+
+    // If there are keys in D1 but none matched, deny admin access
+    if (count && count.c > 0) return false;
+  } catch {
+    // api_keys table may not exist yet — fall through
+  }
+
+  // Fallback: env var admin token
+  if (env.RCAN_ADMIN_TOKEN && token === env.RCAN_ADMIN_TOKEN) return true;
+  return false;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function json(data: unknown, status = 200): Response {
@@ -329,9 +423,9 @@ async function handleDelete(rrn: string, req: Request, env: Env): Promise<Respon
 
   if (!robot) return err(`Robot not found: ${rrn}`, 404);
   if (robot.api_key_hash !== keyHash) {
-    // Allow admin token too
-    const adminToken = env.RCAN_ADMIN_TOKEN;
-    if (!adminToken || token !== adminToken) return err("Invalid API key", 403);
+    // Allow global admin auth (D1 api_keys table or RCAN_ADMIN_TOKEN env var)
+    const isAdmin = await verifyGlobalAdminAuth(token, env);
+    if (!isAdmin) return err("Invalid API key", 403);
   }
 
   await env.DB.prepare(
@@ -347,8 +441,9 @@ export async function onRequest(context: {
   request: Request;
   env: Env;
   params: Record<string, string>;
+  waitUntil: (p: Promise<unknown>) => void;
 }): Promise<Response> {
-  const { request, env } = context;
+  const { request, env, waitUntil } = context;
   const method = request.method.toUpperCase();
   const url = new URL(request.url);
 
@@ -364,7 +459,19 @@ export async function onRequest(context: {
     if (rrnMatch) {
       const rrn = rrnMatch[1].toUpperCase();
       if (method === "GET") return await handleGet(rrn, env);
-      if (method === "PATCH") return await handleUpdate(rrn, request, env);
+      if (method === "PATCH") {
+        const res = await handleUpdate(rrn, request, env);
+        // Fire webhook delivery for successful updates
+        if (res.status === 200) {
+          try {
+            const updated = await res.clone().json() as Record<string, unknown>;
+            if (typeof waitUntil === "function") {
+              waitUntil(deliverWebhooks(env, rrn, updated));
+            }
+          } catch { /* ignore */ }
+        }
+        return res;
+      }
       if (method === "DELETE") return await handleDelete(rrn, request, env);
       return err("Method not allowed", 405);
     }
@@ -372,7 +479,20 @@ export async function onRequest(context: {
     // /api/v1/robots — collection operations
     if (path.endsWith("/api/v1/robots") || path.endsWith("/api/v1/robots/")) {
       if (method === "GET") return await handleList(request, env);
-      if (method === "POST") return await handleRegister(request, env);
+      if (method === "POST") {
+        const res = await handleRegister(request, env);
+        // Fire webhook delivery for new registrations
+        if (res.status === 201) {
+          try {
+            const created = await res.clone().json() as Record<string, unknown>;
+            const rrn = String(created.rrn ?? "");
+            if (rrn && typeof waitUntil === "function") {
+              waitUntil(deliverWebhooks(env, rrn, created));
+            }
+          } catch { /* ignore */ }
+        }
+        return res;
+      }
       return err("Method not allowed", 405);
     }
 
