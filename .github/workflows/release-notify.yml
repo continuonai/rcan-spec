@@ -1,0 +1,45 @@
+name: Release Notify — file SDK update issues on new spec tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  notify-sdks:
+    name: File SDK update issues
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Extract version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: File rcan-py update issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.RCAN_SDK_PAT || github.token }}
+          script: |
+            const tag = '${{ steps.version.outputs.tag }}';
+            await github.rest.issues.create({
+              owner: 'continuonai',
+              repo: 'rcan-py',
+              title: `chore: update SDK for rcan-spec ${tag}`,
+              body: `rcan-spec was tagged **${tag}**.\n\nPlease update rcan-py to maintain spec compatibility:\n- [ ] Review spec changelog at https://rcan.dev/changelog\n- [ ] Update conformance tests if needed\n- [ ] Bump version and release\n\nTriggered by: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/releases/tag/${tag}`,
+              labels: ['spec-sync'],
+            });
+
+      - name: File rcan-ts update issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.RCAN_SDK_PAT || github.token }}
+          script: |
+            const tag = '${{ steps.version.outputs.tag }}';
+            await github.rest.issues.create({
+              owner: 'continuonai',
+              repo: 'rcan-ts',
+              title: `chore: update SDK for rcan-spec ${tag}`,
+              body: `rcan-spec was tagged **${tag}**.\n\nPlease update @continuonai/rcan-ts to maintain spec compatibility:\n- [ ] Review spec changelog at https://rcan.dev/changelog\n- [ ] Update conformance tests if needed\n- [ ] Bump version and publish to npm\n\nTriggered by: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/releases/tag/${tag}`,
+              labels: ['spec-sync'],
+            });

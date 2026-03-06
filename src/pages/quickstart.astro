@@ -16,15 +16,61 @@ const description = "From zero to your first RCAN message in 5 minutes.";
     <span class="text-accent font-mono text-lg mr-2">01</span>Install the SDK
   </h2>
 
-  <CodeWindow language="bash" title="Terminal" code={`pip install rcan
+  <!-- SDK Tabs -->
+  <div class="not-prose my-6">
+    <div class="flex gap-2 mb-0 border-b border-white/10" id="sdk-tabs">
+      <button class="sdk-tab px-4 py-2 text-sm font-medium rounded-t-lg border border-b-0 border-white/10 bg-accent/10 text-accent transition-all" data-tab="python">Python</button>
+      <button class="sdk-tab px-4 py-2 text-sm font-medium rounded-t-lg border border-b-0 border-white/10 bg-bg-alt/30 text-text-muted hover:text-white transition-all" data-tab="typescript">TypeScript</button>
+      <button class="sdk-tab px-4 py-2 text-sm font-medium rounded-t-lg border border-b-0 border-white/10 bg-bg-alt/30 text-text-muted hover:text-white transition-all" data-tab="curl">curl / CDN</button>
+    </div>
 
-# Optional extras
-pip install rcan[http]    # registry client (httpx)
-pip install rcan[crypto]  # Ed25519 message signing
-pip install rcan[all]     # everything
+    <div id="tab-python" class="sdk-panel rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
+      <pre class="text-green-400"># Install</pre>
+      <pre class="text-white">pip install rcan</pre>
+      <pre class="text-text-muted mt-2"># Optional extras</pre>
+      <pre class="text-white">pip install rcan[http]    <span class="text-text-muted"># registry client (httpx)</span></pre>
+      <pre class="text-white">pip install rcan[crypto]  <span class="text-text-muted"># Ed25519 message signing</span></pre>
+      <pre class="text-white">pip install rcan[all]     <span class="text-text-muted"># everything</span></pre>
+    </div>
 
-# TypeScript / JavaScript
-npm install rcan-ts`} />
+    <div id="tab-typescript" class="sdk-panel hidden rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
+      <pre class="text-green-400"># Install</pre>
+      <pre class="text-white">npm install @continuonai/rcan-ts</pre>
+      <pre class="text-text-muted mt-2"># or yarn</pre>
+      <pre class="text-white">yarn add @continuonai/rcan-ts</pre>
+      <pre class="text-text-muted mt-2"># Import</pre>
+      <pre class="text-white">import &#123; RobotURI, RCANMessage, ConfidenceGate &#125; from '@continuonai/rcan-ts';</pre>
+    </div>
+
+    <div id="tab-curl" class="sdk-panel hidden rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
+      <pre class="text-green-400"># CDN (no build step)</pre>
+      <pre class="text-white">&lt;script src="https://unpkg.com/@continuonai/rcan-ts/dist/rcan.iife.js"&gt;&lt;/script&gt;</pre>
+      <pre class="text-white">&lt;script&gt;const uri = RCAN.RobotURI.parse('rcan://registry.rcan.dev/acme/arm/v1/unit-001');&lt;/script&gt;</pre>
+      <pre class="text-text-muted mt-2"># Registry API (curl)</pre>
+      <pre class="text-white">curl https://rcan.dev/api/v1/robots \</pre>
+      <pre class="text-white">  -H 'Content-Type: application/json' \</pre>
+      <pre class="text-white">  -d '&#123;"manufacturer":"acme","model":"arm","version":"v1","device_id":"unit-001"&#125;'</pre>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.sdk-tab');
+    const panels = document.querySelectorAll<HTMLElement>('.sdk-panel');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach(t => {
+          t.classList.toggle('bg-accent/10', t.dataset.tab === target);
+          t.classList.toggle('text-accent', t.dataset.tab === target);
+          t.classList.toggle('bg-bg-alt/30', t.dataset.tab !== target);
+          t.classList.toggle('text-text-muted', t.dataset.tab !== target);
+        });
+        panels.forEach(p => {
+          p.classList.toggle('hidden', p.id !== `tab-${target}`);
+        });
+      });
+    });
+  </script>
 
   <!-- Step 2 -->
   <h2 id="robot-uri">
