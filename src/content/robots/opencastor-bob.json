@@ -1,0 +1,19 @@
+{
+  "rrn": "RRN-00000001",
+  "name": "OpenCastor Bob",
+  "manufacturer": "ContinuonAI",
+  "model": "opencastor-rpi5",
+  "description": "Reference implementation of an RCAN-Swarm Safe robot running OpenCastor on a Raspberry Pi 5 with Hailo-8 NPU and OAK-D camera.",
+  "status": "active",
+  "production_year": 2026,
+  "specs": {
+    "compute": "Raspberry Pi 5 16GB + Hailo-8",
+    "sensors": ["OAK-D RGB+Depth", "Hailo-8 NPU"],
+    "ros_version": []
+  },
+  "verification_status": "community",
+  "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
+  "tags": ["rpi5", "hailo", "oak-d", "rcan-swarm-safe"],
+  "submitted_by": "craigm26",
+  "submitted_date": "2026-03-06"
+}

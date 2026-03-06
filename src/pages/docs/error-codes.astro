@@ -231,12 +231,12 @@ try &#123;
 try:
     robot = client.resolve("RRN-BD-000000000001")
 except RCANNodeNotFoundError as e:
-    print(f"RRN not found: {e.rrn}")
+    print(f"RRN not found: &#123;e.rrn&#125;")
 except RCANNodeTrustError as e:
     # e.reason: 'invalid_signature' | 'expired_cert' | ...
-    print(f"Trust failure: {e.reason}")
+    print(f"Trust failure: &#123;e.reason&#125;")
 except RCANGateError as e:
-    print(f"Gate blocked: {e.value} &lt; {e.threshold}")</code></pre>
+    print(f"Gate blocked: &#123;e.value&#125; &lt; &#123;e.threshold&#125;")</code></pre>
   </section>
 
   <!-- Back links -->
