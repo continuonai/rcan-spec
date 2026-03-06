@@ -14,13 +14,13 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.0",
-    "@astrojs/tailwind": "^5.1.5",
+    "@astrojs/tailwind": "^6.0.2",
     "@types/qrcode": "^1.5.6",
-    "@types/three": "^0.182.0",
+    "@types/three": "^0.183.1",
     "astro": "^5.18.0",
     "qrcode": "^1.5.4",
     "tailwindcss": "^3.4.19",
-    "three": "^0.182.0",
+    "three": "^0.183.2",
     "urdf-loader": "^0.12.6"
   },
   "devDependencies": {
