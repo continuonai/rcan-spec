@@ -1,0 +1,71 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+
+const matrix = await fetch(
+  new URL("../../public/compatibility.json", import.meta.url)
+)
+  .then((r) => r.json())
+  .catch(() => null);
+
+const rows = matrix?.spec_versions ?? [];
+
+const statusBadge: Record<string, string> = {
+  current: "bg-emerald-900/40 text-emerald-300 border border-emerald-700",
+  archived: "bg-zinc-800 text-zinc-400 border border-zinc-700",
+  draft: "bg-yellow-900/40 text-yellow-300 border border-yellow-700",
+};
+---
+
+<BaseLayout title="SDK Compatibility — RCAN" description="Which SDK version implements which RCAN spec version.">
+  <SiteHeader />
+  <main class="max-w-4xl mx-auto px-6 py-16">
+    <h1 class="text-3xl font-bold text-white mb-2">SDK Compatibility Matrix</h1>
+    <p class="text-zinc-400 mb-10">
+      Which SDK version implements which RCAN spec version. Always pin your SDK to a version that supports your target spec.
+    </p>
+
+    <div class="overflow-x-auto rounded-xl border border-zinc-800">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-zinc-900 text-zinc-400 uppercase text-xs tracking-wider">
+          <tr>
+            <th class="px-5 py-4">Spec</th>
+            <th class="px-5 py-4">Status</th>
+            <th class="px-5 py-4">rcan-py</th>
+            <th class="px-5 py-4">rcan-ts</th>
+            <th class="px-5 py-4">OpenCastor</th>
+            <th class="px-5 py-4">Notes</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800">
+          {rows.map((row: any) => (
+            <tr class="bg-zinc-950 hover:bg-zinc-900/60 transition-colors">
+              <td class="px-5 py-4 font-mono font-semibold text-cyan-400">
+                v{row.version}
+              </td>
+              <td class="px-5 py-4">
+                <span class={`px-2 py-0.5 rounded text-xs font-medium ${statusBadge[row.status] ?? statusBadge.archived}`}>
+                  {row.status}
+                </span>
+              </td>
+              <td class="px-5 py-4 font-mono text-zinc-200">{row.rcan_py ?? "—"}</td>
+              <td class="px-5 py-4 font-mono text-zinc-200">{row.rcan_ts ?? "—"}</td>
+              <td class="px-5 py-4 font-mono text-zinc-200">{row.opencastor ?? "—"}</td>
+              <td class="px-5 py-4 text-zinc-400 text-xs">{row.notes ?? ""}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-8 p-5 rounded-xl bg-zinc-900 border border-zinc-800">
+      <h2 class="text-lg font-semibold text-white mb-2">Machine-readable</h2>
+      <p class="text-zinc-400 text-sm mb-3">
+        Fetch <code class="text-cyan-400">/compatibility.json</code> to query the matrix programmatically.
+      </p>
+      <pre class="bg-zinc-950 rounded-lg p-4 text-xs text-zinc-300 overflow-x-auto"><code>curl https://rcan.dev/compatibility.json</code></pre>
+    </div>
+
+    <p class="mt-6 text-xs text-zinc-600">Last updated: {matrix?.updated ?? "unknown"}</p>
+  </main>
+</BaseLayout>
