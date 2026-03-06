@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/rcan-robot.schema.json",
+  "title": "RCAN Robot Record",
+  "type": "object",
+  "required": ["rrn", "name", "manufacturer", "model", "rcan_version"],
+  "properties": {
+    "rrn": { "type": "string", "pattern": "^RRN(-[A-Z0-9]+)?-[0-9]{8}$" },
+    "name": { "type": "string" },
+    "manufacturer": { "type": "string" },
+    "model": { "type": "string" },
+    "rcan_version": { "type": "string", "pattern": "^\\d+\\.\\d+(\\.\\d+)?$" },
+    "verification_tier": { "type": "string", "enum": ["community", "verified", "certified", "accredited"] },
+    "registered_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "node_id": { "type": "string" },
+    "public_key": { "type": "string" }
+  }
+}

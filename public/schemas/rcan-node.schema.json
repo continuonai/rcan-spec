@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/rcan-node.schema.json",
+  "title": "RCAN Node Manifest",
+  "type": "object",
+  "required": ["rcan_node_version", "node_type", "operator", "namespace_prefix", "public_key", "api_base"],
+  "properties": {
+    "rcan_node_version": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "node_type": { "type": "string", "enum": ["root", "authoritative", "resolver", "cache"] },
+    "operator": { "type": "string" },
+    "namespace_prefix": { "type": "string", "pattern": "^RRN(-[A-Z0-9]+)?$" },
+    "public_key": { "type": "string", "pattern": "^ed25519:.+" },
+    "api_base": { "type": "string", "format": "uri" },
+    "registry_ui": { "type": "string", "format": "uri" },
+    "spec_version": { "type": "string" },
+    "capabilities": { "type": "array", "items": { "type": "string" } },
+    "sync_endpoint": { "type": "string", "format": "uri" },
+    "last_sync": { "type": "string", "format": "date-time" },
+    "ttl_seconds": { "type": "integer", "minimum": 60 },
+    "contact": { "type": "string" },
+    "governance": { "type": "string", "format": "uri" },
+    "federation_protocol": { "type": "string", "format": "uri" }
+  }
+}
