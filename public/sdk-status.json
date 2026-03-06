@@ -1,5 +1,16 @@
 {
-  "updated": "2026-03-06T19:50:39Z",
-  "rcan_py": "success",
-  "rcan_ts": "success"
+  "updated": "2026-03-06T20:00:47Z",
+  "spec_version": "1.2",
+  "sdks": {
+    "rcan-py": {
+      "version": "0.2.0",
+      "status": "pass",
+      "pypi": "https://pypi.org/project/rcan/"
+    },
+    "rcan-ts": {
+      "version": "0.2.0",
+      "status": "failure",
+      "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts"
+    }
+  }
 }
