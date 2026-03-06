@@ -1,0 +1,33 @@
+---
+/**
+ * VerificationBadge — shows robot verification tier inline.
+ * Tiers: community | verified | manufacturer | certified
+ */
+
+interface Props {
+  tier: string;
+  size?: 'sm' | 'md';
+  showLabel?: boolean;
+}
+
+const { tier = 'community', size = 'md', showLabel = true } = Astro.props;
+
+const tiers: Record<string, { emoji: string; label: string; color: string; bg: string; border: string }> = {
+  community:    { emoji: '⬜', label: 'Community',    color: 'text-text-muted',   bg: 'bg-white/5',         border: 'border-white/10' },
+  verified:     { emoji: '🟡', label: 'Verified',     color: 'text-yellow-400',   bg: 'bg-yellow-500/10',   border: 'border-yellow-500/25' },
+  manufacturer: { emoji: '🔵', label: 'Manufacturer', color: 'text-blue-400',     bg: 'bg-blue-500/10',     border: 'border-blue-500/25' },
+  certified:    { emoji: '✅', label: 'Certified',    color: 'text-emerald-400',  bg: 'bg-emerald-500/10',  border: 'border-emerald-500/25' },
+};
+
+const t = tiers[tier.toLowerCase()] ?? tiers.community;
+const sizeClass = size === 'sm' ? 'text-[10px] px-1.5 py-0.5 gap-1' : 'text-xs px-2 py-1 gap-1.5';
+---
+
+<a
+  href={`/registry/verification/#${tier.toLowerCase()}`}
+  class={`inline-flex items-center font-medium rounded-full border transition-opacity hover:opacity-80 ${sizeClass} ${t.color} ${t.bg} ${t.border}`}
+  title={`Verification tier: ${t.label}`}
+>
+  <span>{t.emoji}</span>
+  {showLabel && <span>{t.label}</span>}
+</a>

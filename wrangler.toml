@@ -1,0 +1,27 @@
+# Cloudflare Pages + Workers config for rcan.dev
+# https://developers.cloudflare.com/pages/functions/
+
+name = "rcan-registry"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rcan-registry"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"   # wrangler d1 create rcan-registry
+
+[vars]
+RCAN_API_KEY_SALT = "REPLACE_WITH_RANDOM_SECRET"
+
+# Secrets (set via wrangler secret put):
+#   RCAN_ADMIN_TOKEN  — admin override token
+#   RCAN_API_KEY_SALT — salt for API key hashing (override the var above)
+
+# Deploy:
+#   1. Create D1 database:   wrangler d1 create rcan-registry
+#   2. Apply schema:         wrangler d1 execute rcan-registry --file=schema/robots-d1.sql
+#   3. Set secrets:          wrangler secret put RCAN_API_KEY_SALT
+#   4. Deploy:               wrangler pages deploy dist
+#
+# Or connect via Cloudflare Pages dashboard:
+#   Settings → Functions → D1 database bindings → Add binding: DB → rcan-registry
