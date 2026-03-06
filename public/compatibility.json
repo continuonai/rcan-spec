@@ -2,35 +2,28 @@
   "updated": "2026-03-06",
   "spec_versions": [
     {
-      "version": "1.0",
-      "status": "archived",
-      "rcan_py": "0.0.x",
-      "rcan_ts": null,
-      "opencastor": "2026.2.x",
-      "notes": "Initial release"
+      "version": "1.2",
+      "status": "current",
+      "rcan_py": ">=0.2.0",
+      "rcan_ts": ">=0.2.0",
+      "opencastor": ">=2026.3.7.0",
+      "notes": "Adds §17 Distributed Registry Node Protocol"
     },
     {
       "version": "1.1",
       "status": "archived",
-      "rcan_py": "0.0.x",
-      "rcan_ts": null,
-      "opencastor": "2026.2.19.x",
-      "notes": "Commitment chain, message signing"
+      "rcan_py": "0.1.x",
+      "rcan_ts": "0.1.x",
+      "opencastor": "2026.2.x",
+      "notes": "AI Accountability Layer (§16)"
     },
     {
-      "version": "1.2",
-      "status": "current",
-      "rcan_py": ">=0.1.0",
-      "rcan_ts": ">=0.1.0",
-      "opencastor": ">=2026.3.3.0",
-      "notes": "AI Accountability Layer (confidence gate, HiTL, thought log)",
-      "api_changes": [
-        {
-          "version": "v1.2",
-          "endpoint": "GET /api/v1/robots",
-          "change": "Added offset-based pagination: ?limit=&offset= params. Response now includes top-level { robots, total, limit, offset, next_offset } alongside legacy pagination block. Default limit=20, max limit=100."
-        }
-      ]
+      "version": "1.0",
+      "status": "archived",
+      "rcan_py": null,
+      "rcan_ts": null,
+      "opencastor": "2026.2.19.x",
+      "notes": "Initial release"
     }
   ]
 }

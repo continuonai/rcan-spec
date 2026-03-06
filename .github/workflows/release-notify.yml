@@ -1,57 +1,102 @@
-name: Release Notify — file SDK update issues on new spec tag
+name: Release Notify — SDK Update Issues
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to notify for (defaults to latest tag)'
+        required: false
+
+permissions:
+  contents: read
 
 jobs:
   notify-sdks:
     name: File SDK update issues
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
     steps:
-      - name: Extract version
-        id: version
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+
+      - name: Determine tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
 
       - name: File rcan-py update issue
-        # Requires RCAN_SDK_PAT secret (classic PAT with repo scope on continuonai org)
-        # Without it, this step is skipped gracefully — add the secret to enable cross-repo notifications
-        if: ${{ secrets.RCAN_SDK_PAT != '' }}
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.RCAN_SDK_PAT }}
-          script: |
-            const tag = '${{ steps.version.outputs.tag }}';
-            await github.rest.issues.create({
-              owner: 'continuonai',
-              repo: 'rcan-py',
-              title: `chore: update SDK for rcan-spec ${tag}`,
-              body: `rcan-spec was tagged **${tag}**.\n\nPlease update rcan-py to maintain spec compatibility:\n- [ ] Review spec changelog at https://rcan.dev/changelog\n- [ ] Update conformance tests if needed\n- [ ] Bump version and release\n\nTriggered by: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/releases/tag/${tag}`,
-              labels: ['spec-sync'],
-            });
+        env:
+          GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
+        run: |
+          gh issue create \
+            --repo continuonai/rcan-py \
+            --title "chore: update SDK for RCAN spec ${{ steps.tag.outputs.tag }}" \
+            --body "## RCAN Spec ${{ steps.tag.outputs.tag }} Released
+
+The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
+
+### Checklist
+- [ ] Update \`SPEC_VERSION\` in \`rcan/validate.py\` to \`${{ steps.tag.outputs.version }}\`
+- [ ] Update \`SPEC_COMPATIBILITY\` in \`rcan/types.py\`
+- [ ] Run full test suite: \`python -m pytest tests/ -x\`
+- [ ] Bump version in \`pyproject.toml\` if breaking changes
+- [ ] Publish to PyPI
+
+**Spec changelog:** https://rcan.dev/changelog/
+**Spec diff:** https://github.com/continuonai/rcan-spec/releases/tag/${{ steps.tag.outputs.tag }}" \
+          || echo "Issue may already exist, continuing"
 
       - name: File rcan-ts update issue
-        if: ${{ secrets.RCAN_SDK_PAT != '' }}
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.RCAN_SDK_PAT }}
-          script: |
-            const tag = '${{ steps.version.outputs.tag }}';
-            await github.rest.issues.create({
-              owner: 'continuonai',
-              repo: 'rcan-ts',
-              title: `chore: update SDK for rcan-spec ${tag}`,
-              body: `rcan-spec was tagged **${tag}**.\n\nPlease update @continuonai/rcan-ts to maintain spec compatibility:\n- [ ] Review spec changelog at https://rcan.dev/changelog\n- [ ] Update conformance tests if needed\n- [ ] Bump version and publish to npm\n\nTriggered by: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/releases/tag/${tag}`,
-              labels: ['spec-sync'],
-            });
-
-      - name: Summary (no PAT configured)
-        if: ${{ secrets.RCAN_SDK_PAT == '' }}
+        env:
+          GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
-          echo "ℹ️ RCAN_SDK_PAT secret not configured — skipping cross-repo issue creation."
-          echo "To enable: add a classic PAT with repo scope as RCAN_SDK_PAT in continuonai/rcan-spec Settings → Secrets."
+          gh issue create \
+            --repo continuonai/rcan-ts \
+            --title "chore: update SDK for RCAN spec ${{ steps.tag.outputs.tag }}" \
+            --body "## RCAN Spec ${{ steps.tag.outputs.tag }} Released
+
+The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
+
+### Checklist
+- [ ] Update \`SPEC_VERSION\` constant in \`src/validate.ts\`
+- [ ] Update type definitions in \`src/types.ts\` if schema changed
+- [ ] Run: \`npm test && npm run build\`
+- [ ] Bump version in \`package.json\` if breaking changes
+- [ ] Publish to npm
+
+**Spec changelog:** https://rcan.dev/changelog/
+**Spec diff:** https://github.com/continuonai/rcan-spec/releases/tag/${{ steps.tag.outputs.tag }}" \
+          || echo "Issue may already exist, continuing"
+
+      - name: File OpenCastor update issue
+        env:
+          GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
+        run: |
+          gh issue create \
+            --repo craigm26/OpenCastor \
+            --title "chore: update RCAN integration for spec ${{ steps.tag.outputs.tag }}" \
+            --body "## RCAN Spec ${{ steps.tag.outputs.tag }} Released
+
+The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
+
+### Checklist
+- [ ] Update \`SPEC_VERSION\` in \`castor/compliance.py\`
+- [ ] Update \`ACCEPTED_RCAN_VERSIONS\` in \`.github/scripts/validate_rcan.py\`
+- [ ] Update \`rcan_version\` in \`tests/fixtures/sample.rcan.yaml\`
+- [ ] Run full CI: \`python -m pytest tests/ -x\`
+- [ ] Bump version if needed
+
+**Spec changelog:** https://rcan.dev/changelog/
+**Spec diff:** https://github.com/continuonai/rcan-spec/releases/tag/${{ steps.tag.outputs.tag }}" \
+          || echo "Issue may already exist, continuing"
+
+      - name: Summary
+        run: |
+          echo "## Release Notify Complete" >> $GITHUB_STEP_SUMMARY
+          echo "Filed SDK update issues for ${{ steps.tag.outputs.tag }} in:" >> $GITHUB_STEP_SUMMARY
+          echo "- continuonai/rcan-py" >> $GITHUB_STEP_SUMMARY
+          echo "- continuonai/rcan-ts" >> $GITHUB_STEP_SUMMARY
+          echo "- craigm26/OpenCastor" >> $GITHUB_STEP_SUMMARY

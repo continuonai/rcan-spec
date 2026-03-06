@@ -1,23 +1,34 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteHeader from "../components/SiteHeader.astro";
+import compatibilityData from "../../public/compatibility.json";
+import sdkStatusData from "../../public/sdk-status.json";
 
-const matrix = await fetch(
-  new URL("../../public/compatibility.json", import.meta.url)
-)
-  .then((r) => r.json())
-  .catch(() => null);
-
-const rows = matrix?.spec_versions ?? [];
+const rows = compatibilityData?.spec_versions ?? [];
+const sdks = sdkStatusData?.sdks ?? {};
+const sdkUpdated = sdkStatusData?.updated ?? null;
+const matrixUpdated = compatibilityData?.updated ?? null;
 
 const statusBadge: Record<string, string> = {
   current: "bg-emerald-900/40 text-emerald-300 border border-emerald-700",
   archived: "bg-zinc-800 text-zinc-400 border border-zinc-700",
   draft: "bg-yellow-900/40 text-yellow-300 border border-yellow-700",
 };
+
+const ciStatusBadge = (s: string) => {
+  if (s === "pass" || s === "success") return "bg-emerald-900/40 text-emerald-300 border border-emerald-700";
+  if (s === "fail" || s === "failure") return "bg-red-900/40 text-red-300 border border-red-700";
+  return "bg-zinc-800 text-zinc-400 border border-zinc-700";
+};
+
+const ciStatusLabel = (s: string) => {
+  if (s === "pass" || s === "success") return "✓ pass";
+  if (s === "fail" || s === "failure") return "✗ fail";
+  return s ?? "unknown";
+};
 ---
 
-<BaseLayout title="SDK Compatibility — RCAN" description="Which SDK version implements which RCAN spec version.">
+<BaseLayout title="SDK Compatibility — RCAN" description="Which SDK version implements which RCAN spec version, with live CI status.">
   <SiteHeader />
   <main class="max-w-4xl mx-auto px-6 py-16">
     <h1 class="text-3xl font-bold text-white mb-2">SDK Compatibility Matrix</h1>
@@ -25,6 +36,48 @@ const statusBadge: Record<string, string> = {
       Which SDK version implements which RCAN spec version. Always pin your SDK to a version that supports your target spec.
     </p>
 
+    <!-- Live SDK Status -->
+    <h2 class="text-xl font-semibold text-white mb-4">Live SDK Status</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+      {sdks["rcan-py"] && (
+        <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-semibold text-white">rcan-py</span>
+            <span class={`px-2 py-0.5 rounded text-xs font-medium ${ciStatusBadge(sdks["rcan-py"].status)}`}>
+              {ciStatusLabel(sdks["rcan-py"].status)}
+            </span>
+          </div>
+          <p class="text-zinc-400 text-sm mb-1">Version: <span class="font-mono text-cyan-400">{sdks["rcan-py"].version || "—"}</span></p>
+          {sdks["rcan-py"].pypi && (
+            <a href={sdks["rcan-py"].pypi} class="text-xs text-zinc-500 hover:text-cyan-400 transition-colors" target="_blank" rel="noopener">
+              PyPI →
+            </a>
+          )}
+        </div>
+      )}
+      {sdks["rcan-ts"] && (
+        <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-semibold text-white">rcan-ts</span>
+            <span class={`px-2 py-0.5 rounded text-xs font-medium ${ciStatusBadge(sdks["rcan-ts"].status)}`}>
+              {ciStatusLabel(sdks["rcan-ts"].status)}
+            </span>
+          </div>
+          <p class="text-zinc-400 text-sm mb-1">Version: <span class="font-mono text-cyan-400">{sdks["rcan-ts"].version || "—"}</span></p>
+          {sdks["rcan-ts"].npm && (
+            <a href={sdks["rcan-ts"].npm} class="text-xs text-zinc-500 hover:text-cyan-400 transition-colors" target="_blank" rel="noopener">
+              npm →
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+    {sdkUpdated && (
+      <p class="text-xs text-zinc-600 -mt-10 mb-12">SDK status last updated: {sdkUpdated}</p>
+    )}
+
+    <!-- Compatibility Table -->
+    <h2 class="text-xl font-semibold text-white mb-4">Version Compatibility</h2>
     <div class="overflow-x-auto rounded-xl border border-zinc-800">
       <table class="w-full text-sm text-left">
         <thead class="bg-zinc-900 text-zinc-400 uppercase text-xs tracking-wider">
@@ -61,11 +114,12 @@ const statusBadge: Record<string, string> = {
     <div class="mt-8 p-5 rounded-xl bg-zinc-900 border border-zinc-800">
       <h2 class="text-lg font-semibold text-white mb-2">Machine-readable</h2>
       <p class="text-zinc-400 text-sm mb-3">
-        Fetch <code class="text-cyan-400">/compatibility.json</code> to query the matrix programmatically.
+        Fetch <code class="text-cyan-400">/compatibility.json</code> or <code class="text-cyan-400">/sdk-status.json</code> to query programmatically.
       </p>
-      <pre class="bg-zinc-950 rounded-lg p-4 text-xs text-zinc-300 overflow-x-auto"><code>curl https://rcan.dev/compatibility.json</code></pre>
+      <pre class="bg-zinc-950 rounded-lg p-4 text-xs text-zinc-300 overflow-x-auto"><code>curl https://rcan.dev/compatibility.json
+curl https://rcan.dev/sdk-status.json</code></pre>
     </div>
 
-    <p class="mt-6 text-xs text-zinc-600">Last updated: {matrix?.updated ?? "unknown"}</p>
+    <p class="mt-6 text-xs text-zinc-600">Compatibility matrix updated: {matrixUpdated ?? "unknown"}</p>
   </main>
 </BaseLayout>
