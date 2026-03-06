@@ -1,4 +1,4 @@
-name: Release Notify — SDK Update Issues
+name: Release Notify
 
 on:
   push:
@@ -31,75 +31,39 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
+          SPEC_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           gh issue create \
             --repo continuonai/rcan-py \
-            --title "chore: update SDK for RCAN spec ${{ steps.tag.outputs.tag }}" \
-            --body "## RCAN Spec ${{ steps.tag.outputs.tag }} Released
-
-The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
-
-### Checklist
-- [ ] Update \`SPEC_VERSION\` in \`rcan/validate.py\` to \`${{ steps.tag.outputs.version }}\`
-- [ ] Update \`SPEC_COMPATIBILITY\` in \`rcan/types.py\`
-- [ ] Run full test suite: \`python -m pytest tests/ -x\`
-- [ ] Bump version in \`pyproject.toml\` if breaking changes
-- [ ] Publish to PyPI
-
-**Spec changelog:** https://rcan.dev/changelog/
-**Spec diff:** https://github.com/continuonai/rcan-spec/releases/tag/${{ steps.tag.outputs.tag }}" \
-          || echo "Issue may already exist, continuing"
+            --title "chore: update SDK for RCAN spec ${SPEC_TAG}" \
+            --body "RCAN spec ${SPEC_TAG} released. Update SPEC_VERSION in rcan/validate.py, run tests, bump version if needed, publish to PyPI. See https://rcan.dev/changelog/" \
+          || echo "Issue may already exist or PAT not configured, continuing"
 
       - name: File rcan-ts update issue
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
+          SPEC_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           gh issue create \
             --repo continuonai/rcan-ts \
-            --title "chore: update SDK for RCAN spec ${{ steps.tag.outputs.tag }}" \
-            --body "## RCAN Spec ${{ steps.tag.outputs.tag }} Released
-
-The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
-
-### Checklist
-- [ ] Update \`SPEC_VERSION\` constant in \`src/validate.ts\`
-- [ ] Update type definitions in \`src/types.ts\` if schema changed
-- [ ] Run: \`npm test && npm run build\`
-- [ ] Bump version in \`package.json\` if breaking changes
-- [ ] Publish to npm
-
-**Spec changelog:** https://rcan.dev/changelog/
-**Spec diff:** https://github.com/continuonai/rcan-spec/releases/tag/${{ steps.tag.outputs.tag }}" \
-          || echo "Issue may already exist, continuing"
+            --title "chore: update SDK for RCAN spec ${SPEC_TAG}" \
+            --body "RCAN spec ${SPEC_TAG} released. Update SPEC_VERSION constant, run npm test and build, bump version if needed, publish to npm. See https://rcan.dev/changelog/" \
+          || echo "Issue may already exist or PAT not configured, continuing"
 
       - name: File OpenCastor update issue
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
+          SPEC_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           gh issue create \
             --repo craigm26/OpenCastor \
-            --title "chore: update RCAN integration for spec ${{ steps.tag.outputs.tag }}" \
-            --body "## RCAN Spec ${{ steps.tag.outputs.tag }} Released
-
-The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
-
-### Checklist
-- [ ] Update \`SPEC_VERSION\` in \`castor/compliance.py\`
-- [ ] Update \`ACCEPTED_RCAN_VERSIONS\` in \`.github/scripts/validate_rcan.py\`
-- [ ] Update \`rcan_version\` in \`tests/fixtures/sample.rcan.yaml\`
-- [ ] Run full CI: \`python -m pytest tests/ -x\`
-- [ ] Bump version if needed
-
-**Spec changelog:** https://rcan.dev/changelog/
-**Spec diff:** https://github.com/continuonai/rcan-spec/releases/tag/${{ steps.tag.outputs.tag }}" \
-          || echo "Issue may already exist, continuing"
+            --title "chore: update RCAN integration for spec ${SPEC_TAG}" \
+            --body "RCAN spec ${SPEC_TAG} released. Update SPEC_VERSION in castor/compliance.py and ACCEPTED_RCAN_VERSIONS in validate_rcan.py, run CI, bump version if needed. See https://rcan.dev/changelog/" \
+          || echo "Issue may already exist or PAT not configured, continuing"
 
       - name: Summary
         run: |
           echo "## Release Notify Complete" >> $GITHUB_STEP_SUMMARY
-          echo "Filed SDK update issues for ${{ steps.tag.outputs.tag }} in:" >> $GITHUB_STEP_SUMMARY
-          echo "- continuonai/rcan-py" >> $GITHUB_STEP_SUMMARY
-          echo "- continuonai/rcan-ts" >> $GITHUB_STEP_SUMMARY
-          echo "- craigm26/OpenCastor" >> $GITHUB_STEP_SUMMARY
+          echo "Filed SDK update issues for ${{ steps.tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
