@@ -1,0 +1,57 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0a0a0f"/>
+
+  <!-- Subtle grid -->
+  <defs>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#27272a" stroke-width="0.5"/>
+    </pattern>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Accent border top -->
+  <rect x="0" y="0" width="1200" height="3" fill="#22d3ee"/>
+
+  <!-- Hexagon logo mark (left side) -->
+  <g transform="translate(100, 255)">
+    <path d="M60 10L110 37.5V92.5L60 120L10 92.5V37.5L60 10Z" fill="none" stroke="#22d3ee" stroke-width="3"/>
+    <circle cx="60" cy="65" r="12" fill="#22d3ee"/>
+    <line x1="60" y1="53" x2="60" y2="28" stroke="#22d3ee" stroke-width="3" stroke-linecap="round"/>
+    <line x1="70.4" y1="71" x2="90" y2="82" stroke="#22d3ee" stroke-width="3" stroke-linecap="round"/>
+    <line x1="49.6" y1="71" x2="30" y2="82" stroke="#22d3ee" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="60" cy="26" r="5" fill="#22d3ee"/>
+    <circle cx="91" cy="83" r="5" fill="#22d3ee"/>
+    <circle cx="29" cy="83" r="5" fill="#22d3ee"/>
+  </g>
+
+  <!-- RCAN wordmark -->
+  <text x="240" y="295" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="88" font-weight="700" letter-spacing="12" fill="#e8e6e3">RCAN</text>
+
+  <!-- Tagline -->
+  <text x="240" y="355" font-family="'Inter', -apple-system, sans-serif" font-size="26" font-weight="400" fill="#9ca3af">The open protocol for AI-accountable robotics</text>
+
+  <!-- Divider -->
+  <rect x="100" y="405" width="1000" height="1" fill="#27272a"/>
+
+  <!-- Pills row -->
+  <!-- Pill 1: RCAN v1.2 -->
+  <rect x="100" y="430" width="160" height="40" rx="20" fill="#22d3ee" fill-opacity="0.1" stroke="#22d3ee" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="180" y="455" font-family="'Inter', sans-serif" font-size="16" font-weight="500" fill="#22d3ee" text-anchor="middle">RCAN v1.2</text>
+
+  <!-- Pill 2: pip install rcan -->
+  <rect x="276" y="430" width="220" height="40" rx="20" fill="#27272a" stroke="#3f3f46" stroke-width="1"/>
+  <text x="386" y="455" font-family="'JetBrains Mono', monospace" font-size="15" fill="#9ca3af" text-anchor="middle">pip install rcan</text>
+
+  <!-- Pill 3: npm install rcan-ts -->
+  <rect x="512" y="430" width="260" height="40" rx="20" fill="#27272a" stroke="#3f3f46" stroke-width="1"/>
+  <text x="642" y="455" font-family="'JetBrains Mono', monospace" font-size="15" fill="#9ca3af" text-anchor="middle">npm install rcan-ts</text>
+
+  <!-- rcan.dev URL -->
+  <text x="1100" y="455" font-family="'Inter', sans-serif" font-size="20" font-weight="600" fill="#4b5563" text-anchor="end">rcan.dev</text>
+</svg>

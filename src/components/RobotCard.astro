@@ -1,4 +1,6 @@
 ---
+import VerificationBadge from './VerificationBadge.astro';
+
 interface Props {
   rrn: string;
   name: string;
@@ -8,19 +10,11 @@ interface Props {
   image?: string;
   status: 'active' | 'retired' | 'prototype' | 'concept';
   tags: string[];
-  verification_status?: 'unverified' | 'community' | 'manufacturer_claimed' | 'manufacturer_verified';
+  verification_tier?: string;
 }
 
-const { rrn, name, manufacturer, model, description, status, tags, verification_status = 'unverified' } = Astro.props;
+const { rrn, name, manufacturer, model, description, status, tags, verification_tier = 'community' } = Astro.props;
 
-const verificationBadge = {
-  unverified:             { emoji: '⬜', label: 'Unverified' },
-  community:              { emoji: '🟡', label: 'Community verified' },
-  manufacturer_claimed:   { emoji: '🔵', label: 'Manufacturer claimed' },
-  manufacturer_verified:  { emoji: '✅', label: 'Manufacturer verified' },
-};
-
-const badge = verificationBadge[verification_status];
 
 const statusColors = {
   active: '#22c55e',
@@ -37,7 +31,7 @@ const statusColor = statusColors[status];
     <div class="card-header">
       <span class="status-badge" style={`--status-color: ${statusColor}`}>{status}</span>
       <span class="rrn">{rrn}</span>
-      <span class="verification-badge" title={badge.label} aria-label={badge.label}>{badge.emoji}</span>
+      <VerificationBadge tier={verification_tier} size="sm" showLabel={false} />
     </div>
     <h3 class="card-title">{name}</h3>
     <p class="card-manufacturer">{manufacturer}</p>

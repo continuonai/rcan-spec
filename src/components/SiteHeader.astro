@@ -23,6 +23,7 @@ const registryLinks = [
 
 const mobileLinks = [
   { href: '/quickstart/', label: 'Quickstart' },
+  { href: '/about/', label: 'About' },
   { href: '/docs/', label: 'Docs' },
   { href: '/spec/', label: 'Spec (v1.2)' },
   { href: '/conformance/', label: '— Conformance' },
@@ -93,6 +94,16 @@ function isActive(href: string) {
         ]}
       >
         Docs
+      </a>
+
+      <!-- About -->
+      <a href="/about/"
+        class:list={[
+          "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+          isActive('/about/') ? "text-accent bg-accent/10" : "text-text-muted hover:text-accent hover:bg-white/5"
+        ]}
+      >
+        About
       </a>
 
       <!-- Spec dropdown -->

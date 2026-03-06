@@ -2,12 +2,20 @@
 interface Props {
   title: string;
   description?: string;
+  ogImage?: string;
 }
 
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 
-const { title, description = "RCAN Protocol Specification - Robot Communication & Addressing Network" } = Astro.props;
+const {
+  title,
+  description = "RCAN Protocol Specification - Robot Communication & Addressing Network",
+  ogImage = "/og.svg",
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, "https://rcan.dev");
+const ogImageURL = new URL(ogImage, "https://rcan.dev");
 ---
 
 <!doctype html>
@@ -16,8 +24,25 @@ const { title, description = "RCAN Protocol Specification - Robot Communication 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} | RCAN Protocol</title>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={`${title} | RCAN Protocol`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="rcan.dev" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | RCAN Protocol`} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
   </head>
   <body class="bg-bg text-text font-sans antialiased min-h-screen flex flex-col selection:bg-accent selection:text-bg relative">
     <div class="noise-background"></div>
