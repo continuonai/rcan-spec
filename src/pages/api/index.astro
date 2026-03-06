@@ -27,12 +27,48 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <section class="api-section">
     <h2>Authentication</h2>
-    <p>No authentication required. The API is publicly accessible and read-only.</p>
+    <p><strong>Read operations</strong> (GET) are publicly accessible and require no authentication.</p>
+    <p><strong>Write operations</strong> (POST, PATCH, DELETE) require an API key via the <code>Authorization</code> header:</p>
+    <pre><code>Authorization: Bearer &lt;RCAN_API_KEY&gt;</code></pre>
+    <p>Contact <a href="mailto:registry@rcan.dev">registry@rcan.dev</a> to request an API key for write access.</p>
   </section>
 
   <section class="api-section">
     <h2>Rate Limits</h2>
-    <p>No rate limits are currently enforced. Please be respectful and cache responses when possible.</p>
+    <p>The API enforces rate limiting to ensure fair access. Limits are per IP address:</p>
+    <table>
+      <thead><tr><th>Operation</th><th>Limit</th></tr></thead>
+      <tbody>
+        <tr><td>Read (GET)</td><td>1,000 requests / minute</td></tr>
+        <tr><td>Write (POST, PATCH, DELETE)</td><td>100 requests / minute</td></tr>
+      </tbody>
+    </table>
+    <p>Rate limit status is returned in every response via headers:</p>
+    <table>
+      <thead><tr><th>Header</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>X-RateLimit-Limit</code></td><td>Maximum requests allowed in the window</td></tr>
+        <tr><td><code>X-RateLimit-Remaining</code></td><td>Requests remaining in the current window</td></tr>
+        <tr><td><code>X-RateLimit-Reset</code></td><td>Unix timestamp when the window resets</td></tr>
+      </tbody>
+    </table>
+    <p>When rate limited, the API returns <code>429 Too Many Requests</code>.</p>
+  </section>
+
+  <section class="api-section">
+    <h2>Error Codes</h2>
+    <p>RCAN-specific error codes are returned in the <code>error_code</code> field of error responses:</p>
+    <table>
+      <thead><tr><th>Code</th><th>Name</th><th>HTTP</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>6001</code></td><td>InvalidRRN</td><td>400</td><td>RRN format is invalid (must match RRN-&#123;8–16 digits&#125; or RRN-&#123;PREFIX&#125;-&#123;8–16 digits&#125;)</td></tr>
+        <tr><td><code>6002</code></td><td>NotFound</td><td>404</td><td>RRN not found in any reachable node</td></tr>
+        <tr><td><code>6003</code></td><td>NodeUnreachable</td><td>503</td><td>The authoritative node for this namespace is unreachable</td></tr>
+        <tr><td><code>6004</code></td><td>ResolutionTimeout</td><td>504</td><td>Resolution timed out across all nodes</td></tr>
+        <tr><td><code>6005</code></td><td>TrustChainFailure</td><td>403</td><td>Node delegation certificate or record signature is invalid</td></tr>
+        <tr><td><code>6006</code></td><td>SyncConflict</td><td>409</td><td>Sync record conflicts with an existing record (different node, same RRN)</td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section class="api-section">
@@ -157,6 +193,160 @@ const url = `https://rcan.dev/api/v1/ruri/$&#123;encodeURIComponent(ruri)&#125;.
   "error": "No robot found for this RURI",
   "ruri": "rcan://rcan.dev/unknown/model/00000000"
 &#125;</code></pre>
+    </article>
+  </section>
+
+  <section class="api-section">
+    <h2>Distributed Registry (§17)</h2>
+    <p>These endpoints interact with the RCAN federated registry network. An RRN may be registered at the root node (rcan.dev) or at a delegated authoritative node. The resolve endpoint handles both transparently.</p>
+
+    <article class="endpoint">
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <code class="path">/api/v1/resolve/:rrn</code>
+      </div>
+      <p>Resolve an RRN to its full robot record. Handles both root RRNs (<code>RRN-XXXXXXXXXXXX</code>) and delegated RRNs (<code>RRN-BD-00000001</code>) by following the delegation chain.</p>
+
+      <h4>Path Parameters</h4>
+      <table>
+        <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>rrn</code></td><td>The Robot Registry Number to resolve (e.g., <code>RRN-000000000042</code> or <code>RRN-BD-00000001</code>)</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Query Parameters</h4>
+      <table>
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>follow</code></td><td>boolean</td><td>Follow delegation to authoritative node (default: <code>true</code>). Set <code>false</code> to only check root.</td></tr>
+          <tr><td><code>verify</code></td><td>boolean</td><td>Verify node signature on the record (default: <code>true</code>). Adds latency.</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Response Headers</h4>
+      <table>
+        <thead><tr><th>Header</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>X-RCAN-Resolved-By</code></td><td>URL of the node that served this record</td></tr>
+          <tr><td><code>X-RCAN-Trust-Level</code></td><td>Trust level of the resolved record: <code>root</code>, <code>delegated-verified</code>, <code>delegated-unverified</code></td></tr>
+        </tbody>
+      </table>
+
+      <h4>Example Requests</h4>
+      <pre><code># Resolve a root RRN
+curl "https://rcan.dev/api/v1/resolve/RRN-000000000042"
+
+# Resolve a delegated RRN (Boston Dynamics namespace)
+curl "https://rcan.dev/api/v1/resolve/RRN-BD-00000001"</code></pre>
+
+      <h4>Example Response</h4>
+      <pre><code>&#123;
+  "api_version": "1.0",
+  "success": true,
+  "rrn": "RRN-BD-00000001",
+  "resolved_by": "https://registry.boston-dynamics.com",
+  "trust_level": "delegated-verified",
+  "data": &#123;
+    "rrn": "RRN-BD-00000001",
+    "robot_name": "Atlas Unit 001",
+    "manufacturer": "Boston Dynamics",
+    "registered_at": "2026-01-15T09:00:00Z",
+    "attestation": "active",
+    "verification_tier": "certified"
+  &#125;
+&#125;</code></pre>
+
+      <h4>Error Responses</h4>
+      <table>
+        <thead><tr><th>Code</th><th>Error Code</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>400</td><td>6001</td><td>Invalid RRN format</td></tr>
+          <tr><td>404</td><td>6002</td><td>RRN not found in any reachable node</td></tr>
+          <tr><td>503</td><td>6003</td><td>Authoritative node unreachable</td></tr>
+          <tr><td>504</td><td>6004</td><td>Resolution timed out</td></tr>
+          <tr><td>403</td><td>6005</td><td>Trust chain verification failed</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="endpoint">
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <code class="path">/api/v1/nodes</code>
+      </div>
+      <p>List all known delegated authoritative nodes in the RCAN federation. Always includes the root node (rcan.dev).</p>
+
+      <h4>Query Parameters</h4>
+      <table>
+        <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>prefix</code></td><td>string</td><td>Filter to a specific namespace prefix (e.g., <code>BD</code>). Always includes root.</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Example Requests</h4>
+      <pre><code># List all nodes
+curl "https://rcan.dev/api/v1/nodes"
+
+# Get the BD namespace delegation
+curl "https://rcan.dev/api/v1/nodes?prefix=BD"</code></pre>
+
+      <h4>Example Response</h4>
+      <pre><code>&#123;
+  "api_version": "1.0",
+  "success": true,
+  "nodes": [
+    &#123;
+      "prefix": "root",
+      "operator": "ContinuonAI",
+      "node_url": "https://rcan.dev",
+      "node_type": "root",
+      "manifest_url": "https://rcan.dev/.well-known/rcan-node.json"
+    &#125;,
+    &#123;
+      "prefix": "BD",
+      "operator": "Boston Dynamics, Inc.",
+      "node_url": "https://registry.boston-dynamics.com",
+      "node_type": "delegated",
+      "manifest_url": "https://registry.boston-dynamics.com/.well-known/rcan-node.json",
+      "delegated_at": "2026-01-01T00:00:00Z",
+      "expires_at": "2027-01-01T00:00:00Z"
+    &#125;
+  ]
+&#125;</code></pre>
+    </article>
+
+    <article class="endpoint">
+      <div class="endpoint-header">
+        <span class="method patch">PATCH</span>
+        <code class="path">/api/v1/robots/:rrn/verify</code>
+      </div>
+      <p>Update the verification tier of a registered robot. Requires <code>Authorization: Bearer &lt;RCAN_API_KEY&gt;</code>.</p>
+
+      <h4>Verification Tiers</h4>
+      <table>
+        <thead><tr><th>Badge</th><th>Tier Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>⬜</td><td><code>community</code></td><td>Default; self-registered, no identity check</td></tr>
+          <tr><td>🟡</td><td><code>verified</code></td><td>Manufacturer email/domain confirmed</td></tr>
+          <tr><td>🔵</td><td><code>partner</code></td><td>Signed partnership agreement on file</td></tr>
+          <tr><td>✅</td><td><code>certified</code></td><td>Passed third-party conformance test suite</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Request Body</h4>
+      <pre><code>&#123;
+  "verification_tier": "verified",
+  "verified_by": "registry-admin",
+  "notes": "Domain ownership confirmed via DNS TXT record"
+&#125;</code></pre>
+
+      <h4>Example Request</h4>
+      <pre><code>curl -X PATCH "https://rcan.dev/api/v1/robots/RRN-000000000042/verify" \
+  -H "Authorization: Bearer $RCAN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '&#123;"verification_tier":"verified","verified_by":"registry-admin"&#125;'</code></pre>
     </article>
   </section>
 
