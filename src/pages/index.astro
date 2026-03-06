@@ -4,8 +4,31 @@ import HeroSection from '../components/HeroSection.astro';
 import FeatureGrid from '../components/FeatureGrid.astro';
 import CodeWindow from '../components/CodeWindow.astro';
 import { getCollection } from 'astro:content';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+
 const robots = await getCollection('robots');
 const robotCount = robots.length;
+
+// Load SDK status badges
+let sdkStatus: Record<string, { status: string; updated: string }> = {};
+try {
+  const statusPath = join(fileURLToPath(import.meta.url), '../../../../public/sdk-status.json');
+  sdkStatus = JSON.parse(readFileSync(statusPath, 'utf-8'));
+} catch {
+  // file missing — show neutral status
+}
+
+function sdkBadge(sdk: string): { label: string; color: string; bg: string; border: string } {
+  const entry = sdkStatus[sdk];
+  if (!entry) return { label: 'status unknown', color: 'text-text-muted/60', bg: 'bg-white/5', border: 'border-white/10' };
+  if (entry.status === 'passing') return { label: '✓ passing', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+  return { label: '✗ failing', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+}
+
+const pyBadge = sdkBadge('rcan-py');
+const tsBadge = sdkBadge('rcan-ts');
 ---
 
 <BaseLayout title="RCAN Protocol" description="RCAN - Robot Communication & Addressing Network. An open protocol for addressing, discovering, and authenticating robotic agents.">
@@ -265,6 +288,26 @@ if gate.allows(confidence):
     </div>
   </section>
 
+  <!-- SDK Status Badges -->
+  <section class="py-16 border-b border-white/5">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-2xl font-bold mb-2">SDK Status</h2>
+      <p class="text-text-muted text-sm mb-8">Official SDKs for the RCAN protocol</p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="https://github.com/continuonai/rcan-py" target="_blank" rel="noopener noreferrer"
+          class={`flex items-center gap-3 px-5 py-3 rounded-xl border ${pyBadge.bg} ${pyBadge.border} hover:opacity-80 transition-opacity`}>
+          <span class="text-sm font-mono font-semibold text-text">rcan-py</span>
+          <span class={`text-sm font-mono font-bold ${pyBadge.color}`}>{pyBadge.label}</span>
+        </a>
+        <a href="https://github.com/continuonai/rcan-ts" target="_blank" rel="noopener noreferrer"
+          class={`flex items-center gap-3 px-5 py-3 rounded-xl border ${tsBadge.bg} ${tsBadge.border} hover:opacity-80 transition-opacity`}>
+          <span class="text-sm font-mono font-semibold text-text">rcan-ts</span>
+          <span class={`text-sm font-mono font-bold ${tsBadge.color}`}>{tsBadge.label}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- Get Started CTA -->
   <section class="py-32">
     <div class="max-w-3xl mx-auto px-6 text-center">
@@ -304,7 +347,7 @@ if gate.allows(confidence):
       </div>
 
       <p class="mt-8 text-sm text-text-muted/50">
-        Open specification · CC BY 4.0 · No vendor lock-in
+        Open specification · CC BY 4.0 · No vendor lock-in · <a href="/changelog/" class="underline hover:text-text-muted/80 transition-colors">Changelog</a>
       </p>
     </div>
   </section>

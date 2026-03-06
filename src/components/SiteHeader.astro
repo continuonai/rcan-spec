@@ -25,6 +25,7 @@ const mobileLinks = [
   { href: '/quickstart/', label: 'Quickstart' },
   { href: '/about/', label: 'About' },
   { href: '/docs/', label: 'Docs' },
+  { href: '/changelog/', label: 'Changelog' },
   { href: '/spec/', label: 'Spec (v1.2)' },
   { href: '/conformance/', label: '— Conformance' },
   { href: '/schemas/', label: '— Schemas' },
@@ -104,6 +105,16 @@ function isActive(href: string) {
         ]}
       >
         About
+      </a>
+
+      <!-- Changelog -->
+      <a href="/changelog/"
+        class:list={[
+          "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+          isActive('/changelog/') ? "text-accent bg-accent/10" : "text-text-muted hover:text-accent hover:bg-white/5"
+        ]}
+      >
+        Changelog
       </a>
 
       <!-- Spec dropdown -->
