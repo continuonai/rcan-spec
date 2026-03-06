@@ -51,13 +51,13 @@ function cors(): Response {
 
 /** Parse RRN and return namespace info or null if invalid */
 function parseRRN(rrn: string): { namespace: "root"; serial: string } | { namespace: string; prefix: string; serial: string } | null {
-  // RRN-BD-00000001 → delegated
-  const delegated = rrn.match(/^RRN-([A-Z]{2,6})-(\d{8})$/);
+  // RRN-BD-000000000001 → delegated (prefix: 2-8 alphanumeric chars, serial: 8-16 digits)
+  const delegated = rrn.match(/^RRN-([A-Z0-9]{2,8})-(\d{8,16})$/);
   if (delegated) {
     return { namespace: delegated[1], prefix: delegated[1], serial: delegated[2] };
   }
-  // RRN-00000001 → root
-  const root = rrn.match(/^RRN-(\d{8})$/);
+  // RRN-000000000001 → root (serial: 8-16 digits)
+  const root = rrn.match(/^RRN-(\d{8,16})$/);
   if (root) {
     return { namespace: "root", serial: root[1] };
   }

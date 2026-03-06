@@ -8,7 +8,7 @@
     "rcan_node_version": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
     "node_type": { "type": "string", "enum": ["root", "authoritative", "resolver", "cache"] },
     "operator": { "type": "string" },
-    "namespace_prefix": { "type": "string", "pattern": "^RRN(-[A-Z0-9]+)?$" },
+    "namespace_prefix": { "type": "string", "pattern": "^RRN(-[A-Z0-9]{2,8})?$" },
     "public_key": { "type": "string", "pattern": "^ed25519:.+" },
     "api_base": { "type": "string", "format": "uri" },
     "registry_ui": { "type": "string", "format": "uri" },

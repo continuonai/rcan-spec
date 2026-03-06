@@ -10,7 +10,9 @@
     "preview": "astro preview",
     "astro": "astro",
     "sync-ruri": "npx ts-node scripts/sync-ruri.ts",
-    "sync-ruri:dry": "npx ts-node scripts/sync-ruri.ts --dry-run"
+    "sync-ruri:dry": "npx ts-node scripts/sync-ruri.ts --dry-run",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.0",
@@ -25,7 +27,8 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
   },
   "pnpm": {
     "overrides": {

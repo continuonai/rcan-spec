@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["rrn", "name", "manufacturer", "model", "rcan_version"],
   "properties": {
-    "rrn": { "type": "string", "pattern": "^RRN(-[A-Z0-9]+)?-[0-9]{8}$" },
+    "rrn": { "type": "string", "pattern": "^RRN(-[A-Z0-9]{2,8})?-[0-9]{8,16}$" },
     "name": { "type": "string" },
     "manufacturer": { "type": "string" },
     "model": { "type": "string" },

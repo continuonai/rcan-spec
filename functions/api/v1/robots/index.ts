@@ -52,7 +52,7 @@ function cors(): Response {
 
 /** Generate a 12-digit padded RRN from sequential id */
 function formatRRN(id: number): string {
-  return `RRN-${String(id).padStart(8, "0")}`;
+  return `RRN-${String(id).padStart(12, "0")}`;
 }
 
 /** SHA-256 hex of a string (for API key hashing) */
@@ -359,8 +359,8 @@ export async function onRequest(context: {
   const path = url.pathname;
 
   try {
-    // /api/v1/robots/:rrn — single robot operations
-    const rrnMatch = path.match(/\/api\/v1\/robots\/(RRN-\d+)$/i);
+    // /api/v1/robots/:rrn — single robot operations (supports 8-16 digit sequences, optional alphanumeric prefix)
+    const rrnMatch = path.match(/\/api\/v1\/robots\/(RRN(?:-[A-Z0-9]{2,8})?-\d{8,16})(?:\/.*)?$/i);
     if (rrnMatch) {
       const rrn = rrnMatch[1].toUpperCase();
       if (method === "GET") return await handleGet(rrn, env);
