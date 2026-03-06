@@ -14,6 +14,10 @@ const protocolLinks = [
   { href: '/api/', label: 'API' },
 ];
 
+const useCasesLinks = [
+  { href: '/use-cases/swarm/', label: '🤖 Swarm Safety' },
+];
+
 const registryLinks = [
   { href: '/registry/', label: 'Browse Registry' },
   { href: '/registry/nodes/', label: 'Registry Nodes' },
@@ -34,6 +38,8 @@ const mobileLinks = [
   { href: '/governance/', label: 'Governance' },
   { href: '/implementations/', label: 'Implementations' },
   { href: '/api/', label: 'API' },
+  { href: '/use-cases/swarm/', label: 'Use Cases' },
+  { href: '/use-cases/swarm/', label: '— Swarm Safety' },
   { href: '/registry/', label: 'Browse Registry' },
   { href: '/registry/nodes/', label: '— Registry Nodes' },
   { href: '/registry/submit/', label: '— Register a Robot' },
@@ -176,6 +182,38 @@ function isActive(href: string) {
           <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
             <div class="p-1">
               {protocolLinks.map(link => (
+                <a href={link.href}
+                  class:list={[
+                    "block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors",
+                    isActive(link.href) ? 'text-accent bg-accent/10' : ''
+                  ]}
+                >{link.label}</a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Use Cases dropdown -->
+      <div class="relative" data-dropdown>
+        <button
+          class:list={[
+            "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+            isActive('/use-cases/')
+              ? "text-accent bg-accent/10"
+              : "text-text-muted hover:text-accent hover:bg-white/5"
+          ]}
+          data-dropdown-trigger
+        >
+          Use Cases
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-48 hidden" data-dropdown-menu>
+          <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-1">
+              {useCasesLinks.map(link => (
                 <a href={link.href}
                   class:list={[
                     "block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors",

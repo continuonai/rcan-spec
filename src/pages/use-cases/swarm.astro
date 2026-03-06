@@ -1,0 +1,402 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+---
+
+<BaseLayout
+  title="RCAN Swarm Safety — Safe Multi-Robot Coordination"
+  description="Build robot swarms with cryptographic trust. RRN-based peer verification, commitment chain audit trails, and federated identity enable safe multi-robot coordination with RCAN."
+>
+
+  <!-- Hero -->
+  <section class="relative py-28 border-b border-white/5 overflow-hidden">
+    <!-- Background glow -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/5 blur-3xl rounded-full"></div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-mono mb-8">
+        <span class="text-lg">🤖</span>
+        Use Case
+        <span class="text-lg">🤝</span>
+        <span class="text-lg">🤖</span>
+      </div>
+
+      <h1 class="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+        Build robot swarms with<br />
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400">cryptographic trust</span>
+      </h1>
+
+      <p class="text-xl text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
+        Traditional robot swarms have no standard identity layer — unverifiable commands, no audit trail, and catastrophic failure modes when one node is compromised. RCAN fixes this.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/quickstart/" class="px-8 py-4 bg-cyan-500 text-bg font-bold text-lg rounded-full hover:bg-cyan-400 transform hover:scale-105 transition-all duration-200 shadow-[0_0_30px_-5px_rgba(34,211,238,0.5)]">
+          Get Started Free
+        </a>
+        <a href="https://github.com/craigm26/OpenCastor" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-white/5 border border-white/10 text-text font-semibold text-lg rounded-full hover:bg-white/10 transition-all duration-200">
+          OpenCastor (reference impl) →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Problem -->
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <span class="text-xs font-mono text-red-400/60 uppercase tracking-widest">The Problem</span>
+        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">Traditional swarms are security nightmares</h2>
+        <p class="text-text-muted max-w-2xl mx-auto">
+          Without a standard identity layer, any robot in a swarm can impersonate another, inject commands, and leave no forensic trail.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          {
+            icon: '🎭',
+            title: 'No standard identity',
+            desc: 'Robots have no universally verifiable ID. Robot B has no way to prove it is who it claims to be to Robot A.'
+          },
+          {
+            icon: '💀',
+            title: 'Unverifiable commands',
+            desc: 'When Robot A receives a "move to zone 7" command, it cannot verify whether that command came from a trusted peer or an attacker.'
+          },
+          {
+            icon: '🕳️',
+            title: 'No audit trail',
+            desc: 'When a swarm makes a catastrophic decision, there is no cryptographic record of who authorized what, when, and with what confidence.'
+          },
+        ].map(item => (
+          <div class="bg-red-500/5 border border-red-500/15 rounded-2xl p-6">
+            <div class="text-3xl mb-4">{item.icon}</div>
+            <h3 class="font-bold text-red-300 mb-2">{item.title}</h3>
+            <p class="text-text-muted text-sm leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- The RCAN Swarm Safety Stack -->
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <span class="text-xs font-mono text-cyan-400/60 uppercase tracking-widest">The Solution</span>
+        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">The RCAN Swarm Safety Stack</h2>
+        <p class="text-text-muted max-w-2xl mx-auto">
+          Four protocol layers combine to give every swarm member a provable identity, reliable communication, full accountability, and no single point of failure.
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        {[
+          {
+            layer: '01',
+            color: 'cyan',
+            icon: '🪪',
+            title: 'Identity Layer',
+            subtitle: 'RRN + Verification Tiers',
+            desc: 'Every robot receives a globally unique Robot Registration Number (RRN) registered at rcan.dev. Verification tiers (community → verified → certified → accredited) give swarm members a cryptographically anchored trust signal. Before accepting any command, a robot can call <code class="text-cyan-300 bg-white/5 px-1 rounded">castor node resolve &lt;rrn&gt;</code> to check a peer\'s certification level in real time.',
+            tags: ['RRN-BD-000000000042', '⬜ community', '🟡 verified', '🔵 certified', '✅ accredited'],
+          },
+          {
+            layer: '02',
+            color: 'purple',
+            icon: '📡',
+            title: 'Communication Layer',
+            subtitle: 'RURI Addressing + mDNS Discovery',
+            desc: 'RCAN Robot URIs provide globally unique, routable addresses for every robot. mDNS local discovery lets swarm members find each other on the LAN without an internet connection or central broker — the swarm self-assembles.',
+            tags: ['rcan://registry.rcan.dev/acme/arm/v2/unit-001', 'mDNS', 'LAN-first', 'offline-capable'],
+          },
+          {
+            layer: '03',
+            color: 'emerald',
+            icon: '🔗',
+            title: 'Accountability Layer',
+            subtitle: '§16 Commitment Chain + Thought Log',
+            desc: 'Every action in the swarm is sealed into a tamper-evident HMAC commitment chain. The §16 AI Accountability layer records which model made each decision, at what confidence, with what reasoning. Full forensic trail across the entire swarm — no gaps.',
+            tags: ['HMAC-SHA256', 'AES-256-GCM', 'model_identity', 'confidence_gate', 'thought_log'],
+          },
+          {
+            layer: '04',
+            color: 'amber',
+            icon: '🌐',
+            title: 'Federation Layer',
+            subtitle: '§17 Distributed Registry',
+            desc: 'No single point of failure. The §17 distributed registry protocol allows federated resolution — robots resolve each other\'s identity from any node in the network. Stale cache means the swarm keeps working even if the central registry is temporarily unreachable.',
+            tags: ['federated', 'stale-cache', 'offline-resilient', 'NodeResolver', 'rate-limited'],
+          },
+        ].map(item => (
+          <div class={`bg-bg-alt/50 border border-white/5 rounded-2xl p-6 hover:border-${item.color}-500/30 transition-all duration-300`}>
+            <div class="flex items-start gap-5">
+              <div class={`flex-shrink-0 w-12 h-12 rounded-xl bg-${item.color}-500/10 border border-${item.color}-500/20 flex items-center justify-center text-2xl`}>{item.icon}</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-1">
+                  <span class={`text-xs font-mono text-${item.color}-400/50`}>{item.layer}</span>
+                  <h3 class={`text-lg font-bold text-${item.color}-300`}>{item.title}</h3>
+                  <span class="text-sm text-text-muted">— {item.subtitle}</span>
+                </div>
+                <p class="text-text-muted text-sm leading-relaxed mb-3" set:html={item.desc}></p>
+                <div class="flex flex-wrap gap-1.5">
+                  {item.tags.map(tag => (
+                    <span class={`text-[10px] bg-${item.color}-500/10 border border-${item.color}-500/20 text-${item.color}-400 px-2 py-0.5 rounded-full font-mono`}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works (Step-by-step) -->
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <span class="text-xs font-mono text-cyan-400/60 uppercase tracking-widest">Flow</span>
+        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">How swarm verification works</h2>
+        <p class="text-text-muted max-w-xl mx-auto">
+          Every cross-robot interaction follows this protocol. Each step is cryptographically enforced.
+        </p>
+      </div>
+
+      <div class="relative">
+        <!-- Vertical line -->
+        <div class="absolute left-6 top-8 bottom-8 w-px bg-gradient-to-b from-cyan-500/40 via-purple-500/40 to-emerald-500/40 hidden md:block"></div>
+
+        <div class="space-y-6">
+          {[
+            {
+              step: '1',
+              color: 'cyan',
+              robot: 'Robot A',
+              title: 'Receives a task request from Robot B',
+              detail: 'Robot B sends an RCAN message addressed to Robot A\'s RURI. The message contains Robot B\'s RRN as the sender identity.',
+            },
+            {
+              step: '2',
+              color: 'cyan',
+              robot: 'Robot A',
+              title: 'Resolves Robot B\'s RRN',
+              detail: 'Robot A calls castor node resolve RRN-BD-000000000042. The NodeClient queries the distributed registry (or stale cache if offline) and returns B\'s full record.',
+            },
+            {
+              step: '3',
+              color: 'purple',
+              robot: 'Robot A',
+              title: 'Checks Robot B\'s verification tier',
+              detail: 'Robot A reads verification_tier from the resolved record. If B is only "community" and this task requires "certified", the command is rejected before execution.',
+            },
+            {
+              step: '4',
+              color: 'amber',
+              robot: 'Robot A',
+              title: 'Evaluates HITL gate (if configured)',
+              detail: 'For safety-critical swarm commands, Robot A\'s HITL gate may require human approval before proceeding. The request is queued at POST /api/hitl/authorize.',
+            },
+            {
+              step: '5',
+              color: 'emerald',
+              robot: 'Robot A',
+              title: 'Executes with confidence gate',
+              detail: 'Robot A\'s own ConfidenceGate ensures its AI model is sufficiently certain before acting. Actions below the threshold are blocked regardless of who sent them.',
+            },
+            {
+              step: '6',
+              color: 'emerald',
+              robot: 'Robot A',
+              title: 'Logs to commitment chain',
+              detail: 'The executed action, sender identity, confidence score, model identity, and timestamp are sealed into the HMAC commitment chain. Tamper-evident. Auditable forever.',
+            },
+          ].map(item => (
+            <div class="flex items-start gap-5 md:ml-0">
+              <div class={`flex-shrink-0 w-12 h-12 rounded-full bg-${item.color}-500/10 border border-${item.color}-500/30 flex items-center justify-center text-sm font-bold font-mono text-${item.color}-400 z-10`}>{item.step}</div>
+              <div class={`flex-1 bg-bg-alt/50 border border-white/5 rounded-xl p-5 hover:border-${item.color}-500/20 transition-all`}>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class={`text-xs font-mono text-${item.color}-400/60`}>{item.robot}</span>
+                  <span class="text-xs text-white/20">→</span>
+                  <span class="font-semibold text-sm">{item.title}</span>
+                </div>
+                <p class="text-text-muted text-sm leading-relaxed">{item.detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="text-center mb-12">
+        <span class="text-xs font-mono text-cyan-400/60 uppercase tracking-widest">Code</span>
+        <h2 class="text-3xl font-bold mt-2 mb-4">Peer verification in practice</h2>
+        <p class="text-text-muted max-w-xl mx-auto">
+          Using <a href="https://github.com/continuonai/rcan-py" class="text-cyan-400 hover:underline">rcan-py</a> and <a href="https://github.com/craigm26/OpenCastor" class="text-cyan-400 hover:underline">OpenCastor</a> together.
+        </p>
+      </div>
+
+      <CodeWindow
+        language="python"
+        title="swarm_peer_verify.py"
+        code={`from rcan import NodeClient, ConfidenceGate, CommitmentRecord
+from rcan.audit import AuditChain
+
+# ─────────────────────────────────────────────
+# Step 1: Verify the peer robot's identity
+# ─────────────────────────────────────────────
+client = NodeClient()
+peer_status = client.resolve("RRN-BD-000000000042")
+
+# Check verification tier before accepting any commands
+tier = peer_status['record'].get('verification_tier', 'community')
+TRUSTED_TIERS = ('verified', 'certified', 'accredited')
+
+if tier not in TRUSTED_TIERS:
+    raise SecurityError(
+        f"Peer robot not sufficiently verified: {tier}. "
+        f"Required one of: {TRUSTED_TIERS}"
+    )
+
+print(f"✅ Peer verified: {peer_status['robot_name']} ({tier})")
+
+# ─────────────────────────────────────────────
+# Step 2: Gate on our own model's confidence
+# ─────────────────────────────────────────────
+gate = ConfidenceGate(threshold=0.80)
+my_confidence = 0.91  # from your AI model
+
+if not gate.allows(my_confidence):
+    raise RuntimeError(f"Confidence too low to act on peer command: {my_confidence}")
+
+# ─────────────────────────────────────────────
+# Step 3: Execute and log to commitment chain
+# ─────────────────────────────────────────────
+chain = AuditChain(secret="your-chain-secret")
+
+record = chain.append(CommitmentRecord(
+    action="move_to_waypoint",
+    robot_uri="rcan://registry.rcan.dev/acme/rover/v1/unit-007",
+    confidence=my_confidence,
+    model_identity="claude-sonnet-4-6",
+    params={"waypoint": "zone-7", "authorized_by": "RRN-BD-000000000042"},
+    safety_approved=True,
+))
+
+print(f"📝 Logged to chain: {record.content_hash[:16]}...")`}
+      />
+    </div>
+  </section>
+
+  <!-- RCAN-Swarm Certified Badge -->
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <span class="text-xs font-mono text-cyan-400/60 uppercase tracking-widest">Certification</span>
+        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">RCAN-Swarm Safe requirements</h2>
+        <p class="text-text-muted max-w-2xl mx-auto">
+          A robot can claim the <strong class="text-cyan-400">RCAN-Swarm Safe</strong> designation when it meets all five criteria below. Run <code class="text-cyan-300 bg-white/5 px-1 rounded text-sm">rcan-validate config myrobot.rcan.yaml</code> to check.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+        {[
+          {
+            check: '✅',
+            title: 'Valid RRN',
+            desc: 'RCAN config present with a registered, globally unique Robot Registration Number.',
+            tag: 'rcan.dev/registry',
+          },
+          {
+            check: '✅',
+            title: 'Verification tier ≥ verified',
+            desc: 'The robot\'s identity has been confirmed — at minimum, email/domain verification completed.',
+            tag: 'verification_tier: verified',
+          },
+          {
+            check: '✅',
+            title: 'Commitment chain enabled',
+            desc: 'All actions are sealed into the HMAC-chained audit log. Tamper detection active.',
+            tag: 'security.commitment.enabled: true',
+          },
+          {
+            check: '✅',
+            title: 'HITL gate for swarm commands',
+            desc: 'Safety-critical commands received from swarm peers require human approval before execution.',
+            tag: 'hitl_gates: [swarm_commands]',
+          },
+          {
+            check: '✅',
+            title: 'Confidence gate ≥ 0.7',
+            desc: 'At least one confidence gate configured. The robot will not act on peer commands when its own model is uncertain.',
+            tag: 'confidence_gate.threshold: 0.7',
+          },
+        ].map(item => (
+          <div class="bg-bg-alt/50 border border-cyan-500/15 rounded-2xl p-5 hover:border-cyan-500/30 transition-all">
+            <div class="text-2xl mb-3">{item.check}</div>
+            <h3 class="font-bold text-sm mb-2">{item.title}</h3>
+            <p class="text-text-muted text-xs leading-relaxed mb-3">{item.desc}</p>
+            <code class="text-[10px] font-mono text-cyan-400/70 bg-cyan-500/5 border border-cyan-500/10 px-2 py-1 rounded-lg block">{item.tag}</code>
+          </div>
+        ))}
+
+        <!-- Badge display card -->
+        <div class="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 rounded-2xl p-5 flex flex-col items-center justify-center text-center">
+          <div class="text-4xl mb-3">🏅</div>
+          <div class="font-bold text-cyan-400 text-lg mb-1">RCAN-Swarm Safe</div>
+          <div class="text-xs text-text-muted mb-3">All 5 criteria met</div>
+          <code class="text-[10px] font-mono text-cyan-400/70 bg-cyan-500/5 border border-cyan-500/10 px-2 py-1 rounded-lg">rcan-validate all config.yaml</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OpenCastor Reference Implementation -->
+  <section class="py-24">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="bg-gradient-to-br from-bg-alt/80 to-bg-alt/40 border border-cyan-500/20 rounded-3xl p-10 text-center">
+        <div class="text-5xl mb-6">🦫</div>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">
+          OpenCastor is the reference implementation for<br />
+          <span class="text-cyan-400">RCAN-Swarm Safe robots</span>
+        </h2>
+        <p class="text-text-muted max-w-2xl mx-auto text-lg mb-8 leading-relaxed">
+          OpenCastor ships with peer verification, commitment chain audit, HITL gates, confidence gates, and mDNS swarm discovery — all configured and ready to run. It is the fastest path to a RCAN-Swarm Safe robot.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-10">
+          {[
+            { icon: '🔐', label: 'castor node resolve <rrn>', desc: 'Real-time peer verification' },
+            { icon: '🔗', label: 'castor commit verify', desc: 'HMAC chain integrity check' },
+            { icon: '📡', label: 'castor discover', desc: 'Find swarm peers via mDNS' },
+          ].map(cmd => (
+            <div class="bg-black/30 border border-white/10 rounded-xl p-4">
+              <div class="text-xl mb-2">{cmd.icon}</div>
+              <code class="text-xs font-mono text-emerald-300 block mb-1">{cmd.label}</code>
+              <div class="text-xs text-text-muted">{cmd.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="https://github.com/craigm26/OpenCastor" target="_blank" rel="noopener noreferrer"
+            class="px-8 py-4 bg-cyan-500 text-bg font-bold text-lg rounded-full hover:bg-cyan-400 transform hover:scale-105 transition-all duration-200 shadow-[0_0_30px_-5px_rgba(34,211,238,0.4)] flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            View OpenCastor on GitHub
+          </a>
+          <a href="/quickstart/" class="px-8 py-4 bg-white/5 border border-white/10 text-text font-semibold text-lg rounded-full hover:bg-white/10 transition-all duration-200">
+            RCAN Quickstart →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
