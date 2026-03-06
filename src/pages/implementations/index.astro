@@ -1,221 +1,149 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const pythonCode = `"""
-RCAN Protocol Reference Implementation (Python)
-"""
-import re
-import asyncio
-import websockets
-from dataclasses import dataclass
-from typing import Optional
-from enum import IntEnum
+const implementations = [
+  {
+    name: "OpenCastor",
+    lang: "Python",
+    description: "Full RCAN §16 robot framework. Confidence gates, HiTL gates, thought logging, commitment chain, multi-provider AI brain, and fleet telemetry.",
+    tier: "verified",
+    github: "https://github.com/craigm26/OpenCastor",
+    tags: ["Python", "Raspberry Pi", "Safety Gates", "Commitment Chain"],
+  },
+  {
+    name: "rcan-py",
+    lang: "Python",
+    description: "Official Python SDK. RURI parsing, message construction, Ed25519 signing, schema validation, and RegistryClient for rcan.dev API.",
+    tier: "verified",
+    github: "https://github.com/continuonai/rcan-py",
+    tags: ["Python", "SDK", "Registry"],
+  },
+  {
+    name: "rcan-ts",
+    lang: "TypeScript",
+    description: "Official TypeScript / Node.js SDK. RURI parsing, message construction, audit chain, and Ed25519 signing. Works in Node and browser (ESM).",
+    tier: "verified",
+    github: "https://github.com/continuonai/rcan-ts",
+    tags: ["TypeScript", "Node.js", "SDK", "ESM"],
+  },
+  {
+    name: "Bob",
+    lang: "Python",
+    description: "Raspberry Pi 5 robot running OpenCastor. Community reference deployment demonstrating the full RCAN stack on consumer hardware.",
+    tier: "community",
+    github: "https://github.com/craigm26/OpenCastor",
+    tags: ["Pi5", "Robot", "OpenCastor"],
+  },
+  {
+    name: "ContinuonOS",
+    lang: "Python",
+    description: "Cognitive operating layer for RCAN robots. Integrates specialist providers, memory, episode replay, and multi-modal perception.",
+    tier: "community",
+    github: "https://github.com/continuonai",
+    tags: ["Cognitive OS", "Memory", "Perception"],
+  },
+];
 
-# RURI Pattern
-RURI_PATTERN = re.compile(
-    r'^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/'
-    r'([a-z0-9][a-z0-9-]*[a-z0-9])/'
-    r'([a-z0-9][a-z0-9-]*[a-z0-9])/'
-    r'([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)'
-    r'(?::(\d{1,5}))?'
-    r'(/[a-z][a-z0-9/-]*)?$'
-)
-
-@dataclass
-class RURI:
-    """Robot Universal Resource Identifier"""
-    registry: str
-    manufacturer: str
-    model: str
-    device_id: str
-    port: int = 8080
-    capability: Optional[str] = None
-    
-    @classmethod
-    def parse(cls, ruri_string: str) -> 'RURI':
-        match = RURI_PATTERN.match(ruri_string)
-        if not match:
-            raise ValueError(f"Invalid RURI: {ruri_string}")
-        return cls(
-            registry=match.group(1),
-            manufacturer=match.group(2),
-            model=match.group(3),
-            device_id=match.group(4),
-            port=int(match.group(5)) if match.group(5) else 8080,
-            capability=match.group(6)
-        )
-    
-    @classmethod
-    def is_valid(cls, ruri_string: str) -> bool:
-        return RURI_PATTERN.match(ruri_string) is not None
-    
-    def __str__(self) -> str:
-        s = f"rcan://{self.registry}/{self.manufacturer}/{self.model}/{self.device_id}"
-        if self.port != 8080:
-            s += f":{self.port}"
-        if self.capability:
-            s += self.capability
-        return s
-
-class Role(IntEnum):
-    """RCAN Role Hierarchy"""
-    GUEST = 1
-    USER = 2
-    LEASEE = 3
-    OWNER = 4
-    CREATOR = 5
-    
-    def can_access(self, required_role: 'Role') -> bool:
-        return self.value >= required_role.value
-
-# Usage
-ruri = RURI.parse("rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6")
-print(f"Registry: {ruri.registry}")
-print(f"Model: {ruri.model}")
-print(f"Valid: {RURI.is_valid(str(ruri))}")`;
-
-const tsCode = `interface RURI {
-  registry: string;
-  manufacturer: string;
-  model: string;
-  deviceId: string;
-  port: number;
-  capability: string | null;
-}
-
-const RURI_REGEX = /^rcan:\\/\\/([a-z0-9][a-z0-9.-]*[a-z0-9])\\/([a-z0-9][a-z0-9-]*[a-z0-9])\\/([a-z0-9][a-z0-9-]*[a-z0-9])\\/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(\\/[a-z][a-z0-9\\/-]*)?$/;
-
-function parseRURI(ruri: string): RURI {
-  const match = ruri.match(RURI_REGEX);
-  if (!match) throw new Error(\`Invalid RURI: \${ruri}\`);
-  
-  return {
-    registry: match[1],
-    manufacturer: match[2],
-    model: match[3],
-    deviceId: match[4],
-    port: match[5] ? parseInt(match[5]) : 8080,
-    capability: match[6] || null,
-  };
-}
-
-function formatRURI(ruri: RURI): string {
-  let s = \`rcan://\${ruri.registry}/\${ruri.manufacturer}/\${ruri.model}/\${ruri.deviceId}\`;
-  if (ruri.port !== 8080) s += \`:\${ruri.port}\`;
-  if (ruri.capability) s += ruri.capability;
-  return s;
-}
-
-enum Role { GUEST = 1, USER = 2, LEASEE = 3, OWNER = 4, CREATOR = 5 }
-
-function canAccess(role: Role, required: Role): boolean {
-  return role >= required;
-}`;
-
-const dartCode = `enum Role { guest, user, leasee, owner, creator }
-
-class RURI {
-  final String registry;
-  final String manufacturer;
-  final String model;
-  final String deviceId;
-  final int port;
-  final String? capability;
-
-  RURI({
-    required this.registry,
-    required this.manufacturer,
-    required this.model,
-    required this.deviceId,
-    this.port = 8080,
-    this.capability,
-  });
-
-  static final _pattern = RegExp(
-    r'^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\\d{1,5}))?(/[a-z][a-z0-9/-]*)?$'
-  );
-
-  factory RURI.parse(String ruri) {
-    final match = _pattern.firstMatch(ruri);
-    if (match == null) throw FormatException('Invalid RURI: \$ruri');
-    
-    return RURI(
-      registry: match.group(1)!,
-      manufacturer: match.group(2)!,
-      model: match.group(3)!,
-      deviceId: match.group(4)!,
-      port: match.group(5) != null ? int.parse(match.group(5)!) : 8080,
-      capability: match.group(6),
-    );
-  }
-
-  static bool isValid(String ruri) => _pattern.hasMatch(ruri);
-
-  @override
-  String toString() {
-    var s = 'rcan://\$registry/\$manufacturer/\$model/\$deviceId';
-    if (port != 8080) s += ':\$port';
-    if (capability != null) s += capability;
-    return s;
-  }
-}`;
+const tierMeta: Record<string, { label: string; color: string; icon: string }> = {
+  verified: { label: "Verified ✅", color: "text-green-400 bg-green-400/10 border-green-400/20", icon: "✅" },
+  community: { label: "Community ⬜", color: "text-text-muted bg-white/5 border-white/10", icon: "⬜" },
+};
 ---
 
-<BaseLayout title="Implementations" description="RCAN Protocol Reference Implementations in Python, TypeScript, and Dart.">
-  <h1>Reference Implementations</h1>
-  <p>Complete, runnable implementations of the RCAN protocol in multiple languages.</p>
-  
-  <hr />
-  
-  <section>
-    <h2>Python (ContinuonBrain)</h2>
-    <p>Full RURI parsing, role management, and RCAN client.</p>
-    <pre><code class="language-python" set:text={pythonCode}></code></pre>
-  </section>
-  
-  <hr />
-  
-  <section>
-    <h2>TypeScript (Node.js)</h2>
-    <pre><code class="language-typescript" set:text={tsCode}></code></pre>
-  </section>
-  
-  <hr />
-  
-  <section>
-    <h2>Dart (Flutter/ContinuonAI)</h2>
-    <pre><code class="language-dart" set:text={dartCode}></code></pre>
-  </section>
-  
-  <hr />
-  
-  <section>
-    <h2>Installation</h2>
-    
-    <h3>Python (pip)</h3>
-    <pre><code class="language-bash"># Coming soon
-pip install rcan</code></pre>
-    
-    <h3>Node.js (npm)</h3>
-    <pre><code class="language-bash"># Coming soon
-npm install @rcan/protocol</code></pre>
-    
-    <h3>Dart (pub)</h3>
-    <pre><code class="language-yaml"># Coming soon
-dependencies:
-  rcan: ^1.0.0</code></pre>
-  </section>
-  
-  <hr />
-  
-  <section>
-    <h2>Contributing</h2>
-    <p>Want to add an implementation in another language?</p>
-    <ul>
-      <li>Fork the <a href="https://github.com/continuonai/rcan-spec" rel="noopener noreferrer">rcan-spec repository</a></li>
-      <li>Add your implementation under <code>implementations/&lt;language&gt;/</code></li>
-      <li>Ensure it passes all <a href="/conformance/">conformance tests</a></li>
-      <li>Submit a pull request</li>
-    </ul>
-  </section>
+<BaseLayout
+  title="Implementations — RCAN Protocol"
+  description="Known implementations of the RCAN protocol: SDKs, robot frameworks, and community projects. Python, TypeScript, and more."
+>
+  <div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="py-16 border-b border-white/5 mb-12">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-text-muted mb-6">
+        <span class="w-2 h-2 rounded-full bg-accent"></span>
+        Protocol v1.2
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold text-text mb-4 leading-tight">
+        Implementations
+      </h1>
+      <p class="text-xl text-text-muted leading-relaxed max-w-2xl">
+        Known implementations of the RCAN protocol — SDKs, robot frameworks, and
+        community deployments. Want to add yours?{" "}
+        <a href="https://github.com/continuonai/rcan-spec" class="text-accent hover:underline" target="_blank" rel="noopener">
+          Open a PR →
+        </a>
+      </p>
+    </div>
+
+    <!-- Tier legend -->
+    <div class="flex flex-wrap gap-3 mb-10">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-400/10 border border-green-400/20 text-green-400 text-xs font-medium">
+        ✅ Verified — tested against official conformance suite
+      </div>
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-text-muted text-xs font-medium">
+        ⬜ Community — self-reported, not independently tested
+      </div>
+    </div>
+
+    <!-- Card grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+      {implementations.map(impl => {
+        const tier = tierMeta[impl.tier] ?? tierMeta.community;
+        return (
+          <div class="bg-bg-alt border border-white/5 rounded-2xl p-6 flex flex-col gap-4 hover:border-white/10 transition-colors">
+            <!-- Top row -->
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h2 class="text-lg font-bold text-text">{impl.name}</h2>
+                <span class="text-xs text-text-muted">{impl.lang}</span>
+              </div>
+              <span class={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full border ${tier.color}`}>
+                {tier.label}
+              </span>
+            </div>
+
+            <!-- Description -->
+            <p class="text-sm text-text-muted leading-relaxed flex-1">{impl.description}</p>
+
+            <!-- Tags -->
+            <div class="flex flex-wrap gap-1.5">
+              {impl.tags.map(tag => (
+                <span class="text-xs px-2 py-0.5 rounded bg-white/5 text-text-muted border border-white/5">
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            <!-- GitHub link -->
+            <a
+              href={impl.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 text-sm text-accent hover:underline mt-auto"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              View on GitHub
+            </a>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Add your own -->
+    <div class="border border-white/5 rounded-2xl p-8 bg-bg-alt text-center mb-16">
+      <h3 class="text-xl font-bold text-text mb-2">Built something with RCAN?</h3>
+      <p class="text-text-muted mb-6">
+        Add your implementation to this page by opening a pull request on the rcan-spec repo.
+        Community implementations welcome — verified status requires conformance suite results.
+      </p>
+      <a
+        href="https://github.com/continuonai/rcan-spec/issues/new?template=implementation.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+      >
+        Submit your implementation →
+      </a>
+    </div>
+
+  </div>
 </BaseLayout>

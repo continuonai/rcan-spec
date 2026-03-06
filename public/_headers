@@ -1,0 +1,5 @@
+/schemas/*.json
+  Content-Type: application/schema+json
+
+/schemas/messages/*.json
+  Content-Type: application/schema+json
