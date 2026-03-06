@@ -29,7 +29,6 @@ jobs:
 
       - name: File rcan-py update issue
         continue-on-error: true
-        if: ${{ secrets.RCAN_SDK_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
@@ -53,7 +52,6 @@ The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
 
       - name: File rcan-ts update issue
         continue-on-error: true
-        if: ${{ secrets.RCAN_SDK_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
@@ -77,7 +75,6 @@ The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
 
       - name: File OpenCastor update issue
         continue-on-error: true
-        if: ${{ secrets.RCAN_SDK_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
