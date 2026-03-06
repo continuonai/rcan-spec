@@ -3,9 +3,11 @@ interface Props {
   language: string;
   code: string;
   title?: string;
+  showCopy?: boolean;
 }
 
-const { language, code, title = "Terminal" } = Astro.props;
+const { language, code, title = "Terminal", showCopy = true } = Astro.props;
+const id = `code-${Math.random().toString(36).slice(2, 8)}`;
 ---
 
 <div class="rounded-xl overflow-hidden bg-[#1e1e2e] border border-white/10 shadow-2xl my-8 group hover:border-accent/30 transition-colors">
@@ -16,9 +18,64 @@ const { language, code, title = "Terminal" } = Astro.props;
       <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
     </div>
     <div class="text-xs text-text-muted font-mono">{title}</div>
-    <div class="w-14"></div> <!-- Spacer for centering -->
+    {showCopy && (
+      <button
+        class="copy-btn flex items-center gap-1.5 text-xs text-text-muted/60 hover:text-accent transition-colors px-2 py-0.5 rounded hover:bg-white/5"
+        data-code-id={id}
+        aria-label="Copy code"
+      >
+        <svg class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg class="check-icon hidden" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="copy-label">Copy</span>
+      </button>
+    )}
+    {!showCopy && <div class="w-14"></div>}
   </div>
   <div class="p-4 overflow-x-auto">
-    <pre class="bg-transparent p-0 m-0"><code class={`language-${language} text-sm font-mono leading-relaxed`}>{code}</code></pre>
+    <pre class="bg-transparent p-0 m-0" id={id}><code class={`language-${language} text-sm font-mono leading-relaxed`}>{code}</code></pre>
   </div>
 </div>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = (btn as HTMLElement).dataset.codeId;
+      const pre = id ? document.getElementById(id) : null;
+      const text = pre?.textContent?.trim() ?? '';
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // Fallback for non-https
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+
+      const copyIcon = btn.querySelector('.copy-icon');
+      const checkIcon = btn.querySelector('.check-icon');
+      const label = btn.querySelector('.copy-label');
+      copyIcon?.classList.add('hidden');
+      checkIcon?.classList.remove('hidden');
+      if (label) (label as HTMLElement).textContent = 'Copied!';
+      btn.classList.add('text-emerald-400');
+
+      setTimeout(() => {
+        copyIcon?.classList.remove('hidden');
+        checkIcon?.classList.add('hidden');
+        if (label) (label as HTMLElement).textContent = 'Copy';
+        btn.classList.remove('text-emerald-400');
+      }, 2000);
+    });
+  });
+</script>

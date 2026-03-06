@@ -1,41 +1,38 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import DocsLayout from '../layouts/DocsLayout.astro';
+import CodeWindow from '../components/CodeWindow.astro';
 
-const title = "Quickstart — RCAN Robot Communication Protocol";
+const title = "Quickstart — RCAN Protocol";
 const description = "From zero to your first RCAN message in 5 minutes.";
 ---
 
-<Layout title={title} description={description}>
-  <main class="max-w-3xl mx-auto px-4 py-12">
+<DocsLayout title={title} description={description}>
 
-    <div class="mb-8">
-      <span class="text-xs font-mono text-blue-400 uppercase tracking-widest">Documentation</span>
-      <h1 class="text-3xl font-bold text-white mt-2">Quickstart</h1>
-      <p class="text-gray-400 mt-2">From zero to your first RCAN message in 5 minutes.</p>
-    </div>
+  <h1>Quickstart</h1>
+  <p class="lead text-xl text-text-muted mb-10">From zero to your first RCAN message in 5 minutes.</p>
 
-    <!-- Step 1 -->
-    <section class="mb-10">
-      <h2 class="text-xl font-semibold text-white mb-3">
-        <span class="text-blue-400 font-mono mr-2">01</span>Install the SDK
-      </h2>
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm text-green-300"><code>pip install rcan
+  <!-- Step 1 -->
+  <h2 id="install">
+    <span class="text-accent font-mono text-lg mr-2">01</span>Install the SDK
+  </h2>
+
+  <CodeWindow language="bash" title="Terminal" code={`pip install rcan
 
 # Optional extras
 pip install rcan[http]    # registry client (httpx)
-pip install rcan[crypto]  # message signing (Ed25519)
-pip install rcan[all]     # everything</code></pre>
-    </section>
+pip install rcan[crypto]  # Ed25519 message signing
+pip install rcan[all]     # everything
 
-    <!-- Step 2 -->
-    <section class="mb-10">
-      <h2 class="text-xl font-semibold text-white mb-3">
-        <span class="text-blue-400 font-mono mr-2">02</span>Build a Robot URI
-      </h2>
-      <p class="text-gray-400 text-sm mb-3">
-        Every robot has a globally unique, resolvable address. No more "which unit was it exactly?"
-      </p>
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm text-green-300"><code>from rcan import RobotURI
+# TypeScript / JavaScript
+npm install rcan-ts`} />
+
+  <!-- Step 2 -->
+  <h2 id="robot-uri">
+    <span class="text-accent font-mono text-lg mr-2">02</span>Build a Robot URI
+  </h2>
+  <p>Every robot has a globally unique, resolvable address. No more "which unit was it?"</p>
+
+  <CodeWindow language="python" title="address.py" code={`from rcan import RobotURI
 
 uri = RobotURI.build(
     manufacturer="acme",
@@ -46,22 +43,18 @@ uri = RobotURI.build(
 print(uri)
 # rcan://registry.rcan.dev/acme/robotarm/v2/unit-001
 
-# Or parse from a string
+# Parse from a string
 uri = RobotURI.parse("rcan://registry.rcan.dev/acme/robotarm/v2/unit-001")
-print(uri.namespace)   # acme/robotarm
-print(uri.registry_url)  # https://registry.rcan.dev/registry/acme/...</code></pre>
-    </section>
+print(uri.namespace)      # acme/robotarm
+print(uri.registry_url)   # https://registry.rcan.dev/registry/...`} />
 
-    <!-- Step 3 -->
-    <section class="mb-10">
-      <h2 class="text-xl font-semibold text-white mb-3">
-        <span class="text-blue-400 font-mono mr-2">03</span>Gate on AI Confidence
-      </h2>
-      <p class="text-gray-400 text-sm mb-3">
-        The gate doesn't trust the model — that's the point. The model is right 99.99% of the time.
-        The gate is for the 0.01%.
-      </p>
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm text-green-300"><code>from rcan import RCANMessage, ConfidenceGate
+  <!-- Step 3 -->
+  <h2 id="confidence-gate">
+    <span class="text-accent font-mono text-lg mr-2">03</span>Gate on AI Confidence
+  </h2>
+  <p>The gate doesn't trust the model — that's the point. The model is right 99.99% of the time. The gate catches the 0.01%.</p>
+
+  <CodeWindow language="python" title="gate.py" code={`from rcan import RCANMessage, ConfidenceGate
 
 gate = ConfidenceGate(threshold=0.8)
 confidence = 0.91  # from your AI model
@@ -76,24 +69,17 @@ if gate.allows(confidence):
     )
     print(msg.to_json(indent=2))
 else:
-    print(f"Blocked: confidence {confidence} < threshold {gate.threshold}")</code></pre>
+    print(f"Blocked: confidence {confidence} < threshold {gate.threshold}")`} />
 
-      <p class="text-gray-500 text-xs mt-3">
-        For high-stakes actions, add a <code class="text-blue-300">HiTLGate</code> to require explicit human approval.
-        See <a href="/spec#section-16" class="text-blue-400 hover:underline">§16 AI Accountability</a>.
-      </p>
-    </section>
+  <p>For high-stakes actions, add a <code>HiTLGate</code> to require explicit human approval. See <a href="/spec/#section-16">§16 AI Accountability</a>.</p>
 
-    <!-- Step 4 -->
-    <section class="mb-10">
-      <h2 class="text-xl font-semibold text-white mb-3">
-        <span class="text-blue-400 font-mono mr-2">04</span>Create a Tamper-Evident Audit Record
-      </h2>
-      <p class="text-gray-400 text-sm mb-3">
-        Every safety-critical action can be sealed into a <code class="text-blue-300">CommitmentRecord</code> — 
-        an HMAC-chained record that provides forensic-grade proof of what the system did, when, at what confidence.
-      </p>
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm text-green-300"><code>from rcan import CommitmentRecord
+  <!-- Step 4 -->
+  <h2 id="audit-chain">
+    <span class="text-accent font-mono text-lg mr-2">04</span>Create a Tamper-Evident Audit Record
+  </h2>
+  <p>Every safety-critical action can be sealed into an HMAC-chained record — forensic-grade proof of what the system did, when, at what confidence.</p>
+
+  <CodeWindow language="python" title="audit.py" code={`from rcan import CommitmentRecord
 from rcan.audit import AuditChain
 
 chain = AuditChain(secret="your-hmac-secret")
@@ -107,79 +93,61 @@ record = chain.append(CommitmentRecord(
     safety_approved=True,
 ))
 
-print(f"Commitment: {record.content_hash}")
+print(f"Sealed: {record.content_hash[:12]}...")
 print(f"Chain valid: {chain.verify_all()}")  # True
 
-# Export as JSONL for long-term storage
+# Export JSONL for long-term storage or audit
 with open("audit.jsonl", "w") as f:
-    f.write(chain.to_jsonl())</code></pre>
-    </section>
+    f.write(chain.to_jsonl())`} />
 
-    <!-- Step 5 -->
-    <section class="mb-10">
-      <h2 class="text-xl font-semibold text-white mb-3">
-        <span class="text-blue-400 font-mono mr-2">05</span>Register Your Robot
-      </h2>
-      <p class="text-gray-400 text-sm mb-3">
-        Get a globally unique RRN (Robot Registry Number) for your robot. Free.
-      </p>
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm text-green-300"><code># If using OpenCastor — registration is built into the wizard
+  <!-- Step 5 -->
+  <h2 id="register">
+    <span class="text-accent font-mono text-lg mr-2">05</span>Register Your Robot
+  </h2>
+  <p>Get a globally unique RRN (Robot Registry Number). Free.</p>
+
+  <CodeWindow language="bash" title="Terminal" code={`# If using OpenCastor — built into the setup wizard
 castor wizard
-# → Step 13: Register with rcan.dev? [Y/n]
-# → ✅ Robot registered: RRN-00000042
+# → Step 13: Register with rcan.dev? [Y/n]  →  ✅ RRN-00000042
 
-# Or register standalone
-castor register --config myrobot.rcan.yaml
+# Or standalone
+castor register --config myrobot.rcan.yaml`} />
 
-# Or via the rcan-py SDK (requires API key from rcan.dev/register)
-from rcan.registry import RegistryClient
+  <!-- Step 6 -->
+  <h2 id="validate">
+    <span class="text-accent font-mono text-lg mr-2">06</span>Validate Your Config
+  </h2>
 
-async with RegistryClient(api_key="rcan_...") as client:
-    result = await client.register(
-        manufacturer="acme", model="robotarm",
-        version="v2", device_id="unit-001",
-    )
-    print(result["rrn"])  # RRN-00000042</code></pre>
-    </section>
-
-    <!-- Step 6 -->
-    <section class="mb-10">
-      <h2 class="text-xl font-semibold text-white mb-3">
-        <span class="text-blue-400 font-mono mr-2">06</span>Validate Your Config
-      </h2>
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm text-green-300"><code># Validate a RCAN message
-rcan-validate message command.json
-
-# Check config conformance (L1/L2/L3)
+  <CodeWindow language="bash" title="Terminal" code={`# Check L1/L2/L3 conformance
 rcan-validate config myrobot.rcan.yaml
 
-# Or with OpenCastor
-castor compliance --config myrobot.rcan.yaml
-
-# Output:
+# Expected output:
 # ✅ L1 — Addressing + message format: passed
 # ✅ L2 — Auth + confidence gates: passed
-# ⚠️  L3 — hitl_gates not configured
-# Result: L2 (1 warning)</code></pre>
-    </section>
+# ⚠️  L3 — hitl_gates not configured (§16)
+# Result: L2 (1 warning)
 
-    <!-- What's next -->
-    <section class="border-t border-gray-800 pt-8">
-      <h2 class="text-xl font-semibold text-white mb-4">What's next</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {[
-          { href: "/spec", label: "Protocol Spec", desc: "Full RCAN v1.2 specification" },
-          { href: "/registry", label: "Robot Registry", desc: "Browse registered robots" },
-          { href: "https://github.com/continuonai/rcan-py", label: "rcan-py on GitHub", desc: "Source, issues, PRs" },
-          { href: "https://github.com/craigm26/OpenCastor", label: "OpenCastor", desc: "Robot runtime with RCAN built in" },
-        ].map(({ href, label, desc }) => (
-          <a href={href} class="block p-4 border border-gray-700 rounded-lg hover:border-blue-500 transition-colors">
-            <div class="text-white font-medium">{label}</div>
-            <div class="text-gray-500 text-sm mt-1">{desc}</div>
-          </a>
-        ))}
-      </div>
-    </section>
+# Or with OpenCastor
+castor compliance --config myrobot.rcan.yaml`} />
 
-  </main>
-</Layout>
+  <!-- What's Next -->
+  <h2 id="next">What's next</h2>
+
+  <div class="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+    {[
+      { href: '/spec/', label: 'Protocol Spec', desc: 'Full RCAN v1.2 specification' },
+      { href: '/conformance/', label: 'Conformance Tests', desc: 'L1/L2/L3 test suite' },
+      { href: 'https://github.com/continuonai/rcan-py', label: 'rcan-py on GitHub', desc: 'Python SDK source + issues' },
+      { href: 'https://github.com/continuonai/rcan-ts', label: 'rcan-ts on GitHub', desc: 'TypeScript SDK source + issues' },
+      { href: 'https://github.com/craigm26/OpenCastor', label: 'OpenCastor', desc: 'Robot runtime with RCAN built in' },
+      { href: '/registry/submit/', label: 'Register a Robot', desc: 'Get your free RRN' },
+    ].map(({ href, label, desc }) => (
+      <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+        class="block p-4 border border-white/8 rounded-xl hover:border-accent/40 hover:bg-accent/5 transition-all duration-200">
+        <div class="text-white font-semibold text-sm">{label}</div>
+        <div class="text-text-muted text-xs mt-1">{desc}</div>
+      </a>
+    ))}
+  </div>
+
+</DocsLayout>

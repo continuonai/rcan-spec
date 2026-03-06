@@ -22,6 +22,7 @@ const registryLinks = [
 ];
 
 const mobileLinks = [
+  { href: '/quickstart/', label: 'Quickstart' },
   { href: '/docs/', label: 'Docs' },
   { href: '/spec/', label: 'Spec (v1.2)' },
   { href: '/conformance/', label: '— Conformance' },
@@ -37,25 +38,74 @@ const mobileLinks = [
   { href: '/pricing/', label: 'Registration' },
   { href: 'https://github.com/continuonai/rcan-spec', label: 'GitHub', external: true },
 ];
+
+const currentPath = Astro.url.pathname;
+
+function isActive(href: string) {
+  if (href === '/') return currentPath === '/';
+  return currentPath.startsWith(href);
+}
 ---
 
 <header class="fixed top-0 w-full z-50 border-b border-white/5 bg-bg/80 backdrop-blur-md transition-all duration-300" id="site-header">
   <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-text hover:text-accent transition-colors group">
-      <span class="text-2xl group-hover:animate-pulse">⚡</span>
-      <span>RCAN</span>
+
+    <!-- Wordmark -->
+    <a href="/" class="flex items-center gap-2.5 font-bold text-xl tracking-tight text-text hover:text-accent transition-colors group">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] transition-all">
+        <!-- Hexagon base -->
+        <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent" />
+        <!-- Circuit node -->
+        <circle cx="14" cy="14" r="3" fill="currentColor" class="text-accent" />
+        <!-- Arms -->
+        <line x1="14" y1="11" x2="14" y2="6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="text-accent" />
+        <line x1="16.6" y1="15.5" x2="21" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="text-accent" />
+        <line x1="11.4" y1="15.5" x2="7" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="text-accent" />
+        <!-- Node dots -->
+        <circle cx="14" cy="6" r="1.5" fill="currentColor" class="text-accent" />
+        <circle cx="21.5" cy="18.5" r="1.5" fill="currentColor" class="text-accent" />
+        <circle cx="6.5" cy="18.5" r="1.5" fill="currentColor" class="text-accent" />
+      </svg>
+      <span class="font-mono tracking-wider">RCAN</span>
     </a>
 
     <!-- Desktop Nav -->
-    <nav class="hidden md:flex items-center gap-6">
+    <nav class="hidden md:flex items-center gap-1">
+
+      <!-- Quickstart pill -->
+      <a href="/quickstart/"
+        class:list={[
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors mr-2",
+          isActive('/quickstart/')
+            ? "bg-accent/15 text-accent border border-accent/30"
+            : "text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20"
+        ]}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        Quickstart
+      </a>
+
       <!-- Docs -->
-      <a href="/docs/" class="text-sm font-medium text-text-muted hover:text-accent transition-colors">
+      <a href="/docs/"
+        class:list={[
+          "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+          isActive('/docs/') ? "text-accent bg-accent/10" : "text-text-muted hover:text-accent hover:bg-white/5"
+        ]}
+      >
         Docs
       </a>
 
       <!-- Spec dropdown -->
       <div class="relative" data-dropdown>
-        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1" data-dropdown-trigger>
+        <button
+          class:list={[
+            "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+            isActive('/spec/') || isActive('/conformance/') || isActive('/schemas/')
+              ? "text-accent bg-accent/10"
+              : "text-text-muted hover:text-accent hover:bg-white/5"
+          ]}
+          data-dropdown-trigger
+        >
           Spec
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -67,7 +117,12 @@ const mobileLinks = [
               {specLinks.map((link, i) => (
                 <a
                   href={link.href}
-                  class={`block px-3 py-2 text-sm rounded-lg hover:bg-white/5 hover:text-accent transition-colors ${i === 2 ? 'border-b border-white/5 mb-1 pb-3' : ''} ${link.label.startsWith('Archived') ? 'text-text-muted/60 text-xs' : 'text-text-muted'}`}
+                  class:list={[
+                    "block px-3 py-2 text-sm rounded-lg hover:bg-white/5 hover:text-accent transition-colors",
+                    i === 2 ? 'border-b border-white/5 mb-1 pb-3' : '',
+                    link.label.startsWith('Archived') ? 'text-text-muted/60 text-xs' : 'text-text-muted',
+                    isActive(link.href) ? 'text-accent bg-accent/10' : ''
+                  ]}
                 >
                   {link.label}
                 </a>
@@ -79,7 +134,15 @@ const mobileLinks = [
 
       <!-- Protocol dropdown -->
       <div class="relative" data-dropdown>
-        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1" data-dropdown-trigger>
+        <button
+          class:list={[
+            "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+            isActive('/federation/') || isActive('/governance/') || isActive('/implementations/') || isActive('/api/')
+              ? "text-accent bg-accent/10"
+              : "text-text-muted hover:text-accent hover:bg-white/5"
+          ]}
+          data-dropdown-trigger
+        >
           Protocol
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -89,9 +152,12 @@ const mobileLinks = [
           <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
             <div class="p-1">
               {protocolLinks.map(link => (
-                <a href={link.href} class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
-                  {link.label}
-                </a>
+                <a href={link.href}
+                  class:list={[
+                    "block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors",
+                    isActive(link.href) ? 'text-accent bg-accent/10' : ''
+                  ]}
+                >{link.label}</a>
               ))}
             </div>
           </div>
@@ -100,7 +166,15 @@ const mobileLinks = [
 
       <!-- Registry dropdown -->
       <div class="relative" data-dropdown>
-        <button class="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-accent transition-colors py-1" data-dropdown-trigger>
+        <button
+          class:list={[
+            "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+            isActive('/registry/') || isActive('/pricing/')
+              ? "text-accent bg-accent/10"
+              : "text-text-muted hover:text-accent hover:bg-white/5"
+          ]}
+          data-dropdown-trigger
+        >
           Registry
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200" data-dropdown-arrow>
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -110,50 +184,62 @@ const mobileLinks = [
           <div class="bg-bg-alt border border-white/10 rounded-xl shadow-xl overflow-hidden">
             <div class="p-1">
               {registryLinks.map(link => (
-                <a href={link.href} class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
-                  {link.label}
-                </a>
+                <a href={link.href}
+                  class:list={[
+                    "block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors",
+                    isActive(link.href) ? 'text-accent bg-accent/10' : ''
+                  ]}
+                >{link.label}</a>
               ))}
+              <div class="border-t border-white/5 mt-1 pt-1">
+                <a href="/pricing/" class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
+                  Pricing
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Registration -->
-      <a href="/pricing/" class="text-sm font-medium text-text-muted hover:text-accent transition-colors">
-        Registration
-      </a>
 
       <!-- GitHub -->
       <a
         href="https://github.com/continuonai/rcan-spec"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-accent transition-colors"
+        class="flex items-center gap-1.5 ml-2 px-3 py-1.5 rounded-lg text-sm font-medium text-text-muted hover:text-accent hover:bg-white/5 transition-colors"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         GitHub
       </a>
     </nav>
 
     <!-- Mobile Menu Button -->
     <button id="nav-toggle" class="md:hidden p-2 text-text-muted hover:text-accent transition-colors" aria-label="Toggle menu">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="icon-open">
         <line x1="3" y1="12" x2="21" y2="12"></line>
         <line x1="3" y1="6" x2="21" y2="6"></line>
         <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="icon-close" class="hidden">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
     </button>
   </div>
 
   <!-- Mobile Nav Overlay -->
-  <div id="mobile-menu" class="fixed inset-0 top-16 bg-bg/95 backdrop-blur-xl border-t border-white/5 transform translate-x-full transition-transform duration-300 md:hidden flex flex-col p-6 gap-1 overflow-y-auto">
+  <div id="mobile-menu" class="fixed inset-0 top-16 bg-bg/97 backdrop-blur-xl border-t border-white/5 transform translate-x-full transition-transform duration-300 md:hidden flex flex-col p-6 gap-1 overflow-y-auto z-40">
     {mobileLinks.map(link => (
       <a
         href={link.href}
         target={link.external ? "_blank" : undefined}
         rel={link.external ? "noopener noreferrer" : undefined}
-        class={`text-base font-medium text-text-muted hover:text-accent transition-colors py-2 border-b border-white/5 ${link.label.startsWith('—') ? 'pl-4 text-sm text-text-muted/70' : ''}`}
+        class:list={[
+          "text-base font-medium transition-colors py-2.5 border-b border-white/5",
+          link.label.startsWith('—') ? 'pl-5 text-sm text-text-muted/70' : 'text-text-muted',
+          isActive(link.href) && !link.external ? 'text-accent' : 'hover:text-accent',
+          link.label === 'Quickstart' ? 'text-emerald-400' : ''
+        ]}
       >
         {link.label}
       </a>
@@ -165,13 +251,17 @@ const mobileLinks = [
   // Mobile nav toggle
   const toggle = document.getElementById('nav-toggle');
   const menu = document.getElementById('mobile-menu');
+  const iconOpen = document.getElementById('icon-open');
+  const iconClose = document.getElementById('icon-close');
+
   toggle?.addEventListener('click', () => {
-    menu?.classList.toggle('translate-x-full');
-    const isOpen = !menu?.classList.contains('translate-x-full');
+    const isOpen = menu?.classList.toggle('translate-x-full') === false;
     document.body.style.overflow = isOpen ? 'hidden' : '';
+    iconOpen?.classList.toggle('hidden', isOpen);
+    iconClose?.classList.toggle('hidden', !isOpen);
   });
 
-  // Dropdown menus — JS-managed with close delay so cursor can travel to menu
+  // Dropdown menus
   document.querySelectorAll('[data-dropdown]').forEach(dropdown => {
     const menuEl = dropdown.querySelector('[data-dropdown-menu]') as HTMLElement | null;
     const arrow = dropdown.querySelector('[data-dropdown-arrow]') as HTMLElement | null;
@@ -182,7 +272,6 @@ const mobileLinks = [
       menuEl?.classList.remove('hidden');
       arrow?.classList.add('rotate-180');
     }
-
     function close() {
       closeTimer = setTimeout(() => {
         menuEl?.classList.add('hidden');
@@ -192,14 +281,10 @@ const mobileLinks = [
 
     dropdown.addEventListener('mouseenter', open);
     dropdown.addEventListener('mouseleave', close);
-    // Keep open while hovering the menu panel itself
-    menuEl?.addEventListener('mouseenter', () => {
-      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
-    });
+    menuEl?.addEventListener('mouseenter', () => { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } });
     menuEl?.addEventListener('mouseleave', close);
   });
 
-  // Close all dropdowns on outside click
   document.addEventListener('click', (e) => {
     document.querySelectorAll('[data-dropdown]').forEach(dropdown => {
       if (!dropdown.contains(e.target as Node)) {
@@ -208,4 +293,10 @@ const mobileLinks = [
       }
     });
   });
+
+  // Scroll shadow
+  window.addEventListener('scroll', () => {
+    const header = document.getElementById('site-header');
+    header?.classList.toggle('shadow-[0_1px_20px_rgba(0,0,0,0.5)]', window.scrollY > 10);
+  }, { passive: true });
 </script>

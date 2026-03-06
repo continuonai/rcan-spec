@@ -3,67 +3,115 @@ const features = [
   {
     iconPath: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
     title: 'Robot URI (RURI)',
-    description: 'Globally unique identifiers for every robot, similar to URLs for websites.',
-    code: 'rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6'
+    description: 'Globally unique identifiers for every robot. Like URLs but for physical machines — resolvable, federated, and human-readable.',
+    code: 'rcan://registry.rcan.dev/acme/arm/v2/unit-001',
+    badge: null,
   },
   {
     iconPath: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
     title: 'Role-Based Access',
-    description: 'Five-level hierarchy: Guest → User → Leasee → Owner → Creator. Each role has explicit permissions.'
+    description: 'Five-level hierarchy: Guest → User → Leasee → Owner → Creator. Explicit, auditable permissions at every layer.',
+    badge: null,
   },
   {
     iconPath: 'M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0',
     title: 'Local Discovery',
-    description: 'mDNS/DNS-SD discovery via _rcan._tcp.local. Works offline when cloud is unreachable.'
+    description: 'mDNS/DNS-SD via _rcan._tcp.local. Works when the cloud goes dark — your robot never loses you.',
+    badge: null,
   },
   {
     iconPath: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
     title: 'Safety Invariants',
-    description: 'Local safety always wins. Network loss triggers safe-stop. All commands are audited.'
+    description: 'Local safety always wins. Network loss triggers safe-stop. All commands timestamped and audited.',
+    badge: null,
   },
   {
     iconPath: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9',
     title: 'Federated Registries',
-    description: 'Like email servers, anyone can run an RCAN registry. No single point of control.'
+    description: 'Like email — anyone can run an RCAN registry. No single point of control. Decentralized by design.',
+    badge: null,
   },
   {
     iconPath: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
     title: 'Fleet Coordination',
-    description: 'Choreographed multi-robot commands, swarm discovery, and conflict resolution.'
+    description: 'Choreographed multi-robot commands, swarm discovery, and conflict resolution across manufacturers.',
+    badge: null,
   },
   {
     iconPath: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
     title: 'AI Accountability (§16)',
-    description: 'Confidence gates, HiTL authorization, and tamper-evident thought logs. Every AI decision carries model identity and confidence — provable, not claimed.'
+    description: 'Confidence gates, HiTL authorization, and HMAC-chained thought logs. Every AI decision carries model identity — provable, not claimed.',
+    badge: { text: 'v1.2', color: 'accent' },
+    featured: true,
+    code: 'confidence: 0.91, model: "Qwen2.5-7B"',
   },
   {
     iconPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
     title: 'Robot Registry',
     description: 'Global RRN registry with manufacturer verification tiers (⬜🟡🔵✅). Like ICANN for robots — federated, open, independent.',
-    code: 'RRN-2026-0001-ABCD'
+    code: 'RRN-2026-0001-ABCD',
+    badge: { text: 'Open', color: 'green' },
   }
 ];
 ---
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 perspective-1000">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
   {features.map(feature => (
-    <div class="group relative bg-[#12121a]/80 backdrop-blur-sm border border-white/5 rounded-2xl p-8 hover:border-accent/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_0_40px_-10px_rgba(34,211,238,0.2)]">
-      <!-- Glow Gradient -->
-      <div class="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-500 pointer-events-none"></div>
-      
+    <div class:list={[
+      "group relative backdrop-blur-sm border rounded-2xl p-7 transition-all duration-500 hover:-translate-y-2",
+      feature.featured
+        ? "bg-gradient-to-br from-accent/10 via-[#12121a]/80 to-[#12121a]/80 border-accent/30 shadow-[0_0_40px_-10px_rgba(34,211,238,0.25)] hover:shadow-[0_0_60px_-10px_rgba(34,211,238,0.4)] hover:border-accent/50 lg:col-span-2"
+        : "bg-[#12121a]/80 border-white/5 hover:border-accent/40 hover:shadow-[0_0_40px_-10px_rgba(34,211,238,0.15)]"
+    ]}>
+      <!-- Glow -->
+      <div class:list={[
+        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-500 pointer-events-none",
+        feature.featured
+          ? "from-accent/8 via-transparent to-purple-500/5"
+          : "from-accent/5 via-transparent to-transparent"
+      ]}></div>
+
       <div class="relative z-10 flex flex-col h-full">
-        <div class="w-14 h-14 mb-6 rounded-xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner group-hover:shadow-[0_0_20px_-5px_var(--color-accent)] group-hover:border-accent/30">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-text-muted group-hover:text-accent transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d={feature.iconPath} />
-          </svg>
+        <div class="flex items-start justify-between mb-5">
+          <div class:list={[
+            "w-12 h-12 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform duration-300",
+            feature.featured
+              ? "bg-gradient-to-br from-accent/20 to-accent/5 border-accent/30 shadow-[0_0_20px_-5px_rgba(34,211,238,0.4)]"
+              : "bg-gradient-to-br from-white/5 to-white/0 border-white/10 group-hover:shadow-[0_0_20px_-5px_rgba(34,211,238,0.3)] group-hover:border-accent/30"
+          ]}>
+            <svg xmlns="http://www.w3.org/2000/svg" class:list={[
+              "h-6 w-6 transition-colors duration-300",
+              feature.featured ? "text-accent" : "text-text-muted group-hover:text-accent"
+            ]} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d={feature.iconPath} />
+            </svg>
+          </div>
+          {feature.badge && (
+            <span class:list={[
+              "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border",
+              feature.badge.color === 'accent'
+                ? "bg-accent/10 text-accent border-accent/30"
+                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+            ]}>
+              {feature.badge.text}
+            </span>
+          )}
         </div>
 
-        <h3 class="text-xl font-bold mb-3 text-text group-hover:text-white transition-colors">{feature.title}</h3>
-        <p class="text-text-muted text-sm leading-relaxed mb-6 flex-grow">{feature.description}</p>
-        
+        <h3 class:list={[
+          "text-lg font-bold mb-2.5 transition-colors",
+          feature.featured ? "text-white" : "text-text group-hover:text-white"
+        ]}>{feature.title}</h3>
+        <p class="text-text-muted text-sm leading-relaxed mb-5 flex-grow">{feature.description}</p>
+
         {feature.code && (
           <div class="mt-auto">
-            <code class="block text-[10px] bg-black/30 border border-white/5 p-2 rounded text-accent/80 truncate font-mono tracking-tight">
+            <code class:list={[
+              "block text-[10px] border p-2 rounded-lg font-mono tracking-tight truncate",
+              feature.featured
+                ? "bg-accent/5 border-accent/20 text-accent"
+                : "bg-black/30 border-white/5 text-accent/80"
+            ]}>
               {feature.code}
             </code>
           </div>
