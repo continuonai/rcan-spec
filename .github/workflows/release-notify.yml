@@ -28,6 +28,8 @@ jobs:
           echo "version=${TAG#v}" >> $GITHUB_OUTPUT
 
       - name: File rcan-py update issue
+        continue-on-error: true
+        if: ${{ secrets.RCAN_SDK_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
@@ -50,6 +52,8 @@ The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
           || echo "Issue may already exist, continuing"
 
       - name: File rcan-ts update issue
+        continue-on-error: true
+        if: ${{ secrets.RCAN_SDK_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
@@ -72,6 +76,8 @@ The RCAN spec has been updated to ${{ steps.tag.outputs.tag }}.
           || echo "Issue may already exist, continuing"
 
       - name: File OpenCastor update issue
+        continue-on-error: true
+        if: ${{ secrets.RCAN_SDK_PAT != '' }}
         env:
           GH_TOKEN: ${{ secrets.RCAN_SDK_PAT }}
         run: |
