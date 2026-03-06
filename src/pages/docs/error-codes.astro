@@ -1,0 +1,452 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Error Codes Reference" description="Comprehensive reference for RCAN Registry API errors, federation errors, and SDK error classes.">
+  <div class="page-header">
+    <h1>Error Codes Reference</h1>
+    <p class="lead">All error codes returned by the RCAN Registry API, federation layer, and SDK error classes.</p>
+  </div>
+
+  <!-- Registry API Errors -->
+  <section class="err-section">
+    <h2>Registry API Errors <span class="badge">HTTP 4xx / 5xx</span></h2>
+    <p>These codes appear in the <code>error_code</code> field of error responses from the REST API.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>HTTP</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>1001</code></td>
+            <td><span class="http http-4xx">400</span></td>
+            <td><code>INVALID_RRN_FORMAT</code></td>
+            <td>RRN does not match expected pattern</td>
+          </tr>
+          <tr>
+            <td><code>1002</code></td>
+            <td><span class="http http-4xx">400</span></td>
+            <td><code>INVALID_TIER</code></td>
+            <td>Verification tier value not recognized</td>
+          </tr>
+          <tr>
+            <td><code>1003</code></td>
+            <td><span class="http http-4xx">400</span></td>
+            <td><code>TIER_SKIP_NOT_ALLOWED</code></td>
+            <td>Cannot skip verification tiers</td>
+          </tr>
+          <tr>
+            <td><code>1004</code></td>
+            <td><span class="http http-4xx">400</span></td>
+            <td><code>EVIDENCE_URL_REQUIRED</code></td>
+            <td><code>evidence_url</code> required for tier upgrade</td>
+          </tr>
+          <tr>
+            <td><code>2001</code></td>
+            <td><span class="http http-4xx">401</span></td>
+            <td><code>AUTH_REQUIRED</code></td>
+            <td>Bearer token required for write operations</td>
+          </tr>
+          <tr>
+            <td><code>2002</code></td>
+            <td><span class="http http-4xx">403</span></td>
+            <td><code>AUTH_INVALID</code></td>
+            <td>Bearer token invalid or expired</td>
+          </tr>
+          <tr>
+            <td><code>3001</code></td>
+            <td><span class="http http-404">404</span></td>
+            <td><code>ROBOT_NOT_FOUND</code></td>
+            <td>RRN not found in registry</td>
+          </tr>
+          <tr>
+            <td><code>3002</code></td>
+            <td><span class="http http-404">404</span></td>
+            <td><code>NODE_NOT_FOUND</code></td>
+            <td>No node registered for RRN prefix</td>
+          </tr>
+          <tr>
+            <td><code>3003</code></td>
+            <td><span class="http http-404">404</span></td>
+            <td><code>DELEGATION_NOT_FOUND</code></td>
+            <td>No delegation for namespace prefix</td>
+          </tr>
+          <tr>
+            <td><code>4001</code></td>
+            <td><span class="http http-429">429</span></td>
+            <td><code>RATE_LIMITED</code></td>
+            <td>Too many requests — see <code>Retry-After</code> header</td>
+          </tr>
+          <tr>
+            <td><code>5001</code></td>
+            <td><span class="http http-5xx">500</span></td>
+            <td><code>INTERNAL_ERROR</code></td>
+            <td>Registry internal error</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Error response shape</h3>
+    <pre><code>&#123;
+  "success": false,
+  "error_code": 3001,
+  "error": "ROBOT_NOT_FOUND",
+  "message": "RRN not found in registry",
+  "rrn": "RRN-000000000042"   // included where applicable
+&#125;</code></pre>
+  </section>
+
+  <!-- Federation Errors -->
+  <section class="err-section">
+    <h2>Federation Errors <span class="badge badge-sec">§17</span></h2>
+    <p>Returned by the distributed resolution layer when traversing the node trust chain. See <a href="/spec/section-17/">§17 Federated Registry</a> for full semantics.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>6001</code></td>
+            <td><code>NODE_NOT_FOUND</code></td>
+            <td>No node registered for RRN prefix</td>
+          </tr>
+          <tr>
+            <td><code>6002</code></td>
+            <td><code>DELEGATION_INVALID</code></td>
+            <td>Node delegation cert signature failed</td>
+          </tr>
+          <tr>
+            <td><code>6003</code></td>
+            <td><code>RECORD_SIG_INVALID</code></td>
+            <td>Robot record signature failed</td>
+          </tr>
+          <tr>
+            <td><code>6004</code></td>
+            <td><code>SYNC_CONFLICT</code></td>
+            <td>Sync conflict — root record wins</td>
+          </tr>
+          <tr>
+            <td><code>6005</code></td>
+            <td><code>NODE_UNAVAILABLE</code></td>
+            <td>Authoritative node unreachable</td>
+          </tr>
+          <tr>
+            <td><code>6006</code></td>
+            <td><code>CACHE_STALE</code></td>
+            <td>Cached record expired, live fetch failed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SDK Error Classes -->
+  <section class="err-section">
+    <h2>SDK Error Classes</h2>
+
+    <h3>TypeScript (<code>@continuonai/rcan-ts</code>)</h3>
+    <p>All SDK errors extend <code>RCANError</code>, which itself extends <code>Error</code>. Errors carry a <code>code</code> string matching the names above.</p>
+
+    <div class="tree">
+      <ul>
+        <li>
+          <code class="cls">RCANError</code> <span class="dim">— base class</span>
+          <ul>
+            <li><code class="cls">RCANValidationError</code> <span class="dim">— invalid input (e.g. malformed RRN)</span></li>
+            <li><code class="cls">RCANGateError</code> <span class="dim">— confidence gate blocked action</span>
+              <ul class="props">
+                <li><code>gateType: string</code></li>
+                <li><code>value: number</code></li>
+                <li><code>threshold: number</code></li>
+              </ul>
+            </li>
+            <li><code class="cls">RCANNodeError</code> <span class="dim">— federation / node error</span>
+              <ul class="props">
+                <li><code>nodeUrl: string</code></li>
+              </ul>
+              <ul>
+                <li><code class="cls">RCANNodeNotFoundError</code>
+                  <ul class="props"><li><code>rrn: string</code></li></ul>
+                </li>
+                <li><code class="cls">RCANNodeSyncError</code>
+                  <ul class="props"><li><code>cause: unknown</code></li></ul>
+                </li>
+                <li><code class="cls">RCANNodeTrustError</code>
+                  <ul class="props">
+                    <li><code>reason: 'invalid_signature' | 'expired_cert' | 'unknown_issuer' | 'missing_pubkey'</code></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <h4>Catching errors</h4>
+    <pre><code>import &#123;
+  RCANNodeNotFoundError,
+  RCANNodeTrustError,
+  RCANGateError,
+&#125; from '@continuonai/rcan-ts';
+
+try &#123;
+  const robot = await client.resolve('RRN-BD-000000000001');
+&#125; catch (err) &#123;
+  if (err instanceof RCANNodeNotFoundError) &#123;
+    console.error('RRN not found:', err.rrn);
+  &#125; else if (err instanceof RCANNodeTrustError) &#123;
+    console.error('Trust failure:', err.reason); // e.g. 'invalid_signature'
+  &#125; else if (err instanceof RCANGateError) &#123;
+    console.error(`Gate blocked: $&#123;err.value&#125; &lt; $&#123;err.threshold&#125;`);
+  &#125;
+&#125;</code></pre>
+
+    <h3>Python (<code>rcan</code>)</h3>
+
+    <pre><code>from rcan.exceptions import (
+    RCANError,           # base
+    RCANValidationError, # invalid input
+    RCANGateError,       # confidence gate blocked
+    RCANNodeError,       # federation / node base
+    RCANNodeNotFoundError,
+    RCANNodeSyncError,
+    RCANNodeTrustError,
+)
+
+try:
+    robot = client.resolve("RRN-BD-000000000001")
+except RCANNodeNotFoundError as e:
+    print(f"RRN not found: {e.rrn}")
+except RCANNodeTrustError as e:
+    # e.reason: 'invalid_signature' | 'expired_cert' | ...
+    print(f"Trust failure: {e.reason}")
+except RCANGateError as e:
+    print(f"Gate blocked: {e.value} &lt; {e.threshold}")</code></pre>
+  </section>
+
+  <!-- Back links -->
+  <section class="err-section">
+    <div class="back-links">
+      <a href="/docs/">&larr; Docs index</a>
+      <a href="/api/">API Reference</a>
+      <a href="/spec/section-17/">§17 Federated Registry</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .lead {
+    font-size: 1.2rem;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+  }
+
+  .err-section {
+    margin-bottom: 3.5rem;
+  }
+
+  .err-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .err-section h3 {
+    font-size: 1.05rem;
+    margin: 2rem 0 0.75rem;
+    color: var(--color-text);
+  }
+
+  .err-section h4 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+  }
+
+  .badge-sec {
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    background: var(--color-bg-alt);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: rgba(255,255,255,0.025);
+  }
+
+  .http {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+  }
+
+  .http-4xx { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
+  .http-404 { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+  .http-429 { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
+  .http-5xx { background: rgba(239, 68, 68, 0.25); color: #ef4444; }
+
+  pre {
+    background: var(--color-code-bg, #0d1117);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    margin: 0.75rem 0;
+  }
+
+  code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    background: rgba(255,255,255,0.07);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Error hierarchy tree */
+  .tree {
+    background: var(--color-code-bg, #0d1117);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin: 0.75rem 0;
+    font-size: 0.85rem;
+  }
+
+  .tree ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  .tree > ul {
+    padding-left: 0;
+  }
+
+  .tree li {
+    position: relative;
+    padding: 0.25rem 0;
+  }
+
+  .tree ul > li::before {
+    content: '├─ ';
+    color: var(--color-text-muted);
+  }
+
+  .tree ul > li:last-child::before {
+    content: '└─ ';
+  }
+
+  .cls {
+    background: rgba(34, 211, 238, 0.1);
+    color: var(--color-accent);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+  }
+
+  .props {
+    padding-left: 2rem !important;
+  }
+
+  .props li::before {
+    content: '· ' !important;
+    color: rgba(255,255,255,0.2) !important;
+  }
+
+  .dim {
+    color: var(--color-text-muted);
+    font-size: 0.8em;
+  }
+
+  .back-links {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .back-links a {
+    color: var(--color-accent);
+    font-size: 0.9rem;
+  }
+
+  .back-links a:hover {
+    text-decoration: underline;
+  }
+</style>

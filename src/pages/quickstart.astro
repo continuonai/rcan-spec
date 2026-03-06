@@ -151,13 +151,74 @@ with open("audit.jsonl", "w") as f:
     <span class="text-accent font-mono text-lg mr-2">05</span>Register Your Robot
   </h2>
   <p>Get a globally unique RRN (Robot Registry Number). Free.</p>
+  <p class="text-sm text-text-muted mt-2">New RRNs use 12-digit sequences (e.g. <code>RRN-000000000001</code>). Legacy 8-digit RRNs (<code>RRN-00000001</code>) remain valid — the format is backward compatible.</p>
 
   <CodeWindow language="bash" title="Terminal" code={`# If using OpenCastor — built into the setup wizard
 castor wizard
-# → Step 13: Register with rcan.dev? [Y/n]  →  ✅ RRN-00000042
+# → Step 13: Register with rcan.dev? [Y/n]  →  ✅ RRN-000000000042
 
 # Or standalone
 castor register --config myrobot.rcan.yaml`} />
+
+  <!-- Step 5b: Federated Resolution -->
+  <h2 id="federated-resolution">
+    <span class="text-accent font-mono text-lg mr-2">05b</span>Federated Resolution
+  </h2>
+  <p>Any client can resolve an RRN across the federation — even if registered at a manufacturer's authoritative node:</p>
+
+  <!-- NodeClient Tabs -->
+  <div class="not-prose my-6">
+    <div class="flex gap-2 mb-0 border-b border-white/10" id="node-tabs">
+      <button class="node-tab px-4 py-2 text-sm font-medium rounded-t-lg border border-b-0 border-white/10 bg-accent/10 text-accent transition-all" data-ntab="node-python">Python</button>
+      <button class="node-tab px-4 py-2 text-sm font-medium rounded-t-lg border border-b-0 border-white/10 bg-bg-alt/30 text-text-muted hover:text-white transition-all" data-ntab="node-typescript">TypeScript</button>
+    </div>
+
+    <div id="tab-node-python" class="node-panel rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
+      <pre class="text-green-400">from rcan import NodeClient</pre>
+      <pre class="text-white mt-2">client = NodeClient()</pre>
+      <pre class="text-white mt-2"><span class="text-text-muted"># Resolve an RRN from any node in the federation</span></pre>
+      <pre class="text-white">robot = client.resolve("RRN-BD-000000000001")</pre>
+      <pre class="text-white">print(f"Found: &#123;robot['record']['name']&#125; (resolved by &#123;robot['resolved_by']&#125;)")</pre>
+      <pre class="text-white mt-2"><span class="text-text-muted"># Discover which node is authoritative for a namespace</span></pre>
+      <pre class="text-white">node = client.discover("RRN-BD-000000000001")</pre>
+      <pre class="text-white">print(f"Authoritative node: &#123;node['operator']&#125; at &#123;node['api_base']&#125;")</pre>
+      <pre class="text-white mt-2"><span class="text-text-muted"># List all known registry nodes</span></pre>
+      <pre class="text-white">nodes = client.list_nodes()</pre>
+      <pre class="text-white">for n in nodes:</pre>
+      <pre class="text-white">    print(f"  &#123;n['operator']&#125;: &#123;n['namespace_prefix']&#125;")</pre>
+    </div>
+
+    <div id="tab-node-typescript" class="node-panel hidden rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
+      <pre class="text-green-400">import &#123; NodeClient &#125; from '@continuonai/rcan-ts';</pre>
+      <pre class="text-white mt-2">const client = new NodeClient();</pre>
+      <pre class="text-white mt-2"><span class="text-text-muted">// Resolve across federation</span></pre>
+      <pre class="text-white">const result = await client.resolve('RRN-BD-000000000001');</pre>
+      <pre class="text-white">console.log(`Found: $&#123;result.record.name&#125; (via $&#123;result.resolved_by&#125;)`);</pre>
+      <pre class="text-white mt-2"><span class="text-text-muted">// Verify a node manifest</span></pre>
+      <pre class="text-white">const manifest = await client.getNodeManifest('https://registry.example.com');</pre>
+      <pre class="text-white">const valid = client.verifyNode(manifest);</pre>
+      <pre class="text-white">console.log(`Node valid: $&#123;valid&#125;`);</pre>
+    </div>
+  </div>
+
+  <script>
+    const nodeTabs = document.querySelectorAll<HTMLButtonElement>('.node-tab');
+    const nodePanels = document.querySelectorAll<HTMLElement>('.node-panel');
+    nodeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.ntab;
+        nodeTabs.forEach(t => {
+          t.classList.toggle('bg-accent/10', t.dataset.ntab === target);
+          t.classList.toggle('text-accent', t.dataset.ntab === target);
+          t.classList.toggle('bg-bg-alt/30', t.dataset.ntab !== target);
+          t.classList.toggle('text-text-muted', t.dataset.ntab !== target);
+        });
+        nodePanels.forEach(p => {
+          p.classList.toggle('hidden', p.id !== `tab-${target}`);
+        });
+      });
+    });
+  </script>
 
   <!-- Step 6 -->
   <h2 id="validate">
