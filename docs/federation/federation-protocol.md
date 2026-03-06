@@ -128,6 +128,27 @@ rcan://local.rcan/opencastor/rover/abc12345
 
 > **Note:** Multiple local registries may exist on a network; the mDNS `priority` field determines preference.
 
+### 4.4 Resolver Node
+
+A Resolver node is operated by a fleet operator or enterprise. It has no namespace authority and cannot register new RRNs. Instead, it caches and proxies records from Authoritative nodes and the root, providing low-latency resolution for local fleets without a permanent internet dependency.
+
+**Characteristics:**
+- Operates under an internal or operator-controlled domain
+- No delegation certificate required
+- Caches records from Authoritative nodes and root with TTL enforcement
+- Proxies resolution requests on cache miss
+- MUST NOT register new RRNs in authoritative namespaces
+- Suitable for fleet operators, enterprises, and research facilities
+
+**Use case:** A logistics company running 500 Boston Dynamics robots deploys a Resolver node on their internal network. The Resolver caches `RRN-BD-*` records from `registry.boston-dynamics.com`, serving resolution requests locally even when the manufacturer's registry is temporarily unreachable.
+
+**Resolver RURI example:**
+```
+# Resolver serves records from rcan://registry.boston-dynamics.com/...
+# but is not itself an authoritative source
+https://resolver.acme-logistics.internal/api/rcan/v1/
+```
+
 ---
 
 ## 5. Resolution Chain
@@ -223,6 +244,28 @@ Resolvers **SHOULD** verify federation proofs by:
 2. Verifying the proof signature against the `registry_pubkey_hint` fingerprint.
 3. Checking `timestamp_iso` is within acceptable skew (recommended: ±5 minutes).
 4. Validating `chain_hash` against the previous proof in the chain (for audit integrity).
+
+### 6.4a Node Trust Verification
+
+When resolving a delegated RRN (format `RRN-{PREFIX}-{SEQUENCE}`) from an Authoritative node, clients MUST perform a full node trust verification in addition to the proof verification steps in §6.4:
+
+1. **Fetch the node manifest** from `https://<authoritative-node>/.well-known/rcan-node.json`.
+2. **Extract the delegation cert** from the manifest's `delegation_cert` field.
+3. **Verify the delegation cert signature** using root's Ed25519 public key (obtained from `https://rcan.dev/.well-known/rcan-node.json`). The signature covers the canonical JSON of the cert (all fields except `root_signature`).
+4. **Check cert expiry**: `expires_at` MUST be in the future.
+5. **Verify namespace match**: the `namespace_prefix` in the cert MUST match the prefix extracted from the RRN being resolved.
+6. **Verify the record signature**: the robot record's `node_signature` MUST be valid against the node's `public_key` from the manifest.
+
+If any verification step fails, the resolver MUST return the appropriate error code (see §10 Error Codes) and MUST NOT serve the record.
+
+```
+# Full trust verification chain
+root.pubkey (pinned from rcan.dev/.well-known/rcan-node.json)
+    → verifies → delegation_cert.root_signature
+        → delegation_cert binds → node.pubkey
+            → verifies → record.node_signature
+                → record is trusted
+```
 
 ---
 
@@ -327,6 +370,102 @@ The root registry will fetch and validate your `.well-known` descriptor, verify 
 
 ---
 
+## 8a. Node Registration Process
+
+Any manufacturer or organisation wishing to operate an Authoritative node and register RRNs under a dedicated prefix MUST complete the following process.
+
+### Application
+
+Submit a node registration request to root:
+
+```http
+POST https://rcan.dev/api/rcan/v1/delegations/apply
+Content-Type: application/json
+
+{
+  "organisation": "Boston Dynamics, Inc.",
+  "contact_email": "registry@bostondynamics.com",
+  "requested_prefix": "BD",
+  "node_url": "https://registry.boston-dynamics.com",
+  "well_known_url": "https://registry.boston-dynamics.com/.well-known/rcan-node.json",
+  "node_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+  "justification": "Manufacturer registry for all Boston Dynamics robot product lines."
+}
+```
+
+Root will:
+1. Verify the `well_known_url` is reachable and returns a valid node manifest.
+2. Verify the `node_pubkey` matches the key published in the manifest.
+3. Check that the `requested_prefix` is available (2–6 uppercase ASCII, not already delegated).
+4. Review the application (automated checks + manual approval for new prefixes).
+5. If approved, issue a signed delegation certificate and add the prefix to the `namespace_delegations` table.
+
+### Certificate Issuance
+
+Upon approval, root generates and signs the delegation cert:
+
+```json
+{
+  "namespace_prefix": "BD",
+  "node_url": "https://registry.boston-dynamics.com",
+  "node_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+  "granted_at": "2026-01-01T00:00:00Z",
+  "expires_at": "2027-01-01T00:00:00Z",
+  "root_signature": "ed25519:<signed-by-root-private-key>"
+}
+```
+
+The applicant MUST embed this cert in their `/.well-known/rcan-node.json` manifest before registering any RRNs.
+
+### Renewal
+
+Delegation certs MUST be renewed before `expires_at`. Renewal uses the same endpoint; an existing cert is required to authenticate the renewal request. Root SHOULD send renewal reminders 30 and 7 days before expiry.
+
+---
+
+## 8b. Sync Protocol
+
+Authoritative nodes synchronise records to root using a combination of periodic pull and optional webhook push.
+
+### Pull Sync (Required)
+
+Every Authoritative node MUST periodically pull sync from its parent (root or an intermediate Authoritative node):
+
+1. **Poll interval**: Every `sync_interval_seconds` (default: 3600 seconds, minimum: 60 seconds).
+2. **Request**: `GET {parent}/api/rcan/v1/sync?since={last_sync_iso}&node={node_url}`
+3. **Response**: JSON sync payload (see §17.7 Wire Format in the spec) containing all records changed since `last_sync_iso`.
+4. **Apply**: Node applies the received changes to its local store.
+5. **Conflict resolution**: If the same RRN exists with differing values, the root record MUST win.
+6. **Timestamp update**: Node records the current time as `synced_at` for the next poll.
+
+On failure, nodes MUST use exponential backoff (initial: 60s, maximum: 3600s).
+
+### Webhook Push (Recommended)
+
+Nodes SHOULD register a webhook URL with their parent to receive push notifications when records change:
+
+```http
+POST https://rcan.dev/api/rcan/v1/nodes/webhooks
+Content-Type: application/json
+
+{
+  "node_url": "https://registry.boston-dynamics.com",
+  "webhook_url": "https://registry.boston-dynamics.com/api/rcan/v1/webhook",
+  "secret": "sha256:<hmac-secret-for-verification>"
+}
+```
+
+When a record changes, the parent POSTs a sync payload to all registered webhook URLs. The receiver MUST validate the `X-RCAN-Signature` HMAC header before processing.
+
+### Sync Security
+
+- All sync requests and webhook deliveries MUST use HTTPS.
+- Sync responses MUST be signed with the sending node's Ed25519 private key.
+- Receivers MUST verify the signature before applying any changes.
+- A sync message with `to_node` not matching the receiver's own URL MUST be rejected.
+
+---
+
 ## 8. Root Registry Governance
 
 `rcan.dev` serves as the root registry and federation anchor. Its operation **MUST** be governed by an independent body to prevent capture by any single commercial or governmental interest.
@@ -387,6 +526,21 @@ Local registries (`local.rcan`) are designed for offline operation. For air-gapp
 | 6006 | `ROBOT_NOT_REGISTERED` | RRN not found in the queried registry |
 | 6007 | `ROBOT_SUSPENDED` | Robot registration is currently suspended |
 | 6008 | `ROBOT_REVOKED` | Robot registration has been permanently revoked |
+
+### Distributed Node Protocol Error Codes (§17)
+
+The following codes are specific to the Distributed Registry Node Protocol (§17). They are returned when resolving delegated RRNs or during node-to-node sync operations.
+
+| Code | Name | HTTP Status | Description |
+|---|---|---|---|
+| 6001 | `NODE_NOT_FOUND` | 404 | No Authoritative node is registered for the RRN prefix. The prefix may not be delegated or may have been revoked. |
+| 6002 | `DELEGATION_INVALID` | 403 | Node delegation certificate signature verification failed. The cert may be expired, tampered with, or signed by an unrecognised key. |
+| 6003 | `RECORD_SIG_INVALID` | 403 | Robot record signature verification failed. The record may have been tampered with in transit or after registration. |
+| 6004 | `SYNC_CONFLICT` | 409 | A sync conflict was detected (same RRN with differing values at node and root). Root record wins; the conflicting node record has been overwritten. |
+| 6005 | `NODE_UNAVAILABLE` | 503 | The Authoritative node for this RRN prefix is currently unreachable. No valid cached record is available. |
+| 6006 | `CACHE_STALE` | 206 | A cached record was found but its TTL has expired. A live fetch from the Authoritative node failed. The stale record is returned; callers SHOULD decide whether to accept it or treat as unavailable. |
+
+**Note on code numbering:** The §17 node protocol error codes reuse the 6001–6006 range for node-specific errors. Implementations SHOULD include a `domain` field in error responses (`"domain": "federation"` or `"domain": "node-protocol"`) to disambiguate when codes overlap.
 
 ---
 

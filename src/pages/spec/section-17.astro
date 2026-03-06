@@ -1,0 +1,538 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const syncWireFormat = `{
+  "protocol": "rcan-sync/1.0",
+  "from_node": "https://registry.example.com",
+  "to_node": "https://rcan.dev",
+  "since": "2026-03-06T00:00:00Z",
+  "records": [
+    {
+      "rrn": "RRN-BD-00000001",
+      "robot_name": "Atlas Unit 001",
+      "registered_at": "2026-01-15T09:00:00Z",
+      "attestation": "active",
+      "node_signature": "ed25519:abc123..."
+    }
+  ],
+  "signature": "ed25519:xyz789..."
+}`;
+
+const nodeManifest = `{
+  "node_id": "https://registry.boston-dynamics.com",
+  "node_type": "authoritative",
+  "namespace_prefix": "BD",
+  "operator": "Boston Dynamics, Inc.",
+  "rcan_version": "1.2",
+  "public_key": "ed25519:MCowBQYDK2VwAyEA...",
+  "public_key_fingerprint": "sha256:3a7f9c2d...",
+  "sync_interval_seconds": 3600,
+  "api_base": "https://registry.boston-dynamics.com/api/rcan/v1",
+  "delegation_cert": {
+    "namespace_prefix": "BD",
+    "node_url": "https://registry.boston-dynamics.com",
+    "node_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+    "granted_at": "2026-01-01T00:00:00Z",
+    "expires_at": "2027-01-01T00:00:00Z",
+    "root_signature": "ed25519:rootsig456..."
+  }
+}`;
+
+const delegationCert = `{
+  "namespace_prefix": "BD",
+  "node_url": "https://registry.boston-dynamics.com",
+  "node_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+  "granted_at": "2026-01-01T00:00:00Z",
+  "expires_at": "2027-01-01T00:00:00Z",
+  "root_signature": "ed25519:rootsig456..."
+}`;
+
+const resolutionAlgorithm = `function resolve(rrn):
+  # Legacy RRN format: RRN-XXXXXXXX (8 hex chars, no prefix)
+  if rrn matches /^RRN-[0-9A-F]{8}$/:
+    return root.lookup(rrn)
+
+  # Delegated RRN format: RRN-{PREFIX}-{SEQUENCE}
+  prefix = extract_prefix(rrn)  // "RRN-BD-00000001" → "BD"
+  node = root.delegations[prefix]
+  if not node:
+    return NOT_FOUND
+
+  try:
+    record = node.lookup(rrn)
+    verify_signature(record, node.pubkey)
+    verify_delegation(node.cert, root.pubkey)
+    return record
+  except NetworkError:
+    return cache.lookup(rrn) or UNAVAILABLE`;
+---
+
+<DocsLayout title="§17 Distributed Registry Node Protocol" description="RCAN §17 — Distributed Registry Node Protocol. Defines node types, RRN namespace partitioning, node identity, sync protocol, trust chain, and resolution algorithm.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">§17 Distributed Registry Node Protocol</h1>
+  </div>
+  <div class="flex gap-2 mb-8 flex-wrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+      Status: Draft
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      RCAN v1.2
+    </span>
+    <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← Back to Specification
+    </a>
+  </div>
+
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#node-types"            class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.1</span> Node Types</a></li>
+      <li><a href="#namespace-partitioning" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.2</span> RRN Namespace Partitioning</a></li>
+      <li><a href="#node-identity"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.3</span> Node Identity</a></li>
+      <li><a href="#sync-protocol"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.4</span> Sync Protocol</a></li>
+      <li><a href="#trust-chain"           class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.5</span> Trust Chain</a></li>
+      <li><a href="#resolution-algorithm"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.6</span> Resolution Algorithm</a></li>
+      <li><a href="#wire-format"           class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.7</span> Wire Format</a></li>
+      <li><a href="#error-codes"           class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">17.8</span> Error Codes</a></li>
+    </ol>
+  </div>
+
+  <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-cyan-300/80">
+      <strong class="text-cyan-400">Overview:</strong> This section defines the Distributed Registry Node Protocol — the layer that enables
+      multiple independent RCAN registry nodes to interoperate as a coherent global namespace. It
+      specifies how nodes identify themselves, partition the RRN namespace, synchronise records, and
+      establish a verifiable trust chain rooted at <code class="text-cyan-400">rcan.dev</code>.
+    </p>
+  </div>
+
+  <hr />
+
+  <!-- ── §17.1 Node Types ─────────────────────────────────────────────────── -->
+  <section id="node-types">
+    <h2>17.1 Node Types</h2>
+    <p>The RCAN distributed registry defines four node types, each with distinct authority level, namespace scope, and operational responsibilities.</p>
+
+    <div class="not-prose grid md:grid-cols-2 gap-4 my-6">
+
+      <div class="bg-bg-alt border border-cyan-400/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20 uppercase tracking-wider">Root</span>
+          <span class="text-xs text-text-muted">rcan.dev</span>
+        </div>
+        <p class="text-sm text-text-muted mb-2">
+          Operated by the RCAN Working Group. Authoritative for the global namespace, delegation authority, and the root of the trust chain.
+        </p>
+        <ul class="text-xs text-text-muted space-y-1">
+          <li>• Maintains <code class="text-cyan-400">namespace_delegations</code> table</li>
+          <li>• Issues delegation certificates to Authoritative nodes</li>
+          <li>• Trust anchor: root Ed25519 public key is the chain root</li>
+          <li>• Resolves legacy <code class="text-cyan-400">RRN-XXXXXXXX</code> RRNs directly</li>
+        </ul>
+      </div>
+
+      <div class="bg-bg-alt border border-purple-400/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-400/10 text-purple-400 border border-purple-400/20 uppercase tracking-wider">Authoritative</span>
+          <span class="text-xs text-text-muted">Manufacturer-run</span>
+        </div>
+        <p class="text-sm text-text-muted mb-2">
+          Operated by a robot manufacturer or organisation. Authoritative for a delegated RRN prefix namespace (e.g. <code class="text-purple-300">BD</code>, <code class="text-purple-300">UR</code>).
+        </p>
+        <ul class="text-xs text-text-muted space-y-1">
+          <li>• Holds a delegation cert signed by root</li>
+          <li>• Signs all records it registers</li>
+          <li>• Syncs records upstream to root on schedule</li>
+          <li>• MUST expose <code class="text-purple-300">/.well-known/rcan-node.json</code></li>
+        </ul>
+      </div>
+
+      <div class="bg-bg-alt border border-green-400/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-400/10 text-green-400 border border-green-400/20 uppercase tracking-wider">Resolver</span>
+          <span class="text-xs text-text-muted">Fleet operator</span>
+        </div>
+        <p class="text-sm text-text-muted mb-2">
+          Operated by a fleet operator or enterprise. Has no namespace authority — caches and proxies records from Authoritative nodes and root.
+        </p>
+        <ul class="text-xs text-text-muted space-y-1">
+          <li>• No delegation cert required</li>
+          <li>• Caches records with TTL enforcement</li>
+          <li>• Serves local fleet without network dependency</li>
+          <li>• MUST NOT register new RRNs in authoritative namespaces</li>
+        </ul>
+      </div>
+
+      <div class="bg-bg-alt border border-orange-400/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-400/10 text-orange-400 border border-orange-400/20 uppercase tracking-wider">Cache</span>
+          <span class="text-xs text-text-muted">Edge / CDN</span>
+        </div>
+        <p class="text-sm text-text-muted mb-2">
+          Edge or CDN node. Stores only TTL-bound records. Cannot originate records. Serves as a performance layer in front of Authoritative nodes.
+        </p>
+        <ul class="text-xs text-text-muted space-y-1">
+          <li>• TTL-bound records only — no persistent storage</li>
+          <li>• Transparent on cache miss (proxies upstream)</li>
+          <li>• MUST include <code class="text-orange-300">X-RCAN-Cache: HIT|MISS</code> header</li>
+          <li>• MUST NOT serve stale records beyond 2× TTL</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Node Type</th><th>Namespace Authority</th><th>Signs Records</th><th>Delegation Cert</th><th>Syncs To</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Root</strong></td><td>Global (all RRNs)</td><td>Yes</td><td>Self (trust anchor)</td><td>—</td></tr>
+        <tr><td><strong>Authoritative</strong></td><td>Delegated prefix (e.g. <code>BD</code>)</td><td>Yes</td><td>Required (from root)</td><td>Root</td></tr>
+        <tr><td><strong>Resolver</strong></td><td>None</td><td>No</td><td>Not required</td><td>Authoritative / Root</td></tr>
+        <tr><td><strong>Cache</strong></td><td>None</td><td>No</td><td>Not required</td><td>Authoritative (TTL-bound)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.2 RRN Namespace Partitioning ─────────────────────────────────── -->
+  <section id="namespace-partitioning">
+    <h2>17.2 RRN Namespace Partitioning</h2>
+    <p>The Robot Registration Number (RRN) namespace is partitioned to support delegation to Authoritative nodes while preserving backwards compatibility with legacy RRNs.</p>
+
+    <h3>Legacy RRNs</h3>
+    <p>Legacy RRNs use the format <code>RRN-XXXXXXXX</code> (8 uppercase hex characters). These RRNs were assigned before namespace delegation was introduced and remain registered at root. They continue to resolve unchanged.</p>
+
+    <div class="not-prose bg-bg-alt border border-white/10 rounded-lg p-4 font-mono text-sm my-4">
+      <span class="text-text-muted"># Legacy format (root-only)</span><br />
+      <span class="text-cyan-400">RRN-00000042</span>  <span class="text-text-muted">→ resolves at rcan.dev</span><br />
+      <span class="text-cyan-400">RRN-DEADBEEF</span>  <span class="text-text-muted">→ resolves at rcan.dev</span>
+    </div>
+
+    <h3>Delegated RRNs</h3>
+    <p>Delegated RRNs use the format <code>RRN-{"{"}PREFIX{"}"}-{"{"}SEQUENCE{"}"}</code>, where:</p>
+    <ul>
+      <li><code>PREFIX</code> — 2 to 6 uppercase ASCII letters (A–Z), uniquely assigned by root to an Authoritative node.</li>
+      <li><code>SEQUENCE</code> — Zero-padded decimal sequence number (minimum 8 digits), assigned by the Authoritative node.</li>
+    </ul>
+
+    <div class="not-prose bg-bg-alt border border-white/10 rounded-lg p-4 font-mono text-sm my-4">
+      <span class="text-text-muted"># Delegated format (authoritative node)</span><br />
+      <span class="text-purple-300">RRN-BD-00000001</span>   <span class="text-text-muted">→ Boston Dynamics, resolves at registry.boston-dynamics.com</span><br />
+      <span class="text-purple-300">RRN-UR-00000042</span>   <span class="text-text-muted">→ Universal Robots, resolves at registry.universal-robots.com</span><br />
+      <span class="text-purple-300">RRN-SPOT-00000001</span> <span class="text-text-muted">→ prefix "SPOT", resolves at delegated node</span>
+    </div>
+
+    <h3>Namespace Delegations Table</h3>
+    <p>Root maintains a <code>namespace_delegations</code> table mapping each PREFIX to its Authoritative node URL and delegation certificate. This table is publicly queryable:</p>
+
+    <pre><code>GET https://rcan.dev/api/rcan/v1/delegations
+GET https://rcan.dev/api/rcan/v1/delegations/{"{"}"prefix{"}"}</code></pre>
+
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>prefix</code></td><td>string (2–6 chars)</td><td>Uppercase ASCII prefix (e.g. <code>BD</code>)</td></tr>
+        <tr><td><code>node_url</code></td><td>string (URL)</td><td>Authoritative node base URL</td></tr>
+        <tr><td><code>operator</code></td><td>string</td><td>Organisation holding this delegation</td></tr>
+        <tr><td><code>delegated_at</code></td><td>ISO 8601</td><td>When the delegation was granted</td></tr>
+        <tr><td><code>cert_fingerprint</code></td><td>string (<code>sha256:...</code>)</td><td>Fingerprint of the delegation cert</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.3 Node Identity ───────────────────────────────────────────────── -->
+  <section id="node-identity">
+    <h2>17.3 Node Identity</h2>
+    <p>Every RCAN registry node (Root, Authoritative, Resolver, Cache) has a cryptographic identity based on an Ed25519 key pair.</p>
+
+    <h3>Key Setup</h3>
+    <p>At initialisation, each node MUST generate an Ed25519 key pair and protect the private key using appropriate access controls. Key rotation MUST be supported without service interruption (see §17.5 for trust chain implications).</p>
+
+    <pre><code># Generate Ed25519 key pair for a registry node
+openssl genpkey -algorithm ed25519 -out node-private.pem
+openssl pkey -in node-private.pem -pubout -out node-public.pem</code></pre>
+
+    <h3>Node Manifest</h3>
+    <p>Every node MUST publish a manifest at <code>/.well-known/rcan-node.json</code>. This endpoint MUST be publicly accessible over HTTPS with no authentication required.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={nodeManifest} language="json" title="/.well-known/rcan-node.json" />
+    </div>
+
+    <h3>Delegation Certificate</h3>
+    <p>Authoritative nodes MUST obtain a delegation certificate from root before registering any RRNs under their delegated prefix. The delegation cert is a JSON document signed by root's Ed25519 private key.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={delegationCert} language="json" title="delegation-cert.json" />
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>namespace_prefix</code></td><td>MUST</td><td>The RRN prefix delegated to this node (e.g. <code>BD</code>)</td></tr>
+        <tr><td><code>node_url</code></td><td>MUST</td><td>Canonical URL of the Authoritative node</td></tr>
+        <tr><td><code>node_pubkey</code></td><td>MUST</td><td>Ed25519 public key of the node (<code>ed25519:&lt;base64&gt;</code>)</td></tr>
+        <tr><td><code>granted_at</code></td><td>MUST</td><td>ISO 8601 timestamp when delegation was granted</td></tr>
+        <tr><td><code>expires_at</code></td><td>MUST</td><td>ISO 8601 expiry; node MUST renew before this date</td></tr>
+        <tr><td><code>root_signature</code></td><td>MUST</td><td>Ed25519 signature over the other fields using root's private key</td></tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Security note:</strong> The delegation cert MUST be embedded in the node manifest at <code>/.well-known/rcan-node.json</code> and included in every sync message. Clients MUST verify the cert signature against root's public key before trusting any record from that node.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.4 Sync Protocol ──────────────────────────────────────────────── -->
+  <section id="sync-protocol">
+    <h2>17.4 Sync Protocol</h2>
+    <p>Authoritative nodes MUST synchronise their records to root (and optionally to other nodes) using a periodic pull-based mechanism with optional webhook push.</p>
+
+    <h3>Pull Sync (Required)</h3>
+    <p>Nodes MUST poll their parent node every <code>sync_interval_seconds</code> (default: <strong>3600 seconds</strong>, minimum: <strong>60 seconds</strong>). Each poll fetches the delta of changed records since the last successful sync.</p>
+
+    <ol>
+      <li>Node sends <code>GET {"{"}parent{"}"}/api/rcan/v1/sync?since={"{"}last_sync_iso{"}"}</code></li>
+      <li>Parent responds with a JSON array of changed records (see §17.7 Wire Format)</li>
+      <li>Node applies changes, updating its local store</li>
+      <li>On conflict, root record MUST win (root is authoritative source of truth)</li>
+      <li>Node records the <code>synced_at</code> timestamp for the next poll cycle</li>
+    </ol>
+
+    <h3>Webhook Push (Recommended)</h3>
+    <p>Nodes SHOULD support webhook-based push from their parent. When a record changes at the parent, the parent SHOULD POST a sync payload to all registered webhook URLs of child nodes.</p>
+
+    <pre><code># Register webhook at parent
+POST https://rcan.dev/api/rcan/v1/nodes/webhooks
+{"{"}
+  "node_url": "https://registry.example.com",
+  "webhook_url": "https://registry.example.com/api/rcan/v1/webhook",
+  "secret": "sha256:<hmac-secret>"
+{"}"}</code></pre>
+
+    <h3>Conflict Resolution</h3>
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>Resolution</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Same RRN exists at node and root with different values</td><td>Root record wins; node MUST overwrite local copy</td></tr>
+        <tr><td>Record exists at node but not at root</td><td>Node-originated record is preserved (node is authoritative for its prefix)</td></tr>
+        <tr><td>Root revokes a record registered by an Authoritative node</td><td>Root revocation MUST propagate; node MUST update attestation to <code>revoked</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80"><strong class="text-cyan-400">Implementation note:</strong> Nodes SHOULD use exponential backoff (starting at 60 seconds, maximum 1 hour) when sync attempts fail due to network errors. Persistent sync failures MUST be surfaced in the node's health endpoint.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.5 Trust Chain ─────────────────────────────────────────────────── -->
+  <section id="trust-chain">
+    <h2>17.5 Trust Chain</h2>
+    <p>RCAN uses a two-level trust chain rooted at the root registry. All verification flows ultimately validate against root's Ed25519 public key.</p>
+
+    <div class="not-prose bg-bg-alt border border-white/10 rounded-xl p-6 my-6 font-mono text-sm">
+      <div class="flex flex-col items-center gap-2 text-center">
+        <div class="px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 font-bold">
+          Root (rcan.dev)<br /><span class="text-xs font-normal text-text-muted">Trust Anchor — Ed25519 public key published at /.well-known/rcan-node.json</span>
+        </div>
+        <div class="text-text-muted">↓ signs delegation cert</div>
+        <div class="px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-400 font-bold">
+          Authoritative Node<br /><span class="text-xs font-normal text-text-muted">Delegation cert signed by root • Signs robot records</span>
+        </div>
+        <div class="text-text-muted">↓ signs robot record</div>
+        <div class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-text font-bold">
+          Robot Record (RRN)<br /><span class="text-xs font-normal text-text-muted">node_signature: ed25519:...</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Trust Rules</h3>
+    <ol>
+      <li><strong>Root's public key is the trust anchor.</strong> It is published at <code>https://rcan.dev/.well-known/rcan-node.json</code>. Clients SHOULD pin this key and verify it out-of-band.</li>
+      <li><strong>Each Authoritative node holds a delegation cert</strong> signed by root's Ed25519 private key. The cert binds the node's public key to its namespace prefix.</li>
+      <li><strong>Each robot record SHOULD carry the registering node's signature</strong> over the record's canonical JSON, using the node's Ed25519 private key.</li>
+      <li><strong>Clients MUST verify</strong> the following chain before trusting a record:
+        <ul>
+          <li>Record signature is valid against the node's public key</li>
+          <li>Node's delegation cert signature is valid against root's public key</li>
+          <li>Delegation cert has not expired</li>
+          <li>RRN prefix in the record matches the prefix in the delegation cert</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>Key Rotation</h3>
+    <p>Nodes MUST support key rotation without breaking existing records. When rotating:</p>
+    <ol>
+      <li>Generate new Ed25519 key pair</li>
+      <li>Obtain updated delegation cert from root (Authoritative nodes)</li>
+      <li>Publish new <code>/.well-known/rcan-node.json</code> with new key and cert</li>
+      <li>Re-sign existing records with the new key (MAY be done lazily on next sync)</li>
+      <li>Keep old public key available for verifying pre-rotation records for at least 30 days</li>
+    </ol>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.6 Resolution Algorithm ───────────────────────────────────────── -->
+  <section id="resolution-algorithm">
+    <h2>17.6 Resolution Algorithm</h2>
+    <p>Clients and Resolver nodes MUST implement the following deterministic algorithm when resolving an RRN. The algorithm handles legacy RRNs, delegated RRNs, network failures, and cache fallback.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={resolutionAlgorithm} language="python" title="resolve.py (pseudocode)" />
+    </div>
+
+    <h3>Step-by-step</h3>
+    <ol>
+      <li><strong>Check cache.</strong> If a valid (non-expired) cached record exists for the RRN, return it immediately without a network call.</li>
+      <li><strong>Legacy RRN check.</strong> If the RRN matches the pattern <code>RRN-[0-9A-F]{"{"}"8{"}"}</code> (no prefix), query root directly.</li>
+      <li><strong>Extract prefix.</strong> From <code>RRN-BD-00000001</code>, extract <code>BD</code>. Look up <code>BD</code> in root's <code>namespace_delegations</code> table.</li>
+      <li><strong>Resolve at Authoritative node.</strong> Query the Authoritative node for the full RRN. Verify both the record signature and the delegation cert.</li>
+      <li><strong>Network failure fallback.</strong> If the Authoritative node is unreachable, attempt to serve from local cache (including stale entries, with appropriate error code <code>6006 CACHE_STALE</code>). If no cache entry exists, return <code>6005 NODE_UNAVAILABLE</code>.</li>
+    </ol>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Security requirement:</strong> Clients MUST NOT skip signature verification even when serving from cache. A cached record with an invalid signature MUST be treated as a cache miss and a fresh lookup MUST be attempted.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.7 Wire Format ─────────────────────────────────────────────────── -->
+  <section id="wire-format">
+    <h2>17.7 Wire Format</h2>
+    <p>All node-to-node sync messages use a standard JSON envelope. This format is used for both pull sync responses and webhook push payloads.</p>
+
+    <h3>Sync Message (Node → Node)</h3>
+    <div class="not-prose">
+      <CodeWindow code={syncWireFormat} language="json" title="sync-message.json" />
+    </div>
+
+    <h3>Field Definitions</h3>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>protocol</code></td><td>string</td><td>MUST</td><td>Protocol identifier and version. Currently <code>"rcan-sync/1.0"</code>.</td></tr>
+        <tr><td><code>from_node</code></td><td>string (URL)</td><td>MUST</td><td>Canonical URL of the sending node.</td></tr>
+        <tr><td><code>to_node</code></td><td>string (URL)</td><td>MUST</td><td>Canonical URL of the receiving node.</td></tr>
+        <tr><td><code>since</code></td><td>string (ISO 8601)</td><td>MUST</td><td>Only records modified after this timestamp are included.</td></tr>
+        <tr><td><code>records</code></td><td>array</td><td>MUST</td><td>Array of robot record objects changed since <code>since</code>. May be empty.</td></tr>
+        <tr><td><code>signature</code></td><td>string</td><td>MUST</td><td>Ed25519 signature over the message (<code>ed25519:&lt;base64&gt;</code>), signed by the sending node's private key.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Record Object</h3>
+    <p>Each element of the <code>records</code> array represents one robot registration. The minimum required fields are:</p>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rrn</code></td><td>string</td><td>MUST</td><td>Robot Registration Number (e.g. <code>RRN-BD-00000001</code>)</td></tr>
+        <tr><td><code>robot_name</code></td><td>string</td><td>MUST</td><td>Human-readable robot name</td></tr>
+        <tr><td><code>registered_at</code></td><td>ISO 8601</td><td>MUST</td><td>When the robot was first registered at the Authoritative node</td></tr>
+        <tr><td><code>attestation</code></td><td>string (enum)</td><td>MUST</td><td>One of: <code>active</code>, <code>pending</code>, <code>suspended</code>, <code>revoked</code></td></tr>
+        <tr><td><code>node_signature</code></td><td>string</td><td>SHOULD</td><td>Ed25519 signature over this record's canonical JSON, from the Authoritative node</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Transport Requirements</h3>
+    <ul>
+      <li>All sync messages MUST be transmitted over HTTPS (TLS 1.2 minimum, TLS 1.3 RECOMMENDED).</li>
+      <li>Webhook deliveries MUST include an <code>X-RCAN-Signature: sha256=&lt;hmac&gt;</code> header for receiver validation.</li>
+      <li>Receivers MUST validate the message-level <code>signature</code> field using the sender's published public key from their <code>/.well-known/rcan-node.json</code>.</li>
+      <li>Receivers MUST reject messages where <code>to_node</code> does not match their own node URL.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <!-- ── §17.8 Error Codes ─────────────────────────────────────────────────── -->
+  <section id="error-codes">
+    <h2>17.8 Error Codes</h2>
+    <p>The following error codes are specific to the Distributed Registry Node Protocol. They supplement the general RCAN error codes defined in §10 (Error Codes). These codes MUST be returned in the <code>code</code> field of an <code>ERROR</code> message or HTTP error response body.</p>
+
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Name</th><th>HTTP Status</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>6001</code></td>
+          <td><code>NODE_NOT_FOUND</code></td>
+          <td>404</td>
+          <td>No Authoritative node is registered for the RRN prefix. The prefix may not be delegated or may have been revoked.</td>
+        </tr>
+        <tr>
+          <td><code>6002</code></td>
+          <td><code>DELEGATION_INVALID</code></td>
+          <td>403</td>
+          <td>Node delegation certificate signature verification failed. The cert may be expired, tampered with, or signed by an unrecognised key.</td>
+        </tr>
+        <tr>
+          <td><code>6003</code></td>
+          <td><code>RECORD_SIG_INVALID</code></td>
+          <td>403</td>
+          <td>Robot record signature verification failed. The record may have been tampered with in transit or after registration.</td>
+        </tr>
+        <tr>
+          <td><code>6004</code></td>
+          <td><code>SYNC_CONFLICT</code></td>
+          <td>409</td>
+          <td>A sync conflict was detected (same RRN with differing values). Root record wins. The conflicting node record has been overwritten.</td>
+        </tr>
+        <tr>
+          <td><code>6005</code></td>
+          <td><code>NODE_UNAVAILABLE</code></td>
+          <td>503</td>
+          <td>The Authoritative node for this RRN prefix is currently unreachable. No cached record is available.</td>
+        </tr>
+        <tr>
+          <td><code>6006</code></td>
+          <td><code>CACHE_STALE</code></td>
+          <td>206</td>
+          <td>A cached record was found but its TTL has expired. A live fetch from the Authoritative node failed. The stale record is returned with this code to allow callers to decide how to proceed.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Error Response Format</h3>
+    <pre><code>{"{"}"code": 6001, "name": "NODE_NOT_FOUND", "message": "No authoritative node registered for prefix 'XY'", "rrn": "RRN-XY-00000001"{"}"}</code></pre>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80"><strong class="text-cyan-400">Note on 6006 CACHE_STALE:</strong> This is a partial success — the caller receives data but SHOULD treat it as unverified. The <code>stale_since</code> field (ISO 8601) SHOULD be included in the response to indicate when the TTL expired.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <div class="not-prose mt-12 flex flex-wrap gap-4">
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/federation/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      Federation Protocol →
+    </a>
+    <a href="/conformance/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      Conformance Tests →
+    </a>
+  </div>
+</DocsLayout>
