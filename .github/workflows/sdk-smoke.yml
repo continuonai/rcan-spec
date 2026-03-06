@@ -24,7 +24,7 @@ jobs:
           cache: pip
 
       - name: Install rcan-py
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev]" pyyaml
 
       - name: Run tests
         run: python -m pytest -q --tb=short
