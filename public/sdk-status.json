@@ -1,10 +1,5 @@
 {
-  "rcan-py": {
-    "status": "passing",
-    "updated": "2026-03-06"
-  },
-  "rcan-ts": {
-    "status": "passing",
-    "updated": "2026-03-06"
-  }
+  "updated": "2026-03-06T18:25:50Z",
+  "rcan_py": "success",
+  "rcan_ts": "success"
 }
