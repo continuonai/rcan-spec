@@ -8,14 +8,11 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "rcan-registry"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"   # wrangler d1 create rcan-registry
+database_id = "ef718040-dc35-4ace-9959-dc6a57eb71b9"   # wrangler d1 create rcan-registry
 
-[vars]
-RCAN_API_KEY_SALT = "REPLACE_WITH_RANDOM_SECRET"
-
-# Secrets (set via wrangler secret put):
-#   RCAN_ADMIN_TOKEN  — admin override token
-#   RCAN_API_KEY_SALT — salt for API key hashing (override the var above)
+# Secrets (set via `wrangler pages secret put --project-name=rcan-spec`):
+#   RCAN_API_KEY_SALT — salt for API key hashing (already set)
+#   RCAN_ADMIN_TOKEN  — optional admin override token
 
 # Deploy:
 #   1. Create D1 database:   wrangler d1 create rcan-registry
