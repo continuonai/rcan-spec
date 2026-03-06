@@ -64,7 +64,7 @@ jobs:
         id: test
         run: |
           node --input-type=module << 'ESEOF'
-          import rcan from '@continuonai/rcan-ts';
+          import * as rcan from '@continuonai/rcan-ts';
           const expected = ['validateConfig', 'NodeClient', 'RegistryClient', 'RCANError'];
           expected.forEach(e => {
             if (!rcan[e]) throw new Error('Missing export: ' + e);
