@@ -35,8 +35,8 @@ jobs:
         run: |
           # Validate config fixture
           rcan-validate config tests/fixtures/sample.rcan.yaml && echo "config: PASS" || echo "config: FAIL"
-          # Validate node manifest (best-effort, network may be unavailable)
-          rcan-validate node https://rcan-spec.pages.dev || true
+          # Validate node manifest (best-effort — command may not exist in older releases)
+          rcan-validate node https://rcan-spec.pages.dev 2>/dev/null || true
           echo "status=pass" >> $GITHUB_OUTPUT
 
   smoke-ts:
@@ -57,21 +57,20 @@ jobs:
       - name: Get version
         id: info
         run: |
-          node -e "const r=require('@continuonai/rcan-ts'); console.log('installed')" 2>/dev/null || true
           VERSION=$(npm list @continuonai/rcan-ts --depth=0 2>/dev/null | grep rcan-ts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Validate SDK exports
+      - name: Validate SDK exports (ESM)
         id: test
         run: |
-          node -e "
-            const rcan = require('@continuonai/rcan-ts');
-            const expected = ['validateConfig', 'NodeClient', 'RegistryClient', 'RCANError'];
-            expected.forEach(e => {
-              if (!rcan[e]) throw new Error('Missing export: ' + e);
-              console.log('✓', e);
-            });
-          "
+          node --input-type=module << 'ESEOF'
+          import rcan from '@continuonai/rcan-ts';
+          const expected = ['validateConfig', 'NodeClient', 'RegistryClient', 'RCANError'];
+          expected.forEach(e => {
+            if (!rcan[e]) throw new Error('Missing export: ' + e);
+            console.log('✓', e);
+          });
+          ESEOF
           echo "status=pass" >> $GITHUB_OUTPUT
 
   update-status:
@@ -87,7 +86,7 @@ jobs:
       - name: Write sdk-status.json
         run: |
           mkdir -p public
-          cat > public/sdk-status.json << EOF
+          cat > public/sdk-status.json << JSONEOF
           {
             "updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "spec_version": "1.2",
@@ -104,7 +103,7 @@ jobs:
               }
             }
           }
-          EOF
+          JSONEOF
 
       - name: Commit sdk-status.json
         uses: stefanzweifel/git-auto-commit-action@v5
