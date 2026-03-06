@@ -1,5 +1,5 @@
 {
-  "updated": "2026-03-06T20:32:43Z",
+  "updated": "2026-03-06T20:37:55Z",
   "spec_version": "1.2",
   "sdks": {
     "rcan-py": {
@@ -9,7 +9,7 @@
     },
     "rcan-ts": {
       "version": "0.3.0",
-      "status": "failure",
+      "status": "pass",
       "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts"
     }
   }
