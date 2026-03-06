@@ -23,7 +23,14 @@
       "rcan_py": ">=0.1.0",
       "rcan_ts": ">=0.1.0",
       "opencastor": ">=2026.3.3.0",
-      "notes": "AI Accountability Layer (confidence gate, HiTL, thought log)"
+      "notes": "AI Accountability Layer (confidence gate, HiTL, thought log)",
+      "api_changes": [
+        {
+          "version": "v1.2",
+          "endpoint": "GET /api/v1/robots",
+          "change": "Added offset-based pagination: ?limit=&offset= params. Response now includes top-level { robots, total, limit, offset, next_offset } alongside legacy pagination block. Default limit=20, max limit=100."
+        }
+      ]
     }
   ]
 }

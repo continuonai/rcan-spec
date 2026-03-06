@@ -194,9 +194,23 @@ async function handleRegister(req: Request, env: Env): Promise<Response> {
 
 async function handleList(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
-  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1"));
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") ?? "20")));
-  const offset = (page - 1) * limit;
+
+  // Support both offset-based (?limit=&offset=) and page-based (?page=&limit=) pagination.
+  // Offset takes precedence when supplied explicitly.
+  const rawLimit = parseInt(url.searchParams.get("limit") ?? "20");
+  const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 20 : rawLimit));
+
+  let offset: number;
+  if (url.searchParams.has("offset")) {
+    // Explicit offset param (v1.2 offset-based pagination)
+    const rawOffset = parseInt(url.searchParams.get("offset") ?? "0");
+    offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
+  } else {
+    // Legacy page-based pagination — backwards-compatible default
+    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1"));
+    offset = (page - 1) * limit;
+  }
+
   const search = url.searchParams.get("q")?.trim() ?? "";
   const tier = url.searchParams.get("tier")?.trim() ?? "";
   const manufacturer = url.searchParams.get("manufacturer")?.trim() ?? "";
@@ -229,17 +243,24 @@ async function handleList(req: Request, env: Env): Promise<Response> {
   ).bind(...params, limit, offset).all();
 
   const total = countResult?.total ?? 0;
+  const nextOffset = offset + limit < total ? offset + limit : null;
+  const page = Math.floor(offset / limit) + 1;
   const totalPages = Math.ceil(total / limit);
 
   return json({
     robots: rows.results,
+    total,
+    limit,
+    offset,
+    next_offset: nextOffset,
+    // Legacy pagination fields preserved for backwards compatibility
     pagination: {
       page,
       limit,
       total,
       total_pages: totalPages,
-      has_next: page < totalPages,
-      has_prev: page > 1,
+      has_next: nextOffset !== null,
+      has_prev: offset > 0,
     },
   });
 }
