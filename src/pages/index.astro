@@ -154,7 +154,7 @@ const tsBadge = sdkBadge('rcan-ts');
         <p class="text-xl text-text-muted">One command to get started.</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-10">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
         <!-- Python SDK -->
         <div class="group bg-bg-alt/50 border border-white/5 rounded-2xl p-6 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300">
           <div class="flex items-center justify-between mb-4">
@@ -172,8 +172,12 @@ const tsBadge = sdkBadge('rcan-ts');
             </a>
           </div>
           <code class="block text-sm font-mono text-emerald-300 bg-black/30 border border-white/5 rounded-lg px-4 py-2.5">pip install rcan</code>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-mono">v0.2.0</span>
+            <a href="https://pypi.org/project/rcan/" target="_blank" rel="noopener noreferrer" class="text-[10px] text-text-muted hover:text-accent">PyPI →</a>
+          </div>
           <div class="flex flex-wrap gap-1.5 mt-3">
-            {['RobotURI', 'RCANMessage', 'AuditChain', 'ConfidenceGate', 'rcan-validate'].map(tag => (
+            {['RobotURI', 'RCANMessage', 'AuditChain', 'ConfidenceGate', 'RegistryClient', 'rcan-validate'].map(tag => (
               <span class="text-[10px] bg-white/5 border border-white/8 text-text-muted px-2 py-0.5 rounded-full">{tag}</span>
             ))}
           </div>
@@ -185,7 +189,7 @@ const tsBadge = sdkBadge('rcan-ts');
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-lg bg-[#3178c6]/10 border border-[#3178c6]/20 flex items-center justify-center text-lg">🟦</div>
               <div>
-                <div class="font-bold text-sm text-text">rcan-ts</div>
+                <div class="font-bold text-sm text-text">@continuonai/rcan-ts</div>
                 <div class="text-xs text-text-muted">TypeScript / JavaScript SDK</div>
               </div>
             </div>
@@ -195,9 +199,32 @@ const tsBadge = sdkBadge('rcan-ts');
               GitHub
             </a>
           </div>
-          <code class="block text-sm font-mono text-emerald-300 bg-black/30 border border-white/5 rounded-lg px-4 py-2.5">npm install rcan-ts</code>
+          <code class="block text-sm font-mono text-emerald-300 bg-black/30 border border-white/5 rounded-lg px-4 py-2.5">npm install @continuonai/rcan-ts</code>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-[10px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-mono">v0.2.0</span>
+            <a href="https://www.npmjs.com/package/@continuonai/rcan-ts" target="_blank" rel="noopener noreferrer" class="text-[10px] text-text-muted hover:text-accent">npm →</a>
+            <span class="text-[10px] text-text-muted">·</span>
+            <a href="https://unpkg.com/@continuonai/rcan-ts/dist/rcan.iife.js" target="_blank" rel="noopener noreferrer" class="text-[10px] text-text-muted hover:text-accent">CDN →</a>
+          </div>
           <div class="flex flex-wrap gap-1.5 mt-3">
-            {['RobotURI', 'RCANMessage', 'AuditChain', 'ConfidenceGate', 'validateConfig'].map(tag => (
+            {['RobotURI', 'RCANMessage', 'AuditChain', 'ConfidenceGate', 'RegistryClient', 'IIFE/CDN'].map(tag => (
+              <span class="text-[10px] bg-white/5 border border-white/8 text-text-muted px-2 py-0.5 rounded-full">{tag}</span>
+            ))}
+          </div>
+        </div>
+
+        <!-- CDN entry -->
+        <div class="group bg-bg-alt/50 border border-white/5 rounded-2xl p-6 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 col-span-full lg:col-span-1">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-lg">🌐</div>
+            <div>
+              <div class="font-bold text-sm text-text">CDN / Browser</div>
+              <div class="text-xs text-text-muted">No build step needed</div>
+            </div>
+          </div>
+          <code class="block text-xs font-mono text-emerald-300 bg-black/30 border border-white/5 rounded-lg px-3 py-2.5 break-all">&lt;script src="https://unpkg.com/@continuonai/rcan-ts/dist/rcan.iife.js"&gt;&lt;/script&gt;</code>
+          <div class="flex flex-wrap gap-1.5 mt-3">
+            {['unpkg', 'jsDelivr', 'RCAN.RobotURI', 'RCAN.validateURI'].map(tag => (
               <span class="text-[10px] bg-white/5 border border-white/8 text-text-muted px-2 py-0.5 rounded-full">{tag}</span>
             ))}
           </div>
