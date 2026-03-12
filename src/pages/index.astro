@@ -34,56 +34,89 @@ const tsBadge = sdkBadge('rcan-ts');
 <BaseLayout title="RCAN Protocol" description="RCAN - Robot Communication & Addressing Network. An open protocol for addressing, discovering, and authenticating robotic agents.">
   <HeroSection />
   
-  <section class="max-w-4xl mx-auto py-24 border-b border-white/5">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold mb-6">Why RCAN?</h2>
-      <p class="text-xl text-text-muted">
-        The internet has DNS and ICANN. IoT has Matter. <strong class="text-accent">Robotics has nothing.</strong>
+  <!-- Two Things Explainer -->
+  <section class="max-w-5xl mx-auto py-24 border-b border-white/5 px-6">
+    <div class="text-center mb-12">
+      <p class="text-sm font-mono uppercase tracking-widest text-accent mb-4">Two distinct things</p>
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">The Protocol and the Registry</h2>
+      <p class="text-xl text-text-muted max-w-2xl mx-auto">
+        The internet has DNS and ICANN. IoT has Matter. <strong class="text-accent">Robotics has nothing.</strong><br/>
+        RCAN proposes both — and they are separate.
       </p>
     </div>
 
-    <div class="prose prose-invert prose-lg mx-auto text-text-muted">
-      <p>
-        As millions of robots are manufactured and deployed—from warehouse arms to delivery bots to humanoids—there is no standard way to:
-      </p>
-      <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 list-none pl-0 my-8">
-        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
-          <span class="text-accent">Target</span> <strong>Address</strong> a robot uniquely and globally
-        </li>
-        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
-          <span class="text-accent">Auth</span> <strong>Authenticate</strong> who is allowed to control it
-        </li>
-        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
-           <span class="text-accent">Swarm</span> <strong>Coordinate</strong> fleets and swarms across manufacturers
-        </li>
-        <li class="flex items-center gap-3 bg-cyan-500/5 p-4 rounded-lg border border-cyan-500/15 col-span-full md:col-span-2">
-           <span class="text-cyan-400">🤖🤝🤖</span> <strong>Swarm Safety</strong> — RRN-based peer verification + commitment chain audit trail enables safe multi-robot coordination · <a href="/use-cases/swarm/" class="text-cyan-400 hover:underline font-medium ml-1">Learn more →</a>
-        </li>
-        <li class="flex items-center gap-3 bg-bg-alt/30 p-4 rounded-lg border border-white/5">
-           <span class="text-accent">Safety</span> <strong>Ensure safety</strong> when networks fail
-        </li>
-      </ul>
-      <p class="text-center">
-        RCAN is an open protocol specification designed to solve these problems with a federated, offline-resilient architecture.
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Protocol card -->
+      <div class="bg-bg-alt/60 border border-accent/20 rounded-2xl p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-xl">📡</div>
+          <div>
+            <p class="text-xs font-mono uppercase tracking-widest text-accent">Open Specification</p>
+            <h3 class="text-xl font-bold">The RCAN Protocol</h3>
+          </div>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed mb-4">
+          A set of open standards — like TCP/IP, but for robots — that define how robots identify themselves, sign actions, authenticate users, and guarantee safe behavior even when networks fail.
+        </p>
+        <ul class="space-y-2 text-sm text-text-muted mb-6">
+          <li class="flex gap-2"><span class="text-accent">→</span> Message format + signing (Ed25519)</li>
+          <li class="flex gap-2"><span class="text-accent">→</span> Confidence gates + Human-in-the-Loop authorization</li>
+          <li class="flex gap-2"><span class="text-accent">→</span> Tamper-evident audit chain</li>
+          <li class="flex gap-2"><span class="text-accent">→</span> Swarm safety + peer verification</li>
+          <li class="flex gap-2"><span class="text-accent">→</span> Offline-resilient: local safety always wins</li>
+        </ul>
+        <p class="text-xs text-text-muted/70 mb-4">CC BY 4.0 — implement it in anything. No registry required.</p>
+        <a href="/spec/" class="inline-flex items-center gap-1 text-accent text-sm font-medium hover:underline">Read the spec →</a>
+      </div>
+
+      <!-- Registry card -->
+      <div class="bg-bg-alt/60 border border-white/10 rounded-2xl p-8">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl">🗂️</div>
+          <div>
+            <p class="text-xs font-mono uppercase tracking-widest text-text-muted">Open Service</p>
+            <h3 class="text-xl font-bold">The Robot Registry</h3>
+          </div>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed mb-4">
+          A global public directory of robots — like a domain registrar, but for physical machines. Any robot, from any manufacturer, using any runtime, can register and get a globally unique Robot Registration Number (RRN).
+        </p>
+        <ul class="space-y-2 text-sm text-text-muted mb-6">
+          <li class="flex gap-2"><span class="text-white/40">→</span> Assigns globally unique RRNs</li>
+          <li class="flex gap-2"><span class="text-white/40">→</span> Tracks provenance, ownership, manufacturer</li>
+          <li class="flex gap-2"><span class="text-white/40">→</span> Machine-readable records via REST API</li>
+          <li class="flex gap-2"><span class="text-white/40">→</span> Verification tiers: community → manufacturer → certified</li>
+          <li class="flex gap-2"><span class="text-white/40">→</span> Federated — multiple registries can cross-verify</li>
+        </ul>
+        <p class="text-xs text-text-muted/70 mb-4">Free to register. No RCAN implementation required to list a robot.</p>
+        <a href="/registry/" class="inline-flex items-center gap-1 text-text-muted text-sm font-medium hover:text-white hover:underline">Browse the registry →</a>
+      </div>
+    </div>
+
+    <!-- Relationship explainer -->
+    <div class="mt-8 bg-white/3 border border-white/8 rounded-2xl p-6 text-center">
+      <p class="text-text-muted text-sm leading-relaxed max-w-2xl mx-auto">
+        <strong class="text-white">How they connect:</strong> The protocol defines the RRN format and how robots reference their registry record in signed messages. The registry assigns and stores those records. You can run RCAN on a private network without registering publicly. You can register a robot without implementing RCAN. Both together give you a globally identifiable, auditable, standards-compliant robot.
       </p>
     </div>
   </section>
-  
+
   <section class="py-24 border-b border-white/5">
     <div class="max-w-7xl mx-auto">
-      <h2 class="text-3xl md:text-4xl font-bold mb-4 text-center">Key Features</h2>
-      <p class="text-text-muted text-center max-w-2xl mx-auto mb-12">Built to handle the complexity of real-world robotics.</p>
+      <h2 class="text-3xl md:text-4xl font-bold mb-4 text-center">Protocol Features</h2>
+      <p class="text-text-muted text-center max-w-2xl mx-auto mb-12">What RCAN defines — implementable in any runtime, any language.</p>
       <FeatureGrid />
     </div>
   </section>
-  
+
   <!-- Registry Section -->
   <section class="py-24 border-b border-white/5">
     <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold mb-4">The Global Robot Registry</h2>
+        <p class="text-sm font-mono uppercase tracking-widest text-text-muted mb-3">The Registry</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Every robot deserves a permanent address.</h2>
         <p class="text-xl text-text-muted max-w-3xl mx-auto">
-          Every robot deserves a unique, verifiable identity. The RCAN registry assigns globally unique RRNs (Robot Registration Numbers), tracks provenance and ownership, and provides machine-readable records via REST API.
+          The Robot Registry is a global public directory — open to any robot, any manufacturer, any runtime. Register once. Get a permanent RRN. Your robot is globally addressable and verifiable forever.
         </p>
       </div>
 
@@ -94,11 +127,11 @@ const tsBadge = sdkBadge('rcan-ts');
         </div>
         <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6 text-center hover:border-accent/30 transition-all">
           <div class="text-4xl font-bold text-accent mb-2">4</div>
-          <div class="text-sm text-text-muted">Verification tiers (⬜🟡🔵✅)</div>
+          <div class="text-sm text-text-muted">Verification tiers — community to certified</div>
         </div>
         <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6 text-center hover:border-accent/30 transition-all">
-          <div class="text-4xl font-bold text-accent mb-2">Open</div>
-          <div class="text-sm text-text-muted">REST API — machine-readable records</div>
+          <div class="text-4xl font-bold text-accent mb-2">Federated</div>
+          <div class="text-sm text-text-muted">Multiple registries, cross-verifiable RRNs</div>
         </div>
       </div>
 
@@ -107,11 +140,11 @@ const tsBadge = sdkBadge('rcan-ts');
           Browse Registry
         </a>
         <a href="/registry/submit/" class="px-8 py-4 bg-white/5 border border-white/10 text-text font-semibold text-lg rounded-full hover:bg-white/10 hover:border-white/20 transition-all duration-200">
-          Register Your Robot
+          Register Your Robot →
         </a>
       </div>
       <p class="text-text-muted text-sm mt-6 max-w-lg mx-auto text-center">
-        Any robot, any runtime, any manufacturer. The registry is open to all. No OpenCastor required.
+        Any robot, any runtime, any manufacturer. Free. No RCAN implementation required to register.
       </p>
     </div>
   </section>
