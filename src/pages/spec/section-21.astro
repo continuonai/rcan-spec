@@ -1,0 +1,457 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const registryRegisterMsg = `{
+  "type": "REGISTRY_REGISTER",
+  "payload": {
+    "rrn": "RRN-00000042",
+    "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
+    "public_key": "MCowBQYDK2VwAyEA...",
+    "metadata": {
+      "name": "Bob",
+      "manufacturer": "ContinuonAI",
+      "model": "opencastor-rpi5"
+    }
+  }
+}`;
+
+const registryRegisterResult = `{
+  "type": "REGISTRY_REGISTER_RESULT",
+  "payload": {
+    "rrn": "RRN-00000042",
+    "status": "registered",
+    "verification_tier": "community"
+  }
+}`;
+
+const registryResolveMsg = `{
+  "type": "REGISTRY_RESOLVE",
+  "payload": {
+    "query": "RRN-00000042"
+  }
+}`;
+
+const registryResolveResult = `{
+  "type": "REGISTRY_RESOLVE_RESULT",
+  "payload": {
+    "rrn": "RRN-00000042",
+    "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
+    "status": "active",
+    "verification_tier": "verified",
+    "public_key": "MCowBQYDK2VwAyEA..."
+  }
+}`;
+
+const ownershipProofFlow = `# Step 1 — Request challenge
+POST /api/v1/challenge
+{"ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob"}
+
+# Response
+{"challenge": "a3f9c2d18b4e7f60...", "expires_at": "2026-03-12T12:00:00Z"}
+
+# Step 2 — Sign challenge with Ed25519 private key (same key used for §5 message signing)
+signature = ed25519_sign(private_key, challenge_hex)
+
+# Step 3 — Submit proof
+POST /api/v1/verify
+{
+  "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
+  "challenge": "a3f9c2d18b4e7f60...",
+  "signature": "<base64url>",
+  "public_key": "<base64url>"
+}
+
+# Response — robot promoted to "verified" tier
+{"status": "verified", "rrn": "RRN-00000042", "verification_tier": "verified"}`;
+
+const ruriLookup = `# RURI → RRN
+GET /api/v1/resolve?ruri=rcan://rcan.dev/continuonai/opencastor-rpi5/bob
+→ {"rrn": "RRN-00000042", "status": "active", "verification_tier": "verified"}
+
+# RRN → RURI
+GET /api/v1/robots/RRN-00000042
+→ {"rrn": "RRN-00000042", "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob", ...}`;
+
+const registryRegisterSchema = `{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "REGISTRY_REGISTER payload",
+  "type": "object",
+  "required": ["ruri", "public_key"],
+  "properties": {
+    "rrn":        { "type": "string", "pattern": "^RRN(-[A-Z]{2,6})?-[0-9A-F]{8}$" },
+    "ruri":       { "type": "string", "pattern": "^rcan://" },
+    "public_key": { "type": "string", "description": "Ed25519 public key, base64url-encoded" },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name":         { "type": "string" },
+        "manufacturer": { "type": "string" },
+        "model":        { "type": "string" }
+      }
+    }
+  }
+}`;
+
+const registryResolveSchema = `{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "REGISTRY_RESOLVE payload",
+  "type": "object",
+  "required": ["query"],
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "RRN (e.g. RRN-00000042) or RURI (e.g. rcan://...) to resolve"
+    }
+  }
+}`;
+
+const rcanConfigExample = `rcan_version: "1.3.0"
+
+metadata:
+  robot_name: "Bob"
+  robot_uuid: "550e8400-e29b-41d4-a716-446655440000"
+
+registry:
+  rrn: "RRN-00000042"
+  registry_url: "https://robotregistryfoundation.org/api/v1"`;
+---
+
+<DocsLayout title="§21 Robot Registry Integration" description="RCAN §21 — Robot Registry Integration. Defines RRN↔RURI canonical mapping, ownership proof via Ed25519 challenge-response, REGISTRY_REGISTER and REGISTRY_RESOLVE message types, and Conformance Level L4.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">§21 Robot Registry Integration</h1>
+  </div>
+  <div class="flex gap-2 mb-8 flex-wrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+      Status: Draft
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+      New in v1.3
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      RCAN v1.3
+    </span>
+    <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← Back to Specification
+    </a>
+  </div>
+
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"             class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.1</span> Overview</a></li>
+      <li><a href="#rrn-ruri-mapping"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.2</span> RRN ↔ RURI Mapping</a></li>
+      <li><a href="#ownership-proof"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.3</span> Ownership Proof</a></li>
+      <li><a href="#registry-register"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.4</span> REGISTRY_REGISTER Message</a></li>
+      <li><a href="#registry-resolve"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.5</span> REGISTRY_RESOLVE Message</a></li>
+      <li><a href="#conformance-l4"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.6</span> Conformance Level L4</a></li>
+      <li><a href="#implementation-notes" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.7</span> Implementation Notes</a></li>
+    </ol>
+  </div>
+
+  <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-cyan-300/80">
+      <strong class="text-cyan-400">Overview:</strong> §21 specifies how a RCAN-compliant robot runtime integrates with an external Robot Registry
+      (such as the <a href="https://robotregistryfoundation.org" target="_blank" rel="noopener" class="text-cyan-400 hover:underline">Robot Registry Foundation</a>).
+      It defines the canonical relationship between Robot Registration Numbers (RRNs) and Robot URIs (RURIs),
+      the challenge-response ownership proof flow, and two new RCAN message types: <code class="text-cyan-400">REGISTRY_REGISTER</code> and <code class="text-cyan-400">REGISTRY_RESOLVE</code>.
+    </p>
+  </div>
+
+  <hr />
+
+  <!-- ── §21.1 Overview ───────────────────────────────────────────────────── -->
+  <section id="overview">
+    <h2>21.1 Overview</h2>
+    <p>Robot runtimes implementing RCAN operate under two independent identity systems:</p>
+    <ul>
+      <li><strong>RURI</strong> (<code>rcan://rcan.dev/continuonai/opencastor-rpi5/bob</code>) — the protocol-level address used in every RCAN message (§2). Assigned by the runtime operator; unique within the registry host's namespace.</li>
+      <li><strong>RRN</strong> (<code>RRN-00000042</code>) — a globally unique, registry-assigned opaque identifier. Issued by the Robot Registry after registration. Stable across network changes, renames, and ownership transfers.</li>
+    </ul>
+    <p>§21 defines:</p>
+    <ul>
+      <li>How a RURI and an RRN are canonically linked in the registry</li>
+      <li>How a runtime proves it controls a RURI (ownership proof via Ed25519 challenge-response)</li>
+      <li>The <code>REGISTRY_REGISTER</code> and <code>REGISTRY_RESOLVE</code> RCAN message types</li>
+      <li>How verification tier upgrades flow through the registry</li>
+    </ul>
+
+    <div class="not-prose bg-bg-alt border border-white/10 rounded-xl p-6 my-6 font-mono text-sm">
+      <div class="flex flex-col items-center gap-2 text-center">
+        <div class="px-4 py-2 bg-accent/10 border border-accent/30 rounded-lg text-accent font-bold">
+          Robot Runtime<br /><span class="text-xs font-normal text-text-muted">RURI: rcan://rcan.dev/continuonai/opencastor-rpi5/bob</span>
+        </div>
+        <div class="text-text-muted">↕ REGISTRY_REGISTER / REGISTRY_RESOLVE</div>
+        <div class="px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 font-bold">
+          Robot Registry<br /><span class="text-xs font-normal text-text-muted">robotregistryfoundation.org — assigns RRN, stores RURI↔RRN mapping</span>
+        </div>
+        <div class="text-text-muted">↕ Ed25519 challenge-response</div>
+        <div class="px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-400 font-bold">
+          Ownership Proof<br /><span class="text-xs font-normal text-text-muted">signs challenge with §5 Ed25519 key → "verified" tier</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §21.2 RRN ↔ RURI Mapping ─────────────────────────────────────────── -->
+  <section id="rrn-ruri-mapping">
+    <h2>21.2 RRN ↔ RURI Mapping</h2>
+    <p>An RRN (<code>RRN-00000001</code>) is a globally unique, registry-assigned opaque identifier. A RURI (<code>rcan://rcan.dev/continuonai/opencastor-rpi5/bob</code>) is the RCAN address used at the protocol level.</p>
+
+    <h3>Canonical Association</h3>
+    <p>A robot MAY associate one or more RURIs with its RRN. The association is stored in the registry and discoverable via the registry resolution API. The primary RURI is the address currently used in RCAN messages.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={ruriLookup} language="bash" title="Registry lookup API" />
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Direction</th><th>Endpoint</th><th>Response field</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>RURI → RRN</td>
+          <td><code>GET /api/v1/resolve?ruri=rcan://...</code></td>
+          <td><code>rrn</code></td>
+        </tr>
+        <tr>
+          <td>RRN → RURI</td>
+          <td><code>GET /api/v1/robots/{"{rrn}"}</code></td>
+          <td><code>ruri</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Note:</strong> A robot that changes its RURI (e.g. after a registry migration) MUST update the mapping at the registry. The RRN remains stable. Resolvers SHOULD cache mappings with the TTL returned by the registry.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §21.3 Ownership Proof ─────────────────────────────────────────────── -->
+  <section id="ownership-proof">
+    <h2>21.3 Ownership Proof</h2>
+    <p>A runtime proves it controls a RURI by signing a challenge issued by the registry using its Ed25519 private key — the same key used to sign RCAN messages per §5.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={ownershipProofFlow} language="bash" title="Ownership proof flow" />
+    </div>
+
+    <h3>Step-by-step</h3>
+    <ol>
+      <li>Runtime calls <code>POST /api/v1/challenge</code> with <code>{"{"}"ruri": "rcan://..."{"}"}</code></li>
+      <li>Registry returns <code>{"{"}"challenge": "&lt;32-byte hex nonce&gt;", "expires_at": "&lt;ISO-8601&gt;"{"}"}</code></li>
+      <li>Runtime signs <code>challenge</code> with its Ed25519 private key (same key used to sign RCAN messages per §5)</li>
+      <li>Runtime calls <code>POST /api/v1/verify</code> with <code>{"{"}"ruri": "...", "challenge": "...", "signature": "&lt;base64url&gt;", "public_key": "&lt;base64url&gt;"{"}"}</code></li>
+      <li>Registry verifies signature, promotes robot to "verified" tier, stores public key</li>
+    </ol>
+
+    <table>
+      <thead>
+        <tr><th>Verification Tier</th><th>Requirement</th><th>Trust Level</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>community</code></td><td>Self-reported registration, no proof required</td><td>Low — unverified</td></tr>
+        <tr><td><code>verified</code></td><td>Ownership proof via Ed25519 challenge-response</td><td>Medium — cryptographically proven</td></tr>
+        <tr><td><code>manufacturer</code></td><td>Verified + manufacturer delegation cert (§17)</td><td>High — manufacturer-attested</td></tr>
+        <tr><td><code>certified</code></td><td>Third-party certification (out of scope for §21)</td><td>Highest</td></tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80"><strong class="text-cyan-400">Security note:</strong> The challenge nonce MUST be at least 32 bytes of cryptographically random data. The challenge MUST expire within 5 minutes (<code>expires_at</code>). Registries MUST reject replayed challenges. A challenge is single-use.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §21.4 REGISTRY_REGISTER Message ───────────────────────────────────── -->
+  <section id="registry-register">
+    <h2>21.4 REGISTRY_REGISTER Message</h2>
+    <p>A new RCAN message type that a runtime sends to a registry node to register or update its RURI↔RRN association and public key. The registry node processes the message and responds with a <code>REGISTRY_REGISTER_RESULT</code>.</p>
+
+    <h3>Request</h3>
+    <div class="not-prose">
+      <CodeWindow code={registryRegisterMsg} language="json" title="REGISTRY_REGISTER" />
+    </div>
+
+    <h3>Response</h3>
+    <div class="not-prose">
+      <CodeWindow code={registryRegisterResult} language="json" title="REGISTRY_REGISTER_RESULT" />
+    </div>
+
+    <h3>JSON Schema — REGISTRY_REGISTER payload</h3>
+    <div class="not-prose">
+      <CodeWindow code={registryRegisterSchema} language="json" title="registry-register.schema.json" />
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rrn</code></td><td>OPTIONAL</td><td>RRN previously assigned by the registry. Omit on first registration; the registry will assign one.</td></tr>
+        <tr><td><code>ruri</code></td><td>MUST</td><td>The robot's RCAN URI. Must match the <code>source_ruri</code> in the outer RCAN message envelope.</td></tr>
+        <tr><td><code>public_key</code></td><td>MUST</td><td>Ed25519 public key, base64url-encoded. Used to verify ownership proofs and future message signatures.</td></tr>
+        <tr><td><code>metadata.name</code></td><td>OPTIONAL</td><td>Human-readable robot name.</td></tr>
+        <tr><td><code>metadata.manufacturer</code></td><td>OPTIONAL</td><td>Manufacturer name.</td></tr>
+        <tr><td><code>metadata.model</code></td><td>OPTIONAL</td><td>Model identifier.</td></tr>
+      </tbody>
+    </table>
+
+    <table>
+      <thead>
+        <tr><th>Result field</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rrn</code></td><td>string</td><td>Assigned (new registration) or confirmed (existing) RRN.</td></tr>
+        <tr><td><code>status</code></td><td><code>"pending" | "registered" | "verified"</code></td><td>Current registration status.</td></tr>
+        <tr><td><code>verification_tier</code></td><td><code>"community" | "verified" | "manufacturer" | "certified"</code></td><td>Current verification tier.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §21.5 REGISTRY_RESOLVE Message ────────────────────────────────────── -->
+  <section id="registry-resolve">
+    <h2>21.5 REGISTRY_RESOLVE Message</h2>
+    <p>A RCAN message type for resolving a RURI or RRN to its full registry record. Useful for runtime-to-runtime lookups and fleet management systems.</p>
+
+    <h3>Request</h3>
+    <div class="not-prose">
+      <CodeWindow code={registryResolveMsg} language="json" title="REGISTRY_RESOLVE" />
+    </div>
+
+    <h3>Response</h3>
+    <div class="not-prose">
+      <CodeWindow code={registryResolveResult} language="json" title="REGISTRY_RESOLVE_RESULT" />
+    </div>
+
+    <h3>JSON Schema — REGISTRY_RESOLVE payload</h3>
+    <div class="not-prose">
+      <CodeWindow code={registryResolveSchema} language="json" title="registry-resolve.schema.json" />
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Result field</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rrn</code></td><td>string</td><td>Resolved Robot Registration Number.</td></tr>
+        <tr><td><code>ruri</code></td><td>string</td><td>Current primary RURI for this robot.</td></tr>
+        <tr><td><code>status</code></td><td><code>"active" | "inactive" | "unknown"</code></td><td>Current registry status of this robot.</td></tr>
+        <tr><td><code>verification_tier</code></td><td>string</td><td>Current verification tier (see §21.3).</td></tr>
+        <tr><td><code>public_key</code></td><td>string</td><td>Ed25519 public key. Present only for <code>verified</code> tier or above. MUST NOT be returned for <code>community</code> tier without explicit opt-in.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Privacy note:</strong> Registry implementors MUST NOT return <code>public_key</code> for unverified (<code>community</code> tier) robots unless the robot owner has explicitly enabled public key disclosure. Verified tier robots implicitly consent by completing the ownership proof flow.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §21.6 Conformance Level L4 ───────────────────────────────────────── -->
+  <section id="conformance-l4">
+    <h2>21.6 Conformance Level L4: Registry Integration</h2>
+    <p>A runtime achieves <strong>L4 (Registry Integration)</strong> conformance by satisfying all L1–L3 requirements plus the following:</p>
+
+    <div class="not-prose grid md:grid-cols-2 gap-4 my-6">
+
+      <div class="bg-bg-alt border border-emerald-400/20 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 uppercase tracking-wider">Required</span>
+        </div>
+        <ul class="text-sm text-text-muted space-y-2">
+          <li>• Implements <code class="text-emerald-400">REGISTRY_REGISTER</code> message type</li>
+          <li>• Implements <code class="text-emerald-400">REGISTRY_RESOLVE</code> message type</li>
+          <li>• Signs registry challenges with the same Ed25519 key used for RCAN message signing (§5)</li>
+          <li>• Stores the assigned RRN in robot config (<code class="text-emerald-400">rcan_protocol.rrn</code>)</li>
+          <li>• Includes RRN as optional field in <code class="text-emerald-400">CONNECT</code> messages</li>
+        </ul>
+      </div>
+
+      <div class="bg-bg-alt border border-white/10 rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white/5 text-text-muted border border-white/10 uppercase tracking-wider">Recommended</span>
+        </div>
+        <ul class="text-sm text-text-muted space-y-2">
+          <li>• Completes ownership proof flow on first registration</li>
+          <li>• Caches REGISTRY_RESOLVE results with registry-provided TTL</li>
+          <li>• Refreshes RRN mapping on RURI change</li>
+          <li>• Exposes RRN in discovery responses (§4)</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h3>Config Schema Extension</h3>
+    <p>Runtimes claiming L4 conformance MUST support the following <code>rcan.yaml</code> fields:</p>
+
+    <div class="not-prose">
+      <CodeWindow code={rcanConfigExample} language="yaml" title="rcan.yaml (L4 fields)" />
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Required for L4</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>registry.rrn</code></td><td>MUST (after registration)</td><td>Robot Registration Number assigned by the registry</td></tr>
+        <tr><td><code>registry.registry_url</code></td><td>OPTIONAL</td><td>Registry API base URL. Defaults to <code>https://robotregistryfoundation.org/api/v1</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §21.7 Implementation Notes ───────────────────────────────────────── -->
+  <section id="implementation-notes">
+    <h2>21.7 Implementation Notes</h2>
+
+    <h3>Optionality</h3>
+    <p>L4 conformance is <strong>OPTIONAL</strong> — robots can implement RCAN (L1–L3) without registry integration. §21 applies only to runtimes that choose to integrate with an external registry for global identity and discoverability.</p>
+
+    <h3>Default Registry</h3>
+    <p>Unless overridden by <code>registry.registry_url</code> in config, implementations MUST use <code>https://robotregistryfoundation.org/api/v1</code> as the default registry endpoint.</p>
+
+    <h3>Key Re-use</h3>
+    <p>The same Ed25519 key pair used for RCAN message signing (§5) is intentionally re-used for registry ownership proofs. This eliminates key management complexity and creates a single cryptographic identity for the robot: the same key that authorises commands also proves registry ownership.</p>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 my-4">
+      <p class="text-sm"><strong class="text-yellow-400">Key rotation:</strong> When a runtime rotates its Ed25519 key (§5), it MUST re-run the ownership proof flow against the registry with the new public key before the old key is retired. Failure to do so will downgrade the robot from <code>verified</code> to <code>community</code> tier.</p>
+    </div>
+
+    <h3>Known Implementations</h3>
+    <table>
+      <thead>
+        <tr><th>Runtime</th><th>Min Version</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>OpenCastor</td><td>≥2026.4.x</td><td>Planned</td></tr>
+        <tr><td>rcan-py</td><td>≥0.3.0</td><td>In progress</td></tr>
+        <tr><td>rcan-ts</td><td>≥0.3.0</td><td>In progress</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <div class="not-prose mt-12 flex flex-wrap gap-4">
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-20/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §20 Telemetry Field Registry
+    </a>
+    <a href="/conformance/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      Conformance Tests →
+    </a>
+  </div>
+</DocsLayout>
