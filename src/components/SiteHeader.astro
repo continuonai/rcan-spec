@@ -9,7 +9,6 @@ const specLinks = [
 
 const protocolLinks = [
   { href: '/federation/', label: 'Federation' },
-  { href: '/governance/', label: 'Governance' },
   { href: '/implementations/', label: 'Implementations' },
   { href: '/api/', label: 'API' },
 ];
@@ -19,11 +18,9 @@ const useCasesLinks = [
 ];
 
 const registryLinks = [
-  { href: '/registry/', label: 'Browse Registry' },
-  { href: '/registry/nodes/', label: 'Registry Nodes' },
-  { href: '/registry/submit/', label: 'Register a Robot' },
-  { href: '/registry/auto-register/', label: 'Auto-Register' },
-  { href: '/registry/verification/', label: 'Verification' },
+  { href: 'https://robotregistryfoundation.org/registry/', label: 'Browse Registry', external: true },
+  { href: 'https://robotregistryfoundation.org/registry/submit/', label: 'Register a Robot', external: true },
+  { href: 'https://robotregistryfoundation.org/', label: 'Robot Registry Foundation', external: true },
 ];
 
 const mobileLinks = [
@@ -35,17 +32,13 @@ const mobileLinks = [
   { href: '/conformance/', label: '— Conformance' },
   { href: '/schemas/', label: '— Schemas' },
   { href: '/federation/', label: 'Federation' },
-  { href: '/governance/', label: 'Governance' },
   { href: '/implementations/', label: 'Implementations' },
   { href: '/api/', label: 'API' },
   { href: '/use-cases/swarm/', label: 'Use Cases' },
   { href: '/use-cases/swarm/', label: '— Swarm Safety' },
-  { href: '/registry/', label: 'Browse Registry' },
-  { href: '/registry/nodes/', label: '— Registry Nodes' },
-  { href: '/registry/submit/', label: '— Register a Robot' },
-  { href: '/registry/auto-register/', label: '— Auto-Register' },
-  { href: '/registry/verification/', label: '— Verification' },
-  { href: '/pricing/', label: 'Registration' },
+  { href: 'https://robotregistryfoundation.org/registry/', label: 'Browse Registry', external: true },
+  { href: 'https://robotregistryfoundation.org/registry/submit/', label: '— Register a Robot', external: true },
+  { href: 'https://robotregistryfoundation.org/', label: '— Robot Registry Foundation', external: true },
   { href: 'https://github.com/continuonai/rcan-spec', label: 'GitHub', external: true },
 ];
 
@@ -167,7 +160,7 @@ function isActive(href: string) {
         <button
           class:list={[
             "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            isActive('/federation/') || isActive('/governance/') || isActive('/implementations/') || isActive('/api/')
+            isActive('/federation/') || isActive('/implementations/') || isActive('/api/')
               ? "text-accent bg-accent/10"
               : "text-text-muted hover:text-accent hover:bg-white/5"
           ]}
@@ -231,9 +224,7 @@ function isActive(href: string) {
         <button
           class:list={[
             "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            isActive('/registry/') || isActive('/pricing/')
-              ? "text-accent bg-accent/10"
-              : "text-text-muted hover:text-accent hover:bg-white/5"
+            "text-text-muted hover:text-accent hover:bg-white/5"
           ]}
           data-dropdown-trigger
         >
@@ -247,17 +238,11 @@ function isActive(href: string) {
             <div class="p-1">
               {registryLinks.map(link => (
                 <a href={link.href}
-                  class:list={[
-                    "block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors",
-                    isActive(link.href) ? 'text-accent bg-accent/10' : ''
-                  ]}
-                >{link.label}</a>
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors"
+                >{link.label} ↗</a>
               ))}
-              <div class="border-t border-white/5 mt-1 pt-1">
-                <a href="/pricing/" class="block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors">
-                  Pricing
-                </a>
-              </div>
             </div>
           </div>
         </div>
