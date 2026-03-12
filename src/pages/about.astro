@@ -116,8 +116,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="relative">
         <div class="absolute left-4 top-0 bottom-0 w-px bg-white/10"></div>
         {[
-          { version: "v1.2", status: "live", label: "Current", desc: "AI Accountability Layer (§16): confidence gates, HiTL gates, model identity, thought log. Ed25519 signing. Commitment chain. §17–§20 + Appendix B (Distributed Registry, Capability Advertisement, INVOKE, Telemetry Fields, WebSocket)." },
-          { version: "v1.3", status: "planned", label: "Next", desc: "§18–§20 + Appendix B promoted to Stable. §21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake. Conformance L4." },
+          { version: "v1.2", status: "archived", label: "Archived", desc: "AI Accountability Layer (§16): confidence gates, HiTL gates, model identity, thought log. Ed25519 signing. Commitment chain. §17–§20 + Appendix B (Distributed Registry, Capability Advertisement, INVOKE, Telemetry Fields, WebSocket)." },
+          { version: "v1.3", status: "live", label: "Current", desc: "§18–§20 + Appendix B promoted to Stable. §21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake. Conformance L4." },
           { version: "v2.0", status: "vision", label: "Vision", desc: "Signed firmware manifests, supply chain attestation, ISO/TC 299 liaison, EU AI Act §16 reference implementation." },
         ].map(item => (
           <div class="flex gap-6 mb-8 relative pl-10">
