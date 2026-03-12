@@ -11,7 +11,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
       <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Level 1</div>
       <div style="font-size:1.1rem;font-weight:700;color:#fff;">L1 Core</div>
-      <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.4rem;">RURI · mDNS · RBAC · Schema · §6 Audit</div>
+      <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.4rem;">RURI · mDNS · RBAC · Schema · §6 Audit · §19 INVOKE · §20 Telemetry</div>
     </div>
     <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
       <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Level 2</div>
@@ -78,6 +78,36 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <td>Malformed message (missing payload) rejected before dispatch</td>
           <td>Schema</td>
           <td>❌ HTTP 400 / 422 · <code>SCHEMA_VALIDATION_FAILED</code></td>
+        </tr>
+        <tr>
+          <td><code>L1-INVOKE-001</code></td>
+          <td>INVOKE message includes <code>msg_id</code> (UUIDv4) and a valid <code>skill</code> name</td>
+          <td>§19 INVOKE</td>
+          <td>✅ Dispatched · robot emits <code>INVOKE_RESULT</code> with matching <code>reply_to</code></td>
+        </tr>
+        <tr>
+          <td><code>L1-INVOKE-002</code></td>
+          <td>INVOKE for unknown skill name returns <code>not_found</code> status</td>
+          <td>§19 INVOKE</td>
+          <td>❌ <code>INVOKE_RESULT</code> with <code>status=not_found</code> · <code>reply_to</code> matches originating <code>msg_id</code></td>
+        </tr>
+        <tr>
+          <td><code>L1-INVOKE-003</code></td>
+          <td>INVOKE_RESULT <code>reply_to</code> MUST echo the originating INVOKE <code>msg_id</code></td>
+          <td>§19 Correlation</td>
+          <td>✅ <code>reply_to == msg_id</code> from INVOKE</td>
+        </tr>
+        <tr>
+          <td><code>L1-TELEM-001</code></td>
+          <td>Telemetry STATUS message uses standard §20 field names for battery and CPU</td>
+          <td>§20 Telemetry</td>
+          <td>✅ Fields: <code>battery_percent</code> (float 0–100) · <code>cpu_percent</code> (float 0–100)</td>
+        </tr>
+        <tr>
+          <td><code>L1-TELEM-002</code></td>
+          <td>Telemetry field values are typed correctly (float, not string)</td>
+          <td>§20 Telemetry</td>
+          <td>✅ <code>battery_percent: 78.5</code> accepted · <code>battery_percent: "78.5"</code> rejected</td>
         </tr>
       </tbody>
     </table>
@@ -245,9 +275,9 @@ for level, tests in suite["levels"].items():
         # compare result to t["expect"]</code></pre>
 
     <h3>Conformance Badges</h3>
-    <pre><code>L1 CORE       ✅ RCAN Conformant v1.2
-L2 SAFETY     ✅ RCAN Safety Conformant v1.2
-L3 AI-ACCT    ✅ RCAN AI-Accountable v1.2</code></pre>
+    <pre><code>L1 CORE       ✅ RCAN Conformant v1.3
+L2 SAFETY     ✅ RCAN Safety Conformant v1.3
+L3 AI-ACCT    ✅ RCAN AI-Accountable v1.3</code></pre>
   </section>
 
   <hr />

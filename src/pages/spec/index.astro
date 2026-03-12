@@ -3,7 +3,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 import CodeWindow from '../../components/CodeWindow.astro';
 
 const protobufCode = `message RCANMessage {
-  string version        = 1;   // "1.2.0"
+  string version        = 1;   // "1.3.0"
   string message_id     = 2;   // UUID v4
   string source_ruri    = 3;   // Sender RURI
   string target_ruri    = 4;   // Recipient RURI or "broadcast"
@@ -63,7 +63,7 @@ const txtRecords = `ruri=rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
 model=companion-v1
 caps=nav,vision,chat,teleop,arm,status
 roles=owner,user,guest
-version=1.1.0
+version=1.3.0
 name=Living Room Companion
 status=idle`;
 
@@ -85,7 +85,7 @@ const ruriRegex = `# Canonical RURI
 # Local shorthand  (authority contains dots, no path segments for identity)
 ^rcan://([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)\.([a-z0-9]{4,36})(/[a-z][a-z0-9/-]*)?$`;
 
-const rcanConfig = `rcan_version: "1.2.0"
+const rcanConfig = `rcan_version: "1.3.0"
 
 metadata:
   robot_name:   "Alex"
@@ -310,7 +310,7 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
   </div>
   <div class="flex gap-2 mb-8">
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      Version 1.2.0
+      Version 1.3.0
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
       Stable
