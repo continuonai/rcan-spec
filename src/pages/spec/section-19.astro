@@ -1,0 +1,300 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const invokeMessage = `{
+  "type": "INVOKE",
+  "skill": "pick_and_place",
+  "params": {
+    "target": "red_cube"
+  },
+  "timeout_ms": 5000,
+  "msg_id": "invoke_abc123"
+}`;
+
+const invokeResult = `{
+  "type": "INVOKE_RESULT",
+  "skill": "pick_and_place",
+  "status": "success",
+  "reply_to": "invoke_abc123",
+  "duration_ms": 1230
+}`;
+
+const invokeFailure = `{
+  "type": "INVOKE_RESULT",
+  "skill": "pick_and_place",
+  "status": "failure",
+  "reply_to": "invoke_abc123",
+  "duration_ms": 312,
+  "error": {
+    "code": 7006,
+    "name": "SkillFailed",
+    "message": "Gripper could not secure the target object"
+  }
+}`;
+
+const invokeNotFound = `{
+  "type": "INVOKE_RESULT",
+  "skill": "undefined_skill",
+  "status": "not_found",
+  "reply_to": "invoke_xyz999",
+  "error": {
+    "code": 7001,
+    "name": "SkillNotFound",
+    "message": "No skill registered with name 'undefined_skill'"
+  }
+}`;
+---
+
+<DocsLayout title="§19 Behavior/Skill Invocation Protocol" description="RCAN §19 — Behavior/Skill Invocation Protocol. Defines the INVOKE and INVOKE_RESULT message types, status values, error codes, and integration with the Capability Advertisement Protocol.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">§19 Behavior/Skill Invocation Protocol</h1>
+  </div>
+  <div class="flex gap-2 mb-8 flex-wrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+      Status: Draft
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      RCAN v1.2
+    </span>
+    <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← Back to Specification
+    </a>
+  </div>
+
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.1</span> Overview</a></li>
+      <li><a href="#invoke"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.2</span> INVOKE Message</a></li>
+      <li><a href="#invoke-result"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.3</span> INVOKE_RESULT Message</a></li>
+      <li><a href="#status-values"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.4</span> Status Values</a></li>
+      <li><a href="#error-codes"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.5</span> Error Codes</a></li>
+      <li><a href="#integration"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.6</span> Integration with §18</a></li>
+    </ol>
+  </div>
+
+  <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-cyan-300/80">
+      <strong class="text-cyan-400">Overview:</strong> The Behavior/Skill Invocation Protocol defines how a client requests execution of a named
+      skill on a robot, and how the robot reports the outcome. Skills are named, parameterised behaviors
+      (e.g. <code class="text-cyan-400">pick_and_place</code>, <code class="text-cyan-400">patrol_loop</code>). The robot advertises available
+      skills via the <code class="text-cyan-400">invoke</code> capability in §18.
+    </p>
+  </div>
+
+  <hr />
+
+  <!-- ── §19.1 Overview ───────────────────────────────────────────────────── -->
+  <section id="overview">
+    <h2>19.1 Overview</h2>
+    <p>A <strong>skill</strong> is a named, self-contained behavior unit that a robot can execute. Skills accept typed parameters and produce a result. The Skill Invocation Protocol consists of two message types:</p>
+
+    <ul>
+      <li><strong>INVOKE</strong> — Sent by the client to request execution of a named skill.</li>
+      <li><strong>INVOKE_RESULT</strong> — Sent by the robot when the skill completes, fails, or times out.</li>
+    </ul>
+
+    <p>Skills are synchronous from the protocol perspective: each INVOKE expects exactly one INVOKE_RESULT correlated via <code>msg_id</code> / <code>reply_to</code>. Long-running skills SHOULD emit intermediate STATUS messages but MUST produce a final INVOKE_RESULT.</p>
+  </section>
+
+  <hr />
+
+  <!-- ── §19.2 INVOKE Message ──────────────────────────────────────────────── -->
+  <section id="invoke">
+    <h2>19.2 INVOKE Message</h2>
+    <p>The INVOKE message is sent by a client to request execution of a named skill. The robot MUST respond with an INVOKE_RESULT within <code>timeout_ms</code> milliseconds (or 30 000 ms if omitted).</p>
+
+    <div class="not-prose">
+      <CodeWindow code={invokeMessage} language="json" title="INVOKE" />
+    </div>
+
+    <h3>INVOKE Fields</h3>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>type</code></td><td>string</td><td>MUST</td><td>Literal <code>"INVOKE"</code></td></tr>
+        <tr><td><code>skill</code></td><td>string</td><td>MUST</td><td>Name of the skill to invoke (e.g. <code>"pick_and_place"</code>). MUST match an entry in the <code>invoke.params.skills</code> capability array.</td></tr>
+        <tr><td><code>params</code></td><td>object</td><td>MAY</td><td>Skill-specific input parameters. Schema is defined per skill. Omit if the skill takes no params.</td></tr>
+        <tr><td><code>timeout_ms</code></td><td>integer</td><td>MAY</td><td>Maximum milliseconds to wait for INVOKE_RESULT. Defaults to <code>30000</code>. If exceeded, robot MUST send INVOKE_RESULT with status <code>"timeout"</code>.</td></tr>
+        <tr><td><code>msg_id</code></td><td>string</td><td>SHOULD</td><td>Unique message ID (UUIDv4 or caller-scoped token). Used by INVOKE_RESULT to correlate the response.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §19.3 INVOKE_RESULT Message ──────────────────────────────────────── -->
+  <section id="invoke-result">
+    <h2>19.3 INVOKE_RESULT Message</h2>
+    <p>The INVOKE_RESULT message is sent by the robot when a skill execution concludes (success, failure, or timeout). It MUST include the correlation ID from the originating INVOKE.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={invokeResult} language="json" title="INVOKE_RESULT — success" />
+    </div>
+
+    <div class="not-prose mt-4">
+      <CodeWindow code={invokeFailure} language="json" title="INVOKE_RESULT — failure" />
+    </div>
+
+    <div class="not-prose mt-4">
+      <CodeWindow code={invokeNotFound} language="json" title="INVOKE_RESULT — not_found" />
+    </div>
+
+    <h3>INVOKE_RESULT Fields</h3>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>type</code></td><td>string</td><td>MUST</td><td>Literal <code>"INVOKE_RESULT"</code></td></tr>
+        <tr><td><code>skill</code></td><td>string</td><td>MUST</td><td>Name of the skill that was invoked (mirrors the INVOKE <code>skill</code> field)</td></tr>
+        <tr><td><code>status</code></td><td>string (enum)</td><td>MUST</td><td>Outcome of the skill execution. See §19.4.</td></tr>
+        <tr><td><code>reply_to</code></td><td>string</td><td>SHOULD</td><td>The <code>msg_id</code> from the originating INVOKE. MUST be present if the INVOKE included a <code>msg_id</code>.</td></tr>
+        <tr><td><code>duration_ms</code></td><td>integer</td><td>MAY</td><td>Wall-clock time the skill ran in milliseconds, from start to completion.</td></tr>
+        <tr><td><code>result</code></td><td>object</td><td>MAY</td><td>Skill-specific output data. Schema defined per skill. Present on <code>"success"</code> when the skill produces output.</td></tr>
+        <tr><td><code>error</code></td><td>object</td><td>MAY</td><td>Error detail object with <code>code</code> (int), <code>name</code> (string), <code>message</code> (string). Present on non-success statuses.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §19.4 Status Values ───────────────────────────────────────────────── -->
+  <section id="status-values">
+    <h2>19.4 Status Values</h2>
+    <p>The <code>status</code> field of INVOKE_RESULT MUST be one of the following enumerated values.</p>
+
+    <table>
+      <thead>
+        <tr><th>Status</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>success</code></td>
+          <td>The skill completed normally and achieved its goal. The <code>result</code> field MAY contain output data.</td>
+        </tr>
+        <tr>
+          <td><code>failure</code></td>
+          <td>The skill ran but did not achieve its goal (e.g. object not graspable). The <code>error</code> field SHOULD describe why.</td>
+        </tr>
+        <tr>
+          <td><code>timeout</code></td>
+          <td>The skill did not complete within <code>timeout_ms</code>. The robot aborted execution. Error code 7002.</td>
+        </tr>
+        <tr>
+          <td><code>not_found</code></td>
+          <td>No skill with the given name is registered on this robot. Error code 7001.</td>
+        </tr>
+        <tr>
+          <td><code>unauthorized</code></td>
+          <td>The session does not have sufficient scope or role to invoke this skill. Error code 7003.</td>
+        </tr>
+        <tr>
+          <td><code>invalid_params</code></td>
+          <td>The <code>params</code> object failed validation against the skill's parameter schema. Error code 7004.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §19.5 Error Codes ─────────────────────────────────────────────────── -->
+  <section id="error-codes">
+    <h2>19.5 Error Codes</h2>
+    <p>The following error codes are reserved for the Skill Invocation Protocol. They supplement the general RCAN error codes defined in §10.</p>
+
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Name</th><th>Status</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>7001</code></td>
+          <td><code>SkillNotFound</code></td>
+          <td><code>not_found</code></td>
+          <td>No skill with the requested name is registered on this robot. The robot MUST NOT execute any action.</td>
+        </tr>
+        <tr>
+          <td><code>7002</code></td>
+          <td><code>SkillTimeout</code></td>
+          <td><code>timeout</code></td>
+          <td>Skill execution exceeded the requested <code>timeout_ms</code>. The robot MUST attempt a graceful abort of the skill.</td>
+        </tr>
+        <tr>
+          <td><code>7003</code></td>
+          <td><code>SkillUnauthorized</code></td>
+          <td><code>unauthorized</code></td>
+          <td>The session token lacks the scope or role required to invoke this skill. The robot MUST NOT execute any action.</td>
+        </tr>
+        <tr>
+          <td><code>7004</code></td>
+          <td><code>InvalidSkillParams</code></td>
+          <td><code>invalid_params</code></td>
+          <td>One or more params failed schema validation. The <code>error.message</code> field SHOULD identify the failing field.</td>
+        </tr>
+        <tr>
+          <td><code>7005</code></td>
+          <td><code>SkillConflict</code></td>
+          <td><code>failure</code></td>
+          <td>Another skill is currently running that conflicts with the requested skill (e.g. two motion skills simultaneously). The client SHOULD retry after the conflicting skill completes.</td>
+        </tr>
+        <tr>
+          <td><code>7006</code></td>
+          <td><code>SkillFailed</code></td>
+          <td><code>failure</code></td>
+          <td>The skill ran but encountered a runtime error or could not achieve its goal. The <code>error.message</code> field SHOULD describe the cause.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── §19.6 Integration with §18 ───────────────────────────────────────── -->
+  <section id="integration">
+    <h2>19.6 Integration with §18 Capability Advertisement</h2>
+    <p>A robot that supports skill invocation MUST include the <code>invoke</code> capability in its Capability Object Map (§18). The <code>skills</code> parameter lists the names of all invocable skills.</p>
+
+    <pre><code>{`{
+  "caps": {
+    "invoke": {
+      "version": "1.0",
+      "required": false,
+      "params": {
+        "skills": ["pick_and_place", "patrol_loop", "door_open"]
+      }
+    }
+  }
+}`}</code></pre>
+
+    <h3>Rules</h3>
+    <ol>
+      <li>A client MUST NOT send INVOKE for a skill not listed in <code>invoke.params.skills</code>. If it does, the robot MUST respond with status <code>not_found</code> (7001).</li>
+      <li>If the robot does not advertise the <code>invoke</code> capability, the client MUST NOT send INVOKE messages.</li>
+      <li>The skills list in <code>invoke.params.skills</code> is authoritative at the time of CONNECT. If skills change at runtime, the robot SHOULD emit a STATUS update with the revised capability map.</li>
+      <li>Skill names MUST be lowercase, using underscores as word separators (e.g. <code>pick_and_place</code>). Custom skills from third parties MUST use reverse-DNS prefix (e.g. <code>com.example.custom_skill</code>).</li>
+    </ol>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80"><strong class="text-cyan-400">Tip:</strong> Clients should inspect the <code>invoke.params.skills</code> list after CONNECT_ACK and build their available-skills UI from it, rather than hard-coding skill names.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <div class="not-prose mt-12 flex flex-wrap gap-4">
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-18/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §18 Capability Advertisement
+    </a>
+    <a href="/spec/section-20/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §20 Telemetry Registry →
+    </a>
+  </div>
+</DocsLayout>

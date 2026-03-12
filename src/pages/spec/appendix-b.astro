@@ -1,0 +1,266 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const connectHandshake = `// Client → Server (first message after WS open)
+{"type":"CONNECT","ruri":"rcan://robot.local","version":"1.2","caps":{"move":{"version":"1.0"}}}
+
+// Server → Client (success)
+{"type":"CONNECT_ACK","session_id":"sess_abc123","server_version":"1.2"}
+
+// Server → Client (failure — closes WS with code 4001)
+{"type":"ERROR","code":8001,"name":"ConnectionRefused","message":"Auth token missing"}`;
+
+const heartbeat = `// Client sends every 30 seconds
+{"type":"PING","msg_id":"ping_001","timestamp_us":1741737600000000}
+
+// Server responds within 5 seconds
+{"type":"PONG","reply_to":"ping_001","timestamp_us":1741737600005000}`;
+
+const backoffExample = `// Reconnect backoff schedule (±500 ms jitter applied at each step)
+Attempt 1: wait  1 s   →  reconnect
+Attempt 2: wait  2 s   →  reconnect
+Attempt 3: wait  4 s   →  reconnect
+Attempt 4: wait  8 s   →  reconnect
+Attempt 5: wait 16 s   →  reconnect
+Attempt 6+: wait 30 s  →  reconnect (cap)`;
+---
+
+<DocsLayout title="Appendix B: WebSocket Transport Binding" description="RCAN Appendix B — WebSocket Transport Binding. Defines framing, handshake, heartbeat, reconnect backoff, sequence numbers, and WS error codes.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">Appendix B: WebSocket Transport Binding</h1>
+  </div>
+  <div class="flex gap-2 mb-8 flex-wrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+      Status: Draft
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      RCAN v1.2
+    </span>
+    <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← Back to Specification
+    </a>
+  </div>
+
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#framing"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.1</span> Framing</a></li>
+      <li><a href="#handshake"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.2</span> Handshake</a></li>
+      <li><a href="#heartbeat"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.3</span> Heartbeat</a></li>
+      <li><a href="#reconnect"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.4</span> Reconnect Strategy</a></li>
+      <li><a href="#sequence-numbers" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.5</span> Sequence Numbers</a></li>
+      <li><a href="#error-codes"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.6</span> Error Codes</a></li>
+    </ol>
+  </div>
+
+  <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-cyan-300/80">
+      <strong class="text-cyan-400">Overview:</strong> This appendix specifies how RCAN messages are carried over a WebSocket connection (RFC 6455).
+      It covers frame format, the mandatory CONNECT handshake, heartbeat requirements, reconnection strategy,
+      sequence number conventions, and WS-level error codes.
+    </p>
+  </div>
+
+  <hr />
+
+  <!-- ── B.1 Framing ──────────────────────────────────────────────────────── -->
+  <section id="framing">
+    <h2>B.1 Framing</h2>
+    <p>RCAN messages are transmitted as <strong>WebSocket text frames</strong> containing UTF-8 encoded JSON. Each WebSocket frame carries exactly one RCAN message object.</p>
+
+    <h3>Text Frames (Required)</h3>
+    <ul>
+      <li>All RCAN control messages (CONNECT, STATUS, COMMAND, INVOKE, etc.) MUST use JSON text frames.</li>
+      <li>Message objects MUST be valid JSON (RFC 8259).</li>
+      <li>Implementations MUST NOT split a single RCAN message across multiple WebSocket frames.</li>
+    </ul>
+
+    <h3>Binary Frames (Optional)</h3>
+    <p>Binary frames MAY be used for high-frequency telemetry streams where JSON overhead is prohibitive. Supported encodings:</p>
+    <ul>
+      <li><strong>Protobuf</strong> — Protocol Buffers (binary serialisation). Message type MUST be identified via a preceding text-frame envelope or an agreed session-level type negotiation.</li>
+      <li><strong>MessagePack</strong> — Compact binary JSON-compatible encoding. Field names MUST match the RCAN JSON field names exactly.</li>
+    </ul>
+    <p>Servers that do not support binary frames MUST close the connection with code <code>1003</code> (Unsupported Data) upon receiving a binary frame.</p>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Note:</strong> Binary frame support is optional. Implementations that require guaranteed interoperability SHOULD use JSON text frames exclusively.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── B.2 Handshake ────────────────────────────────────────────────────── -->
+  <section id="handshake">
+    <h2>B.2 Handshake</h2>
+    <p>After the WebSocket connection is established (HTTP Upgrade complete), the client MUST send a CONNECT message as its very first frame.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={connectHandshake} language="json" title="Connection handshake" />
+    </div>
+
+    <h3>Rules</h3>
+    <ol>
+      <li>The client MUST send CONNECT as the first frame. Any other message type sent first MUST be rejected by the server with a close frame (code <code>4001</code>).</li>
+      <li>The server MUST respond with either <code>CONNECT_ACK</code> (success) or close the WebSocket with code <code>4001</code> (ConnectionRefused) and an ERROR payload.</li>
+      <li>No other messages may be exchanged until CONNECT_ACK is received.</li>
+      <li>The server MAY impose a handshake timeout (RECOMMENDED: 10 seconds). If CONNECT is not received in time, the server MUST close with code <code>1002</code>.</li>
+    </ol>
+
+    <table>
+      <thead>
+        <tr><th>WS Close Code</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>4001</code></td><td>ConnectionRefused — authentication failed, version mismatch, or server at capacity</td></tr>
+        <tr><td><code>1002</code></td><td>Protocol error — non-CONNECT first frame, or malformed JSON</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr />
+
+  <!-- ── B.3 Heartbeat ────────────────────────────────────────────────────── -->
+  <section id="heartbeat">
+    <h2>B.3 Heartbeat</h2>
+    <p>RCAN uses an application-level heartbeat (PING/PONG) in addition to, or instead of, the WebSocket protocol-level ping/pong frames.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={heartbeat} language="json" title="PING / PONG" />
+    </div>
+
+    <h3>Rules</h3>
+    <ol>
+      <li>The client MUST send a PING message every <strong>30 seconds</strong> of inactivity (no other messages sent).</li>
+      <li>The server MUST respond with a PONG within <strong>5 seconds</strong> of receiving a PING.</li>
+      <li>If the client receives no PONG within 5 seconds of sending a PING, it MUST close the connection with code <code>1001</code> (Going Away) and initiate reconnect (see B.4).</li>
+      <li>If the server receives no PING for more than <strong>60 seconds</strong>, it MAY close the connection with code <code>1001</code>.</li>
+    </ol>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80"><strong class="text-cyan-400">Tip:</strong> In practice, STATUS messages sent by the robot implicitly act as keep-alive signals. Clients SHOULD reset the PING timer on receipt of any message from the server.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── B.4 Reconnect Strategy ────────────────────────────────────────────── -->
+  <section id="reconnect">
+    <h2>B.4 Reconnect Strategy</h2>
+    <p>Clients MUST implement exponential backoff when reconnecting after a connection loss. A new CONNECT message MUST be sent on each reconnect attempt.</p>
+
+    <div class="not-prose">
+      <CodeWindow code={backoffExample} language="text" title="Reconnect backoff schedule" />
+    </div>
+
+    <h3>Backoff Parameters</h3>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Initial wait</td><td>1 second</td></tr>
+        <tr><td>Multiplier</td><td>×2 per attempt</td></tr>
+        <tr><td>Maximum wait (cap)</td><td>30 seconds</td></tr>
+        <tr><td>Jitter</td><td>±500 ms (uniform random, applied after cap)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Rules</h3>
+    <ol>
+      <li>Clients MUST reset the backoff counter to the initial value (1 s) after a successful CONNECT_ACK.</li>
+      <li>Clients MUST re-send a full CONNECT message (including <code>caps</code>) on each reconnect. Servers MUST NOT assume session state persists across connections.</li>
+      <li>If the server responds to CONNECT with code <code>4002</code> (AuthExpired), the client MUST refresh its auth token before retrying and MUST NOT use the backoff schedule for this specific case — it MUST wait until a new token is available.</li>
+      <li>Clients SHOULD surface persistent reconnect failures to the user or operator after 5 consecutive failed attempts.</li>
+    </ol>
+  </section>
+
+  <hr />
+
+  <!-- ── B.5 Sequence Numbers ──────────────────────────────────────────────── -->
+  <section id="sequence-numbers">
+    <h2>B.5 Sequence Numbers</h2>
+    <p>Messages SHOULD include a monotonically increasing <code>seq</code> field (integer). Sequence numbers help receivers detect dropped messages and reorder out-of-order delivery.</p>
+
+    <pre><code>{`{"type":"STATUS","seq":1042,"ruri":"rcan://robot.local", ...}`}</code></pre>
+
+    <h3>Rules</h3>
+    <ol>
+      <li>Senders SHOULD include <code>seq</code> in STATUS, COMMAND, INVOKE, and INVOKE_RESULT messages.</li>
+      <li>Sequence numbers SHOULD start at 1 and increment by 1 per message. They MAY wrap to 1 after reaching <code>2^31 − 1</code>.</li>
+      <li>Receivers MAY use <code>seq</code> gaps to detect dropped messages and emit a warning, but MUST NOT block processing waiting for a missing sequence number.</li>
+      <li>Sequence numbers are session-scoped — they reset on reconnect.</li>
+    </ol>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80"><strong class="text-cyan-400">Note:</strong> WebSocket provides ordered, reliable delivery on a single connection. Sequence numbers are primarily useful for detecting message loss at the application layer (e.g. after reconnect) and for correlating telemetry samples across multiple streams.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── B.6 Error Codes ───────────────────────────────────────────────────── -->
+  <section id="error-codes">
+    <h2>B.6 Error Codes</h2>
+    <p>The following error codes are defined for the WebSocket Transport Binding. RCAN error codes in the 8xxx range map to specific WebSocket close codes.</p>
+
+    <table>
+      <thead>
+        <tr><th>RCAN Code</th><th>Name</th><th>WS Close Code</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>8001</code></td>
+          <td><code>ConnectionRefused</code></td>
+          <td><code>4001</code></td>
+          <td>Server refused the connection — auth failure, version incompatibility, or server at capacity. Client SHOULD display an error and MAY retry with backoff.</td>
+        </tr>
+        <tr>
+          <td><code>8002</code></td>
+          <td><code>AuthExpired</code></td>
+          <td><code>4002</code></td>
+          <td>The session auth token has expired. Client MUST refresh the token before reconnecting. Do NOT use the standard backoff schedule.</td>
+        </tr>
+        <tr>
+          <td><code>8003</code></td>
+          <td><code>HeartbeatTimeout</code></td>
+          <td><code>1001</code></td>
+          <td>No PONG received within the heartbeat window (B.3). The connection is considered dead. Client MUST reconnect with backoff.</td>
+        </tr>
+        <tr>
+          <td><code>8004</code></td>
+          <td><code>MessageTooLarge</code></td>
+          <td><code>1009</code></td>
+          <td>An inbound message exceeded the server's maximum frame size. The connection is closed. Client SHOULD reduce payload size before reconnecting.</td>
+        </tr>
+        <tr>
+          <td><code>8005</code></td>
+          <td><code>InvalidFrame</code></td>
+          <td><code>1007</code></td>
+          <td>A text frame contained invalid UTF-8 or a malformed JSON object. The connection is closed. Client SHOULD fix message serialisation before reconnecting.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Mapping Summary</h3>
+    <div class="not-prose bg-bg-alt border border-white/10 rounded-lg p-4 font-mono text-sm my-4 grid grid-cols-2 gap-x-8 gap-y-1">
+      <div><span class="text-cyan-400">8001</span> <span class="text-text-muted">→ WS 4001</span></div>
+      <div><span class="text-cyan-400">8002</span> <span class="text-text-muted">→ WS 4002</span></div>
+      <div><span class="text-cyan-400">8003</span> <span class="text-text-muted">→ WS 1001</span></div>
+      <div><span class="text-cyan-400">8004</span> <span class="text-text-muted">→ WS 1009</span></div>
+      <div><span class="text-cyan-400">8005</span> <span class="text-text-muted">→ WS 1007</span></div>
+    </div>
+  </section>
+
+  <hr />
+
+  <div class="not-prose mt-12 flex flex-wrap gap-4">
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-20/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §20 Telemetry Registry
+    </a>
+  </div>
+</DocsLayout>

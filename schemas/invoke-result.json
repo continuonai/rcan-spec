@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/invoke-result.json",
+  "title": "RCAN INVOKE_RESULT Message",
+  "description": "§19 Behavior/Skill Invocation Protocol — INVOKE_RESULT message. Sent by the robot when a skill execution concludes (success, failure, timeout, etc.).",
+  "type": "object",
+  "required": ["type", "skill", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "INVOKE_RESULT",
+      "description": "Message type discriminator. MUST be 'INVOKE_RESULT'."
+    },
+    "skill": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the skill that was invoked. Mirrors the skill field from the originating INVOKE."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failure", "timeout", "not_found", "unauthorized", "invalid_params"],
+      "description": "Outcome of the skill execution."
+    },
+    "reply_to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The msg_id from the originating INVOKE. MUST be present if the INVOKE included a msg_id."
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Wall-clock time the skill ran in milliseconds, from start to completion."
+    },
+    "result": {
+      "type": "object",
+      "description": "Skill-specific output data. Present on 'success' when the skill produces output.",
+      "additionalProperties": true
+    },
+    "error": {
+      "type": "object",
+      "description": "Error detail. Present on non-success statuses.",
+      "required": ["code", "name", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "integer",
+          "minimum": 7001,
+          "maximum": 7999,
+          "description": "RCAN error code in the 7xxx range (see §19.5)."
+        },
+        "name": {
+          "type": "string",
+          "enum": [
+            "SkillNotFound",
+            "SkillTimeout",
+            "SkillUnauthorized",
+            "InvalidSkillParams",
+            "SkillConflict",
+            "SkillFailed"
+          ],
+          "description": "Machine-readable error name."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error description."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "type": "INVOKE_RESULT",
+      "skill": "pick_and_place",
+      "status": "success",
+      "reply_to": "invoke_abc123",
+      "duration_ms": 1230
+    },
+    {
+      "type": "INVOKE_RESULT",
+      "skill": "pick_and_place",
+      "status": "failure",
+      "reply_to": "invoke_abc123",
+      "duration_ms": 312,
+      "error": {
+        "code": 7006,
+        "name": "SkillFailed",
+        "message": "Gripper could not secure the target object"
+      }
+    },
+    {
+      "type": "INVOKE_RESULT",
+      "skill": "undefined_skill",
+      "status": "not_found",
+      "reply_to": "invoke_xyz999",
+      "error": {
+        "code": 7001,
+        "name": "SkillNotFound",
+        "message": "No skill registered with name 'undefined_skill'"
+      }
+    }
+  ]
+}

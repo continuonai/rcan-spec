@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/capability-object.json",
+  "title": "RCAN Capability Object Map",
+  "description": "§18 Capability Advertisement Protocol — Capability Object Map. The value of the 'caps' field in CONNECT and STATUS messages when using the structured format.",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/definitions/CapabilityDescriptor"
+  },
+  "definitions": {
+    "CapabilityDescriptor": {
+      "type": "object",
+      "description": "Descriptor for a single named capability.",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+$",
+          "description": "MAJOR.MINOR semantic version of this capability's interface. Defaults to '1.0' if omitted.",
+          "default": "1.0"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "If true, the connecting client MUST support this capability to proceed. Defaults to false.",
+          "default": false
+        },
+        "params": {
+          "type": "object",
+          "description": "Capability-specific typed parameters. Schema varies per capability name.",
+          "additionalProperties": true
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "move": {
+        "version": "1.0",
+        "required": true,
+        "params": {
+          "max_velocity_m_s": 1.5,
+          "max_angular_rad_s": 2.0,
+          "kinematic_model": "differential"
+        }
+      },
+      "grip": {
+        "version": "1.0",
+        "required": false,
+        "params": {
+          "max_force_n": 50.0,
+          "grip_types": ["parallel", "vacuum"]
+        }
+      },
+      "speak": {
+        "version": "1.0",
+        "required": false,
+        "params": {
+          "languages": ["en-US", "fr-FR"],
+          "voices": ["nova", "alloy"]
+        }
+      },
+      "invoke": {
+        "version": "1.0",
+        "required": false,
+        "params": {
+          "skills": ["pick_and_place", "patrol_loop"]
+        }
+      }
+    }
+  ]
+}

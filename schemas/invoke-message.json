@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/invoke-message.json",
+  "title": "RCAN INVOKE Message",
+  "description": "§19 Behavior/Skill Invocation Protocol — INVOKE message. Sent by a client to request execution of a named skill on a robot.",
+  "type": "object",
+  "required": ["type", "skill"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "INVOKE",
+      "description": "Message type discriminator. MUST be 'INVOKE'."
+    },
+    "skill": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+      "description": "Name of the skill to invoke. MUST match an entry in the robot's invoke.params.skills capability list."
+    },
+    "params": {
+      "type": "object",
+      "description": "Skill-specific input parameters. Schema is defined per skill. Omit if the skill takes no parameters.",
+      "additionalProperties": true
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 30000,
+      "description": "Maximum milliseconds to wait for INVOKE_RESULT. Defaults to 30000 ms. If exceeded, the robot MUST send INVOKE_RESULT with status 'timeout'."
+    },
+    "msg_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique message ID (UUIDv4 or caller-scoped token). Used by INVOKE_RESULT to correlate the response via reply_to."
+    }
+  },
+  "examples": [
+    {
+      "type": "INVOKE",
+      "skill": "pick_and_place",
+      "params": {
+        "target": "red_cube"
+      },
+      "timeout_ms": 5000,
+      "msg_id": "invoke_abc123"
+    },
+    {
+      "type": "INVOKE",
+      "skill": "patrol_loop",
+      "timeout_ms": 120000,
+      "msg_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ]
+}

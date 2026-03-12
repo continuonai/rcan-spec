@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/robot-state.json",
+  "title": "RCAN Robot State Object",
+  "description": "§20 Telemetry Field Registry — Robot State object. Top-level telemetry payload carried in a STATUS message. Aggregates robot-wide state and an optional array of Joint Telemetry objects.",
+  "type": "object",
+  "required": ["ruri", "timestamp_us"],
+  "additionalProperties": true,
+  "properties": {
+    "ruri": {
+      "type": "string",
+      "pattern": "^rcan://",
+      "description": "Robot's canonical RURI. MUST match the RURI from the CONNECT message."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonically increasing sequence number. Receivers MAY use for gap detection. Resets on reconnect."
+    },
+    "uptime_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Milliseconds since the robot process last started."
+    },
+    "battery_v": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Battery pack voltage in Volts."
+    },
+    "battery_pct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Battery state of charge as a percentage (0–100)."
+    },
+    "position": {
+      "type": "object",
+      "description": "Robot's 2D world-frame position. Origin is implementation-defined (typically map or odometry frame).",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "X position in metres."
+        },
+        "y": {
+          "type": "number",
+          "description": "Y position in metres."
+        },
+        "heading_rad": {
+          "type": "number",
+          "description": "Heading angle in radians (0 = forward, positive = counter-clockwise)."
+        }
+      }
+    },
+    "joints": {
+      "type": "array",
+      "description": "Array of Joint Telemetry objects (see joint-telemetry.json). MAY be empty or omitted.",
+      "items": {
+        "$ref": "https://rcan.dev/schemas/joint-telemetry.json"
+      }
+    },
+    "timestamp_us": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Timestamp of this state snapshot in microseconds since Unix epoch."
+    }
+  },
+  "examples": [
+    {
+      "ruri": "rcan://robot.local",
+      "seq": 1042,
+      "uptime_ms": 3600000,
+      "battery_v": 14.2,
+      "battery_pct": 78,
+      "position": {
+        "x": 1.2,
+        "y": 0.5,
+        "heading_rad": 1.57
+      },
+      "joints": [
+        {
+          "joint": "shoulder_pan",
+          "position_rad": 0.785,
+          "velocity_rad_s": 0.02,
+          "effort_nm": 0.41,
+          "temperature_c": 38.5,
+          "error_flags": 0,
+          "timestamp_us": 1741737600000000
+        }
+      ],
+      "timestamp_us": 1741737600000000
+    }
+  ]
+}

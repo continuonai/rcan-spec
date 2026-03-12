@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/joint-telemetry.json",
+  "title": "RCAN Joint Telemetry Object",
+  "description": "§20 Telemetry Field Registry — Joint Telemetry object. Represents a single snapshot of sensor readings for one named joint. Consumers MUST ignore unknown fields.",
+  "type": "object",
+  "required": ["joint", "timestamp_us"],
+  "additionalProperties": true,
+  "properties": {
+    "joint": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique joint name within this robot (e.g. 'shoulder_pan', 'elbow_flex'). MUST be stable across reboots."
+    },
+    "position_rad": {
+      "type": "number",
+      "description": "Current joint angle in radians. For prismatic joints use position_m instead."
+    },
+    "position_m": {
+      "type": "number",
+      "description": "Current joint linear position in metres (prismatic joints only)."
+    },
+    "velocity_rad_s": {
+      "type": "number",
+      "description": "Current joint angular velocity in rad/s. Positive = increasing angle."
+    },
+    "velocity_m_s": {
+      "type": "number",
+      "description": "Current joint linear velocity in m/s (prismatic joints only)."
+    },
+    "effort_nm": {
+      "type": "number",
+      "description": "Current joint torque in Newton-metres. Positive = joint closing / forward effort."
+    },
+    "temperature_c": {
+      "type": "number",
+      "description": "Motor or actuator temperature in degrees Celsius."
+    },
+    "error_flags": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Driver-defined error bitmask. 0 = no errors. Bit definitions are hardware-specific."
+    },
+    "timestamp_us": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Hardware capture timestamp in microseconds since Unix epoch. MUST be monotonically increasing within a session."
+    }
+  },
+  "examples": [
+    {
+      "joint": "shoulder_pan",
+      "position_rad": 0.785,
+      "velocity_rad_s": 0.02,
+      "effort_nm": 0.41,
+      "temperature_c": 38.5,
+      "error_flags": 0,
+      "timestamp_us": 1741737600000000
+    },
+    {
+      "joint": "lift_column",
+      "position_m": 0.35,
+      "velocity_m_s": 0.01,
+      "effort_nm": 12.5,
+      "temperature_c": 41.0,
+      "error_flags": 0,
+      "timestamp_us": 1741737600000000
+    }
+  ]
+}
