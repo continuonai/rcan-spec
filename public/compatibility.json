@@ -7,7 +7,7 @@
       "rcan_py": ">=0.3.0",
       "rcan_ts": ">=0.3.0",
       "opencastor": ">=2026.3.13.0",
-      "notes": "§18-20 + Appendix B stable; §21 Registry Integration; conformance L4; INVOKE_CANCEL (§19.4) MessageType=15; REGISTRY_REGISTER (§21) MessageType=16; REGISTRY_RESOLVE (§21) MessageType=17; OpenCastor ref impl v2026.3.13.x"
+      "notes": "§18-20 + Appendix B stable; §21 Registry Integration; conformance L4; INVOKE_CANCEL (§19.4) MessageType=15; REGISTRY_REGISTER (§21.4) MessageType=13; REGISTRY_RESOLVE (§21.5) MessageType=14; OpenCastor ref impl v2026.3.13.x"
     },
     {
       "version": "1.2",
