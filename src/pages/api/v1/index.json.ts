@@ -27,6 +27,12 @@ export const GET: APIRoute = async ({ site }) => {
         description: 'Get a single robot by RRN (e.g. /api/v1/robots/RRN-00000001.json)',
       },
       {
+        path: '/api/v1/verify/[rrn].json',
+        method: 'GET',
+        description:
+          'Get the verification status and tier for a robot by RRN (e.g. /api/v1/verify/RRN-000000000001.json). Returns current tier, verifier, and verification timestamp.',
+      },
+      {
         path: '/api/v1/ruri/[...slug].json',
         method: 'GET',
         description:

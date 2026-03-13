@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/invoke-cancel.json",
+  "title": "INVOKE_CANCEL Message",
+  "description": "RCAN message type 15. Sent by a principal to request best-effort cancellation of an in-flight INVOKE (§19.4). The runtime SHOULD stop execution if the skill has not yet completed and emit an INVOKE_RESULT with status 'cancelled'. Cancellation is advisory — the runtime is not required to honour it if execution has already passed a point of no return.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "principal_id",
+    "session_token",
+    "cancel_msg_id",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 15,
+      "description": "Identifies this as an INVOKE_CANCEL message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "RURI of the target robot runtime that received the original INVOKE."
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identity of the cancelling principal. MUST match the principal_id of the original INVOKE message."
+    },
+    "session_token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Valid JWT session token authorising this cancellation. MUST be the same token or a token for the same session as the original INVOKE."
+    },
+    "cancel_msg_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "The msg_id of the INVOKE message to cancel. The runtime correlates cancellation requests by this value."
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Optional human-readable reason for cancellation (e.g. 'user abort', 'timeout exceeded by caller')."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the INVOKE_CANCEL was sent."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this message envelope."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 15,
+      "ruri": "rcan://rcan.dev/opencastor/rover/abc12345",
+      "principal_id": "agent:anthropic:claude-sonnet-4",
+      "session_token": "tok_example",
+      "cancel_msg_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "reason": "user abort",
+      "timestamp_ms": 1741100110000,
+      "message_id": "e5f6a7b8-c9d0-1234-ef01-234567890124"
+    }
+  ]
+}

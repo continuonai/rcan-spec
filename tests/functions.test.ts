@@ -1,5 +1,5 @@
 /**
- * rcan-spec — Vitest unit tests for Cloudflare Functions logic
+ * rcan-spec — Vitest unit tests for Cloudflare Functions logic and ruri.ts utilities
  *
  * Covers:
  *   - RRN parsing (root and delegated namespaces, expanded address space)
@@ -410,5 +410,267 @@ describe("mockD1 helper", () => {
     const db = mockD1();
     const { results } = await db.prepare("SELECT * FROM test").bind().all();
     expect(Array.isArray(results)).toBe(true);
+  });
+});
+
+// ── ruri.ts utility tests ─────────────────────────────────────────────────────
+// Mirror parseRURI, buildRURI, ruriToHttpUrl, and validateManifest from src/utils/ruri.ts
+// These are inlined here to avoid Astro/Vite build-time imports in the Vitest environment.
+
+interface ParsedRURI {
+  raw: string;
+  registry: string;
+  manufacturer: string;
+  model: string;
+  deviceId: string;
+  port?: number;
+  capability?: string;
+}
+
+interface RURIValidationResult {
+  valid: boolean;
+  error?: string;
+  parsed?: ParsedRURI;
+}
+
+const RURI_REGEX =
+  /^rcan:\/\/([a-z0-9][a-z0-9.-]*[a-z0-9])\/([a-z0-9][a-z0-9-]*[a-z0-9])\/([a-z0-9][a-z0-9-]*[a-z0-9])\/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\d{1,5}))?(\/?[a-z][a-z0-9/-]*)?$/i;
+
+function parseRURI(ruri: string): RURIValidationResult {
+  if (!ruri) return { valid: false, error: "RURI cannot be empty" };
+  const trimmedRuri = ruri.trim();
+  if (!trimmedRuri.startsWith("rcan://"))
+    return { valid: false, error: "RURI must start with rcan://" };
+  const match = trimmedRuri.match(RURI_REGEX);
+  if (!match) return { valid: false, error: "Invalid RURI format" };
+  const [, registry, manufacturer, model, deviceId, port, capability] = match;
+  if (port) {
+    const portNum = parseInt(port, 10);
+    if (portNum < 1 || portNum > 65535)
+      return { valid: false, error: "Port must be between 1 and 65535" };
+  }
+  return {
+    valid: true,
+    parsed: {
+      raw: trimmedRuri,
+      registry,
+      manufacturer,
+      model,
+      deviceId,
+      port: port ? parseInt(port, 10) : undefined,
+      capability: capability?.replace(/^\//, "") || undefined,
+    },
+  };
+}
+
+function buildRURI(parts: {
+  registry: string;
+  manufacturer: string;
+  model: string;
+  deviceId: string;
+  port?: number;
+  capability?: string;
+}): string {
+  let ruri = `rcan://${parts.registry}/${parts.manufacturer}/${parts.model}/${parts.deviceId}`;
+  if (parts.port) ruri += `:${parts.port}`;
+  if (parts.capability) ruri += `/${parts.capability}`;
+  return ruri;
+}
+
+function ruriToHttpUrl(ruri: string | ParsedRURI): string | null {
+  const parsed = typeof ruri === "string" ? parseRURI(ruri).parsed : ruri;
+  if (!parsed) return null;
+  const port = parsed.port || 8080;
+  const protocol = parsed.registry === "localhost" ? "http" : "https";
+  return `${protocol}://${parsed.registry}:${port}/.well-known/rcan-manifest.json`;
+}
+
+interface RobotManifest {
+  ruri: string;
+  name: string;
+  manufacturer: string;
+  model: string;
+  [key: string]: unknown;
+}
+
+function validateManifest(manifest: unknown): manifest is RobotManifest {
+  if (!manifest || typeof manifest !== "object") return false;
+  const m = manifest as Record<string, unknown>;
+  if (typeof m.ruri !== "string") return false;
+  if (typeof m.name !== "string") return false;
+  if (typeof m.manufacturer !== "string") return false;
+  if (typeof m.model !== "string") return false;
+  return true;
+}
+
+describe("parseRURI — valid inputs", () => {
+  it("parses a minimal RURI", () => {
+    const r = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345");
+    expect(r.valid).toBe(true);
+    expect(r.parsed?.registry).toBe("rcan.dev");
+    expect(r.parsed?.manufacturer).toBe("myorg");
+    expect(r.parsed?.model).toBe("mybot");
+    expect(r.parsed?.deviceId).toBe("abc12345");
+    expect(r.parsed?.port).toBeUndefined();
+    expect(r.parsed?.capability).toBeUndefined();
+  });
+
+  it("parses a RURI with port", () => {
+    const r = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345:9090");
+    expect(r.valid).toBe(true);
+    expect(r.parsed?.port).toBe(9090);
+  });
+
+  it("parses a RURI with capability", () => {
+    const r = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345/nav");
+    expect(r.valid).toBe(true);
+    expect(r.parsed?.capability).toBe("nav");
+  });
+
+  it("parses a RURI with port and capability", () => {
+    const r = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345:8080/camera");
+    expect(r.valid).toBe(true);
+    expect(r.parsed?.port).toBe(8080);
+    expect(r.parsed?.capability).toBe("camera");
+  });
+
+  it("preserves raw string on parsed output", () => {
+    const ruri = "rcan://rcan.dev/opencastor/rover/abc12345";
+    const r = parseRURI(ruri);
+    expect(r.parsed?.raw).toBe(ruri);
+  });
+
+  it("strips leading whitespace before parsing", () => {
+    const r = parseRURI("  rcan://rcan.dev/myorg/mybot/abc12345");
+    expect(r.valid).toBe(true);
+  });
+});
+
+describe("parseRURI — invalid inputs", () => {
+  it("rejects empty string", () => {
+    const r = parseRURI("");
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain("empty");
+  });
+
+  it("rejects URI without rcan:// scheme", () => {
+    const r = parseRURI("https://rcan.dev/myorg/mybot/abc12345");
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain("rcan://");
+  });
+
+  it("rejects RURI missing components", () => {
+    expect(parseRURI("rcan://rcan.dev/myorg/mybot").valid).toBe(false);
+  });
+
+  it("rejects port 0 (invalid)", () => {
+    const r = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345:0");
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects port > 65535", () => {
+    const r = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345:99999");
+    expect(r.valid).toBe(false);
+  });
+});
+
+describe("buildRURI", () => {
+  it("builds a minimal RURI", () => {
+    expect(
+      buildRURI({ registry: "rcan.dev", manufacturer: "myorg", model: "mybot", deviceId: "abc12345" })
+    ).toBe("rcan://rcan.dev/myorg/mybot/abc12345");
+  });
+
+  it("appends port when provided", () => {
+    expect(
+      buildRURI({ registry: "rcan.dev", manufacturer: "myorg", model: "mybot", deviceId: "abc12345", port: 9090 })
+    ).toBe("rcan://rcan.dev/myorg/mybot/abc12345:9090");
+  });
+
+  it("appends capability when provided", () => {
+    expect(
+      buildRURI({ registry: "rcan.dev", manufacturer: "myorg", model: "mybot", deviceId: "abc12345", capability: "nav" })
+    ).toBe("rcan://rcan.dev/myorg/mybot/abc12345/nav");
+  });
+
+  it("round-trips with parseRURI", () => {
+    const parts = { registry: "rcan.dev", manufacturer: "opencastor", model: "rover", deviceId: "abc12345" };
+    const built = buildRURI(parts);
+    const parsed = parseRURI(built);
+    expect(parsed.valid).toBe(true);
+    expect(parsed.parsed?.manufacturer).toBe(parts.manufacturer);
+    expect(parsed.parsed?.model).toBe(parts.model);
+  });
+});
+
+describe("ruriToHttpUrl", () => {
+  it("returns HTTPS URL for remote registry", () => {
+    const url = ruriToHttpUrl("rcan://rcan.dev/myorg/mybot/abc12345");
+    expect(url).toBe("https://rcan.dev:8080/.well-known/rcan-manifest.json");
+  });
+
+  it("returns HTTP URL for localhost registry", () => {
+    const url = ruriToHttpUrl("rcan://localhost/myorg/mybot/abc12345");
+    expect(url).toBe("http://localhost:8080/.well-known/rcan-manifest.json");
+  });
+
+  it("uses explicit port when provided", () => {
+    const url = ruriToHttpUrl("rcan://rcan.dev/myorg/mybot/abc12345:9090");
+    expect(url).toBe("https://rcan.dev:9090/.well-known/rcan-manifest.json");
+  });
+
+  it("returns null for invalid RURI string", () => {
+    expect(ruriToHttpUrl("not-a-ruri")).toBeNull();
+  });
+
+  it("accepts a pre-parsed ParsedRURI object", () => {
+    const parsed = parseRURI("rcan://rcan.dev/myorg/mybot/abc12345").parsed!;
+    const url = ruriToHttpUrl(parsed);
+    expect(url).toBe("https://rcan.dev:8080/.well-known/rcan-manifest.json");
+  });
+});
+
+describe("validateManifest", () => {
+  const valid: RobotManifest = {
+    ruri: "rcan://rcan.dev/myorg/mybot/abc12345",
+    name: "My Bot",
+    manufacturer: "MyOrg",
+    model: "mybot",
+  };
+
+  it("accepts a valid manifest", () => {
+    expect(validateManifest(valid)).toBe(true);
+  });
+
+  it("rejects null", () => {
+    expect(validateManifest(null)).toBe(false);
+  });
+
+  it("rejects non-object", () => {
+    expect(validateManifest("string")).toBe(false);
+  });
+
+  it("rejects manifest missing ruri", () => {
+    const { ruri: _ruri, ...rest } = valid;
+    expect(validateManifest(rest)).toBe(false);
+  });
+
+  it("rejects manifest missing name", () => {
+    const { name: _name, ...rest } = valid;
+    expect(validateManifest(rest)).toBe(false);
+  });
+
+  it("rejects manifest missing manufacturer", () => {
+    const { manufacturer: _mfr, ...rest } = valid;
+    expect(validateManifest(rest)).toBe(false);
+  });
+
+  it("rejects manifest missing model", () => {
+    const { model: _model, ...rest } = valid;
+    expect(validateManifest(rest)).toBe(false);
+  });
+
+  it("accepts manifest with extra optional fields", () => {
+    expect(validateManifest({ ...valid, description: "extra", capabilities: ["nav"] })).toBe(true);
   });
 });
