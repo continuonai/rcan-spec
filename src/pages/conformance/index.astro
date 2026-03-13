@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite v1.3 — L1 Core, L2 Safety, L3 AI Accountability.">
+<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite v1.3 — L1 Core, L2 Safety, L3 AI Accountability, L4 Registry Integration.">
 
   <h1>Conformance Test Suite <span style="font-size:0.55em;color:var(--color-text-muted);font-weight:400;">v1.3</span></h1>
   <p>A conforming RCAN implementation <strong>MUST</strong> pass all tests at the level it claims. Levels are cumulative — an <strong>L3</strong> implementation must also pass <strong>L1</strong> and <strong>L2</strong>.</p>
@@ -277,7 +277,54 @@ for level, tests in suite["levels"].items():
     <h3>Conformance Badges</h3>
     <pre><code>L1 CORE       ✅ RCAN Conformant v1.3
 L2 SAFETY     ✅ RCAN Safety Conformant v1.3
-L3 AI-ACCT    ✅ RCAN AI-Accountable v1.3</code></pre>
+L3 AI-ACCT    ✅ RCAN AI-Accountable v1.3
+L4 REGISTRY   ✅ RCAN Registry-Integrated v1.3</code></pre>
+  </section>
+
+  <hr />
+
+
+  <!-- ─── L4 REGISTRY INTEGRATION ─────────────────────────────── -->
+  <section>
+    <h2>L4 — Registry Integration</h2>
+    <p>L4 builds on L3. An L4 implementation performs a successful REGISTRY_REGISTER + REGISTRY_RESOLVE roundtrip and validates RRNs in both numeric and URI formats.</p>
+    <table>
+      <thead>
+        <tr><th>Test ID</th><th>Description</th><th>MUST / SHOULD</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>L4-REG-001</code></td>
+          <td>Send <code>REGISTRY_REGISTER</code> (type 13) with valid RRN and metadata; expect <code>REGISTRY_REGISTER_RESULT</code> (type 16) with <code>status="success"</code></td>
+          <td>MUST</td>
+        </tr>
+        <tr>
+          <td><code>L4-REG-002</code></td>
+          <td>Send <code>REGISTRY_RESOLVE</code> (type 14) with the registered RRN; expect <code>REGISTRY_RESOLVE_RESULT</code> (type 17) with <code>status="found"</code> and <code>ruri</code> populated</td>
+          <td>MUST</td>
+        </tr>
+        <tr>
+          <td><code>L4-REG-003</code></td>
+          <td>Numeric RRN format (<code>RRN-XXXXXXXXXXXX</code>, 12 digits) accepted by <code>_validate_rrn()</code></td>
+          <td>MUST</td>
+        </tr>
+        <tr>
+          <td><code>L4-REG-004</code></td>
+          <td>URI RRN format (<code>rrn://org/category/model/id</code>) accepted; category MUST be one of <code>robot</code> | <code>component</code> | <code>sensor</code> | <code>assembly</code></td>
+          <td>MUST</td>
+        </tr>
+        <tr>
+          <td><code>L4-REG-005</code></td>
+          <td>Two-segment legacy URI RRN (<code>rrn://org/id</code>) treated as <code>category=robot</code> with no validation error</td>
+          <td>SHOULD</td>
+        </tr>
+        <tr>
+          <td><code>L4-REG-006</code></td>
+          <td>Resolve of unknown RRN returns <code>status="not_found"</code> — not an error message type</td>
+          <td>MUST</td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 
   <hr />
