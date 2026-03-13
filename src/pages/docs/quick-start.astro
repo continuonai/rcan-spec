@@ -34,13 +34,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <p>The registry provides a JSON API for programmatic access:</p>
 
       <h3>List all robots</h3>
-      <pre><code>curl https://rcan.dev/api/robots.json</code></pre>
+      <pre><code>curl https://rcan.dev/api/v1/robots</code></pre>
 
       <h3>Get a specific robot</h3>
-      <pre><code>curl https://rcan.dev/api/robots/RRN-00000001.json</code></pre>
+      <pre><code>curl https://rcan.dev/api/v1/robots/RRN-000000000001</code></pre>
 
       <h3>Filter by status</h3>
-      <pre><code>curl "https://rcan.dev/api/robots.json?status=active"</code></pre>
+      <pre><code>curl "https://rcan.dev/api/v1/robots?status=active"</code></pre>
 
       <p>See the <a href="/api/">full API documentation</a> for all endpoints and options.</p>
     </section>
