@@ -8,11 +8,11 @@ const tiers = [
     price: '$0',
     period: 'forever',
     highlight: true,
-    badge: '🟡',
+    badge: '⬜',
     comingSoon: false,
     features: [
       'Up to 3 RRNs',
-      'Community verification badge (🟡)',
+      'Community verification badge (⬜)',
       'Public registry listing',
       'API access — read-only, 100 req/day',
       'QR code per robot',
@@ -26,7 +26,7 @@ const tiers = [
     price: null,
     period: null,
     highlight: false,
-    badge: '🟡',
+    badge: '⬜',
     comingSoon: true,
     features: [
       'More RRNs per account',
@@ -86,7 +86,7 @@ const faqs = [
   },
   {
     q: 'What is manufacturer verification?',
-    a: 'Verification tiers (⬜ unverified → 🟡 community → 🔵 manufacturer-claimed → ✅ manufacturer-verified) indicate how strongly a robot\'s origin has been validated. Manufacturer-claimed (🔵) uses DNS TXT records to prove domain ownership. Manufacturer-verified (✅) involves a signed attestation review by the Registry Foundation — the gold standard for commercial and regulated deployments.'
+    a: 'Verification tiers (⬜ community → 🟡 verified → 🔵 manufacturer-claimed → ✅ manufacturer-verified) indicate how strongly a robot\'s origin has been validated. All registered robots start at Community tier (⬜). Manufacturer-claimed (🔵) uses DNS TXT records to prove domain ownership. Manufacturer-verified (✅) involves a signed attestation review by the Registry Foundation — the gold standard for commercial and regulated deployments.'
   },
 ];
 ---
@@ -172,8 +172,8 @@ const faqs = [
       <h2 class="text-2xl font-bold text-center mb-8">Verification Tiers Explained</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { badge: '⬜', label: 'Unverified', desc: 'No verification — RRN assigned but origin unconfirmed.' },
-          { badge: '🟡', label: 'Community', desc: 'Self-reported via public registry form. Free tier and above.' },
+          { badge: '⬜', label: 'Community', desc: 'Self-reported via public registry form. All robots start here.' },
+          { badge: '🟡', label: 'Verified', desc: 'Identity confirmed via registry verification process. Maker plan and above.' },
           { badge: '🔵', label: 'Mfr-Claimed', desc: 'DNS TXT record proves domain ownership. Manufacturer plan.' },
           { badge: '✅', label: 'Mfr-Verified', desc: 'Signed attestation review by Registry Foundation. Enterprise.' },
         ].map(t => (

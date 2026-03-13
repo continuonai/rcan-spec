@@ -493,10 +493,10 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
         <tr><td><code>AUTHORIZE</code></td><td>control</td><td><code>ref_message_id</code> (str), <code>decision</code> (<code>"approve"</code>|<code>"deny"</code>)</td></tr>
         <tr><td><code>PENDING_AUTH</code></td><td>none</td><td><code>pending_id</code> (str), <code>action_type</code> (str), <code>description</code> (str), <code>timeout_remaining_ms</code> (int)</td></tr>
         <tr><td><code>INVOKE</code></td><td>control</td><td><code>skill_id</code> (str), <code>params</code> (obj), <code>timeout_ms</code> (int) — §19.2 Skill Invocation</td></tr>
-        <tr><td><code>INVOKE_RESULT</code></td><td>—</td><td><code>ref_invoke_id</code> (str), <code>status</code> (<code>"success"</code>|<code>"failure"</code>|<code>"timeout"</code>|<code>"cancelled"</code>), <code>result</code> (obj) — §19.3</td></tr>
+        <tr><td><code>INVOKE_RESULT</code></td><td>—</td><td><code>reply_to</code> (str), <code>status</code> (<code>"success"</code>|<code>"failure"</code>|<code>"timeout"</code>|<code>"cancelled"</code>), <code>result</code> (obj) — §19.3</td></tr>
         <tr><td><code>REGISTRY_REGISTER</code></td><td>admin</td><td><code>rrn</code> (str), <code>ruri</code> (str), <code>metadata</code> (obj) — §21.4</td></tr>
         <tr><td><code>REGISTRY_RESOLVE</code></td><td>status</td><td><code>rrn</code> (str) — §21.5; response carries <code>ruri</code>, <code>metadata</code></td></tr>
-        <tr><td><code>INVOKE_CANCEL</code></td><td>control</td><td><code>ref_invoke_id</code> (str) — §19.4; best-effort in-flight cancellation</td></tr>
+        <tr><td><code>INVOKE_CANCEL</code></td><td>control</td><td><code>payload.msg_id</code> (str) — §19.4; <code>msg_id</code> of the INVOKE to cancel; best-effort in-flight cancellation</td></tr>
       </tbody>
     </table>
   </section>
