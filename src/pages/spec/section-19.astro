@@ -44,9 +44,31 @@ const invokeNotFound = `{
     "message": "No skill registered with name 'undefined_skill'"
   }
 }`;
+
+const invokeCancel = `{
+  "type": "INVOKE_CANCEL",
+  "payload": {
+    "msg_id": "abc-123",
+    "reason": "User aborted navigation task",
+    "cancel_timeout_ms": 5000
+  }
+}`;
+
+const invokeCancelledResult = `{
+  "type": "INVOKE_RESULT",
+  "skill": "navigate",
+  "status": "cancelled",
+  "reply_to": "abc-123",
+  "duration_ms": 812,
+  "error": {
+    "code": 7007,
+    "name": "SkillCancelled",
+    "message": "Skill aborted by client INVOKE_CANCEL"
+  }
+}`;
 ---
 
-<DocsLayout title="§19 Behavior/Skill Invocation Protocol" description="RCAN §19 — Behavior/Skill Invocation Protocol. Defines the INVOKE and INVOKE_RESULT message types, status values, error codes, and integration with the Capability Advertisement Protocol.">
+<DocsLayout title="§19 Behavior/Skill Invocation Protocol" description="RCAN §19 — Behavior/Skill Invocation Protocol. Defines the INVOKE, INVOKE_RESULT, and INVOKE_CANCEL message types, status values, error codes, and integration with the Capability Advertisement Protocol.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§19 Behavior/Skill Invocation Protocol</h1>
   </div>
@@ -68,10 +90,11 @@ const invokeNotFound = `{
       <li><a href="#overview"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.1</span> Overview</a></li>
       <li><a href="#invoke"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.2</span> INVOKE Message</a></li>
       <li><a href="#invoke-result"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.3</span> INVOKE_RESULT Message</a></li>
-      <li><a href="#status-values"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.4</span> Status Values</a></li>
-      <li><a href="#error-codes"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.5</span> Error Codes</a></li>
-      <li><a href="#integration"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.6</span> Integration with §18</a></li>
-      <li><a href="#invoke-cancel"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.7</span> INVOKE_CANCEL</a></li>
+      <li><a href="#invoke-cancel"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.4</span> INVOKE_CANCEL Message</a></li>
+      <li><a href="#status-values"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.5</span> Status Values</a></li>
+      <li><a href="#error-codes"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.6</span> Error Codes</a></li>
+      <li><a href="#integration"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.7</span> Integration with §18</a></li>
+      <li><a href="#message-types"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.8</span> MessageType Reference</a></li>
     </ol>
   </div>
 
@@ -174,9 +197,79 @@ const invokeNotFound = `{
 
   <hr />
 
-  <!-- ── §19.4 Status Values ───────────────────────────────────────────────── -->
+  <!-- ── §19.4 INVOKE_CANCEL Message ─────────────────────────────────────── -->
+  <section id="invoke-cancel">
+    <h2>19.4 INVOKE_CANCEL Message</h2>
+    <p>The INVOKE_CANCEL message allows a client to request cancellation of an in-progress skill invocation. It is an optional message type that enables cooperative abort for long-running skills.</p>
+
+    <h3>Wire Format</h3>
+    <div class="not-prose">
+      <CodeWindow code={invokeCancel} language="json" title="INVOKE_CANCEL" />
+    </div>
+
+    <h3>INVOKE_CANCEL Fields</h3>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>type</code></td><td>string</td><td>MUST</td><td>Literal <code>"INVOKE_CANCEL"</code></td></tr>
+        <tr><td><code>payload.msg_id</code></td><td>string</td><td>MUST</td><td>The <code>msg_id</code> of the original INVOKE message to cancel. MUST match exactly.</td></tr>
+        <tr><td><code>payload.reason</code></td><td>string</td><td>OPTIONAL</td><td>Human-readable description of why the cancellation was requested. For logging and diagnostics only.</td></tr>
+        <tr><td><code>payload.cancel_timeout_ms</code></td><td>integer</td><td>OPTIONAL</td><td>Milliseconds the receiver will wait for graceful abort before force-terminating. Defaults to <code>5000</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Normative Behavior</h3>
+    <ul>
+      <li>Client sends INVOKE_CANCEL with <code>msg_id</code> matching the in-flight INVOKE.</li>
+      <li>Receiver MUST attempt to abort the skill gracefully, allowing safe actuator wind-down within <code>cancel_timeout_ms</code> (default 5000 ms).</li>
+      <li>Receiver MUST send INVOKE_RESULT with <code>status="cancelled"</code> after aborting (error code 7007).</li>
+      <li>If the skill has already completed before INVOKE_CANCEL arrives, the receiver MUST silently ignore the INVOKE_CANCEL. The previously sent INVOKE_RESULT stands.</li>
+      <li>If <code>msg_id</code> does not match any in-flight INVOKE, the receiver MUST respond with INVOKE_RESULT <code>status="not_found"</code> (error code 7001).</li>
+      <li>INVOKE_CANCEL does not require a direct acknowledgement beyond the eventual INVOKE_RESULT.</li>
+    </ul>
+
+    <div class="not-prose mt-4">
+      <CodeWindow code={invokeCancelledResult} language="json" title="INVOKE_RESULT — cancelled" />
+    </div>
+
+    <h3>Sequence Diagram</h3>
+    <pre><code>{`Client                        Robot
+  |                              |
+  |── INVOKE ──────────────────>|  msg_id: abc-123, skill: navigate
+  |                              |  (skill running...)
+  |── INVOKE_CANCEL ──────────>|  msg_id: abc-123
+  |                              |  (graceful abort, ≤ cancel_timeout_ms)
+  |<── INVOKE_RESULT ──────────|  msg_id: abc-123, status: cancelled
+  |                              |`}</code></pre>
+
+    <h3>Conformance</h3>
+    <table>
+      <thead>
+        <tr><th>Message</th><th>L1</th><th>L2</th><th>L3</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>INVOKE_CANCEL</code></td>
+          <td>MAY</td>
+          <td>SHOULD</td>
+          <td>MUST</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-yellow-300/80 font-semibold mb-2">Implementation Note</p>
+      <p class="text-sm text-yellow-300/70">INVOKE_CANCEL is a best-effort cooperative mechanism. Skills that interact with physical actuators MUST ensure a safe state before emitting the cancelled INVOKE_RESULT, regardless of <code>cancel_timeout_ms</code>. Safety constraints (§16 HiTL gates, §17 Confidence Gating) remain active during cancellation.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── §19.5 Status Values ───────────────────────────────────────────────── -->
   <section id="status-values">
-    <h2>19.4 Status Values</h2>
+    <h2>19.5 Status Values</h2>
     <p>The <code>status</code> field of INVOKE_RESULT MUST be one of the following enumerated values.</p>
 
     <table>
@@ -218,9 +311,9 @@ const invokeNotFound = `{
 
   <hr />
 
-  <!-- ── §19.5 Error Codes ─────────────────────────────────────────────────── -->
+  <!-- ── §19.6 Error Codes ─────────────────────────────────────────────────── -->
   <section id="error-codes">
-    <h2>19.5 Error Codes</h2>
+    <h2>19.6 Error Codes</h2>
     <p>The following error codes are reserved for the Skill Invocation Protocol. They supplement the general RCAN error codes defined in §10.</p>
 
     <table>
@@ -276,9 +369,9 @@ const invokeNotFound = `{
 
   <hr />
 
-  <!-- ── §19.6 Integration with §18 ───────────────────────────────────────── -->
+  <!-- ── §19.7 Integration with §18 ───────────────────────────────────────── -->
   <section id="integration">
-    <h2>19.6 Integration with §18 Capability Advertisement</h2>
+    <h2>19.7 Integration with §18 Capability Advertisement</h2>
     <p>A robot that supports skill invocation MUST include the <code>invoke</code> capability in its Capability Object Map (§18). The <code>skills</code> parameter lists the names of all invocable skills.</p>
 
     <pre><code>{`{
@@ -308,50 +401,36 @@ const invokeNotFound = `{
 
   <hr />
 
-  <hr />
+  <!-- ── §19.8 MessageType Reference ──────────────────────────────────────── -->
+  <section id="message-types">
+    <h2>19.8 MessageType Reference</h2>
+    <p>The following MessageType enum values are defined for the Skill Invocation Protocol. These values map to the <code>MessageType</code> enum in the <a href="/spec/#messages">§3 protobuf envelope</a>.</p>
 
-  <!-- ── §19.7 INVOKE_CANCEL ───────────────────────────────────────────────── -->
-  <section id="invoke-cancel">
-    <h2>19.7 INVOKE_CANCEL Message</h2>
-    <p>The INVOKE_CANCEL message allows a client to request cancellation of an in-progress skill invocation. It is an optional message type that enables cooperative abort for long-running skills.</p>
-
-    <h3>INVOKE_CANCEL Fields</h3>
     <table>
       <thead>
-        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><th>Value</th><th>Name</th><th>Direction</th><th>Description</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>type</code></td><td>string</td><td>MUST</td><td>Literal <code>"INVOKE_CANCEL"</code></td></tr>
-        <tr><td><code>msg_id</code></td><td>string</td><td>MUST</td><td>The <code>msg_id</code> of the original INVOKE message to cancel. MUST match exactly.</td></tr>
-        <tr><td><code>cancel_timeout_ms</code></td><td>integer</td><td>MAY</td><td>Milliseconds the receiver MAY take to gracefully shut down the skill before force-aborting. Defaults to implementation-defined. If omitted, the receiver SHOULD abort as quickly as safely possible.</td></tr>
+        <tr>
+          <td><code>11</code></td>
+          <td><code>INVOKE</code></td>
+          <td>Client → Robot</td>
+          <td>Request execution of a named skill (§19.2)</td>
+        </tr>
+        <tr>
+          <td><code>12</code></td>
+          <td><code>INVOKE_RESULT</code></td>
+          <td>Robot → Client</td>
+          <td>Final outcome of a skill execution (§19.3)</td>
+        </tr>
+        <tr>
+          <td><code>15</code></td>
+          <td><code>INVOKE_CANCEL</code></td>
+          <td>Client → Robot</td>
+          <td>Cancel an in-progress skill invocation (§19.4)</td>
+        </tr>
       </tbody>
     </table>
-
-    <h3>Semantics</h3>
-    <ul>
-      <li>The client sends INVOKE_CANCEL with <code>msg_id</code> matching the original INVOKE message.</li>
-      <li>The receiver SHOULD abort the skill and MUST send an INVOKE_RESULT with <code>status</code> set to <code>"cancelled"</code> and <code>reply_to</code> equal to the original INVOKE <code>msg_id</code>.</li>
-      <li>If the skill has already completed (successfully or otherwise) before INVOKE_CANCEL arrives, the receiver MUST silently ignore the INVOKE_CANCEL. The previously sent INVOKE_RESULT stands.</li>
-      <li>Implementations MAY define a graceful shutdown period via <code>cancel_timeout_ms</code> during which the skill cleans up state (e.g. stops actuators safely) before the INVOKE_RESULT is emitted.</li>
-      <li>INVOKE_CANCEL does not require a direct acknowledgement beyond the eventual INVOKE_RESULT with <code>status: "cancelled"</code>.</li>
-    </ul>
-
-    <h3>Conformance</h3>
-    <table>
-      <thead>
-        <tr><th>Level</th><th>Requirement</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>L1</td><td>Not required.</td></tr>
-        <tr><td>L2</td><td>Implementations SHOULD accept and process INVOKE_CANCEL messages. Silently ignoring a cancel for an already-completed skill is conformant.</td></tr>
-        <tr><td>L3</td><td>Implementations MUST support INVOKE_CANCEL. The receiver MUST emit INVOKE_RESULT with <code>status: "cancelled"</code> upon successful abort, or the normal result if the skill completed first.</td></tr>
-      </tbody>
-    </table>
-
-    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
-      <p class="text-sm text-yellow-300/80 font-semibold mb-2">Implementation Note</p>
-      <p class="text-sm text-yellow-300/70">INVOKE_CANCEL is a best-effort cooperative mechanism. Skills that interact with physical actuators MUST ensure a safe state before emitting the cancelled INVOKE_RESULT, regardless of <code>cancel_timeout_ms</code>. Safety constraints (§16 HiTL gates, §17 Confidence Gating) remain active during cancellation.</p>
-    </div>
   </section>
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
