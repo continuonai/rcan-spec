@@ -12,7 +12,7 @@ The **Robot Registry Foundation (RRF)** shall operate the root RCAN robot regist
 
 The RRF will:
 
-- Maintain the authoritative root registry of Robot Registry Numbers (RRNs) and registered robot identities under the RCAN protocol.
+- Maintain the authoritative root registry of Robot Registration Numbers (RRNs) and registered robot identities under the RCAN protocol.
 - Operate that registry in a vendor-neutral, financially transparent, and publicly accountable manner.
 - Serve as the **registry of last resort**, ensuring continuity of robot identity infrastructure regardless of any single organization's commercial fate.
 - Steward the RCAN specification in alignment with the broader RCAN community.
@@ -25,7 +25,7 @@ Robot identity infrastructure today has no independent authority. This creates s
 
 1. **Manufacturer-controlled registries.** Each manufacturer operates its own robot registry under its own terms. There is no shared namespace, no interoperability guarantee, and no recourse if a manufacturer changes its policies or exits the market. When a manufacturer's registry disappears, the identity records of deployed robots disappear with it.
 
-2. **No dispute resolution.** If two organizations claim the same Robot Registry Number prefix, or if a manufacturer's identity is impersonated in a third-party registry, there is currently no neutral body to adjudicate the conflict. Legal action in national courts — slow, expensive, and jurisdictionally fragmented — is the only recourse.
+2. **No dispute resolution.** If two organizations claim the same Robot Registration Number prefix, or if a manufacturer's identity is impersonated in a third-party registry, there is currently no neutral body to adjudicate the conflict. Legal action in national courts — slow, expensive, and jurisdictionally fragmented — is the only recourse.
 
 3. **No registry of last resort.** There is no entity whose explicit mandate is to preserve the root registry and ensure that deployed robots can always resolve their identity. Infrastructure that depends on any single commercial entity's survival is fragile by design.
 
@@ -94,7 +94,7 @@ Individuals who contribute to the RCAN specification, registry software, documen
 
 The RRF shall provide a structured dispute resolution process for the following categories of conflict:
 
-- **RRN conflicts**: Two organizations claim the same Robot Registry Number prefix or overlapping namespace.
+- **RRN conflicts**: Two organizations claim the same Robot Registration Number prefix or overlapping namespace.
 - **Manufacturer impersonation**: A registry entry falsely claims to represent a manufacturer's robots.
 - **Registry abuse**: A registered operator violates RRF policies (e.g., issuing fraudulent identities, failing to maintain data accuracy).
 
@@ -141,7 +141,7 @@ The current EU database is EU-operated and EU-jurisdictional. This creates compl
 
 ### RCAN as Technical Identity Infrastructure
 
-RCAN's Robot Registry Numbers (RRNs) and Robot Uniform Resource Identifiers (RURIs) provide the technical identity layer that registration frameworks require:
+RCAN's Robot Registration Numbers (RRNs) and Robot Uniform Resource Identifiers (RURIs) provide the technical identity layer that registration frameworks require:
 - A unique, persistent, globally resolvable identifier per robot.
 - A structured namespace enabling rapid lookup by regulatory authorities.
 - An audit chain linking physical robot to registered identity.
