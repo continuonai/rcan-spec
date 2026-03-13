@@ -38,15 +38,16 @@ const robotState = `{
 }`;
 
 const prometheusExample = `# Joint telemetry — Prometheus exposition format
-opencastor_acb_position_rad{joint="shoulder_pan"} 0.785
-opencastor_acb_velocity_rad_s{joint="shoulder_pan"} 0.02
-opencastor_acb_effort_nm{joint="shoulder_pan"} 0.41
-opencastor_acb_temperature_c{joint="shoulder_pan"} 38.5
+# NOTE: metric name prefix is implementation-defined (shown here as rcan_)
+rcan_acb_position_rad{joint="shoulder_pan",ruri="rcan://robot.local"} 0.785
+rcan_acb_velocity_rad_s{joint="shoulder_pan",ruri="rcan://robot.local"} 0.02
+rcan_acb_effort_nm{joint="shoulder_pan",ruri="rcan://robot.local"} 0.41
+rcan_acb_temperature_c{joint="shoulder_pan",ruri="rcan://robot.local"} 38.5
 
 # Robot-level metrics
-opencastor_robot_battery_v{ruri="rcan://robot.local"} 14.2
-opencastor_robot_battery_pct{ruri="rcan://robot.local"} 78
-opencastor_robot_uptime_ms{ruri="rcan://robot.local"} 3600000`;
+rcan_robot_battery_v{ruri="rcan://robot.local"} 14.2
+rcan_robot_battery_pct{ruri="rcan://robot.local"} 78
+rcan_robot_uptime_ms{ruri="rcan://robot.local"} 3600000`;
 ---
 
 <DocsLayout title="§20 Telemetry Field Registry" description="RCAN §20 — Telemetry Field Registry. Defines standard joint telemetry and robot state objects, required and optional fields, and Prometheus label conventions.">
@@ -233,14 +234,15 @@ opencastor_robot_uptime_ms{ruri="rcan://robot.local"} 3600000`;
   <!-- ── §20.5 Prometheus Label Convention ────────────────────────────────── -->
   <section id="prometheus">
     <h2>20.5 Prometheus Label Convention</h2>
-    <p>Implementations that export telemetry to Prometheus MUST use the following metric naming convention:</p>
+    <p>Implementations that export telemetry to Prometheus SHOULD use the following metric naming convention. The metric name prefix is <strong>implementation-defined</strong> — implementations SHOULD use a consistent prefix that identifies the exporter (e.g., the robot runtime name):</p>
 
     <div class="not-prose bg-bg-alt border border-white/10 rounded-lg p-4 font-mono text-sm my-4">
-      <span class="text-cyan-400">opencastor_&lt;subsystem&gt;_&lt;field&gt;_&lt;unit&gt;{"{"}joint="&lt;name&gt;"{"}"}</span>
+      <span class="text-cyan-400">&lt;prefix&gt;_&lt;subsystem&gt;_&lt;field&gt;_&lt;unit&gt;{"{"}joint="&lt;name&gt;"{"}"}</span>
     </div>
 
     <p>Where:</p>
     <ul>
+      <li><code>&lt;prefix&gt;</code> — Implementation-defined prefix identifying the exporter (e.g. <code>rcan</code>, <code>myrobot</code>).</li>
       <li><code>&lt;subsystem&gt;</code> — Robot subsystem identifier (e.g. <code>acb</code> for actuator control board).</li>
       <li><code>&lt;field&gt;</code> — Field name without unit suffix (e.g. <code>position</code>, <code>velocity</code>, <code>effort</code>).</li>
       <li><code>&lt;unit&gt;</code> — SI unit abbreviation (e.g. <code>rad</code>, <code>nm</code>, <code>c</code>).</li>
@@ -248,13 +250,13 @@ opencastor_robot_uptime_ms{ruri="rcan://robot.local"} 3600000`;
     </ul>
 
     <div class="not-prose">
-      <CodeWindow code={prometheusExample} language="text" title="Prometheus exposition format" />
+      <CodeWindow code={prometheusExample} language="text" title="Prometheus exposition format (prefix shown as rcan_)" />
     </div>
 
     <h3>Robot-Level Labels</h3>
     <p>Robot-level metrics (battery, uptime, position) use the <code>ruri</code> label instead of <code>joint</code>:</p>
     <div class="not-prose bg-bg-alt border border-white/10 rounded-lg p-4 font-mono text-sm my-4">
-      <span class="text-cyan-400">opencastor_robot_battery_pct{"{"}ruri="rcan://robot.local"{"}"} 78</span>
+      <span class="text-cyan-400">&lt;prefix&gt;_robot_battery_pct{"{"}ruri="rcan://robot.local"{"}"} 78</span>
     </div>
   </section>
 
