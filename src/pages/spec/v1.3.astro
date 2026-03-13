@@ -1,0 +1,188 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const changes = [
+  { type: 'feat', text: '§18–§20 + Appendix B promoted from Draft to Stable' },
+  { type: 'feat', text: '§21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake' },
+  { type: 'feat', text: '§21.2.1 Structured URI RRN Format — rrn://[org]/[category]/[model]/[id] (robot|component|sensor|assembly)' },
+  { type: 'feat', text: 'Conformance L4: Registry Integration test suite' },
+  { type: 'feat', text: 'REGISTRY_REGISTER (type 13) and REGISTRY_RESOLVE (type 14) wire messages' },
+  { type: 'feat', text: 'REGISTRY_REGISTER_RESULT (type 16) and REGISTRY_RESOLVE_RESULT (type 17) result messages' },
+  { type: 'chore', text: 'Compatibility matrix updated for OpenCastor ≥2026.3.13.0, rcan-py ≥0.3.0, rcan-ts ≥0.3.0' },
+];
+
+const conformanceLevels = [
+  { level: 'L1', label: 'Basic', desc: 'DISCOVER, STATUS, COMMAND, ERROR; RURI addressing; JWT auth; ConfidenceGate' },
+  { level: 'L2', label: 'Secure', desc: 'L1 + HiTL gates; Ed25519 MessageSigner; AuditChain with HMAC' },
+  { level: 'L3', label: 'Federated', desc: 'L2 + commitment chain; cross-registry discovery; capability advertisement' },
+  { level: 'L4', label: 'Registry', desc: 'L3 + REGISTRY_REGISTER/RESOLVE handshake; RRN validation; structured URI RRN (§21)' },
+];
+
+const msgTypes: Record<number, string> = {
+  1: 'DISCOVER', 2: 'STATUS', 3: 'COMMAND', 4: 'STREAM', 5: 'EVENT',
+  6: 'HANDOFF', 7: 'ACK', 8: 'ERROR', 9: 'AUTH', 10: 'REGISTER',
+  11: 'INVOKE', 12: 'INVOKE_RESULT', 13: 'REGISTRY_REGISTER',
+  14: 'REGISTRY_RESOLVE', 15: 'INVOKE_CANCEL',
+  16: 'REGISTRY_REGISTER_RESULT', 17: 'REGISTRY_RESOLVE_RESULT',
+};
+
+const typeStyle: Record<string, string> = {
+  feat:  'bg-accent/10 text-accent border-accent/20',
+  fix:   'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  chore: 'bg-white/5 text-text-muted/60 border-white/10',
+};
+---
+
+<DocsLayout title="RCAN v1.3 Specification Snapshot" description="RCAN v1.3 — Latest stable release. Adds §21 Robot Registry Integration, structured URI RRN format, and L4 conformance.">
+
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm text-text-muted font-mono mb-8">
+      <a href="/spec" class="hover:text-accent transition-colors">Spec</a>
+      <span>/</span>
+      <span class="text-text">v1.3</span>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-3">
+        <h1 class="font-display text-4xl font-semibold text-text">RCAN v1.3</h1>
+        <span class="px-2 py-0.5 text-xs font-mono rounded border bg-accent/15 text-accent border-accent/30">Latest</span>
+      </div>
+      <p class="text-text-muted mb-1">Released <time datetime="2026-03-13">March 13, 2026</time></p>
+      <p class="text-text-muted leading-relaxed">
+        v1.3 adds §21 Robot Registry Integration — the first spec-level definition of how robots register with
+        the Robot Registry Foundation, obtain a Robot Registration Number (RRN), and resolve other robots by RRN.
+        Introduces the structured URI RRN format (<code class="font-mono text-accent text-sm">rrn://org/category/model/id</code>)
+        alongside the numeric format (<code class="font-mono text-accent text-sm">RRN-000000000001</code>).
+        L4 conformance is added as the new highest conformance tier.
+      </p>
+    </div>
+
+    <!-- What's New -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">What's New in v1.3</h2>
+      <div class="space-y-2">
+        {changes.map(c => (
+          <div class="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
+            <span class={`text-xs font-mono px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5 ${typeStyle[c.type]}`}>{c.type}</span>
+            <span class="text-text-muted text-sm">{c.text}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- §21 Highlight -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">§21 — Robot Registry Integration</h2>
+      <div class="space-y-4">
+        <p class="text-text-muted leading-relaxed">
+          §21 defines how RCAN nodes interact with the Robot Registry Foundation (RRF) to mint and resolve Robot Registration Numbers.
+          Two wire flows are specified:
+        </p>
+
+        <!-- Register flow -->
+        <div class="p-4 bg-bg-card border border-border rounded-lg">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="font-mono text-xs text-accent">§21.2</span>
+            <span class="font-semibold text-text">Registration Flow</span>
+          </div>
+          <pre class="text-xs font-mono text-text-muted leading-relaxed overflow-x-auto">{`Robot → RRF: REGISTRY_REGISTER (type 13)
+  payload: { rrn, ruri, public_key, metadata: { category, model, ... } }
+
+RRF → Robot: REGISTRY_REGISTER_RESULT (type 16)
+  payload: { status: "success", rrn: "RRN-000000000042" }
+           { status: "failure", error: "duplicate RRN" }`}</pre>
+        </div>
+
+        <!-- Resolve flow -->
+        <div class="p-4 bg-bg-card border border-border rounded-lg">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="font-mono text-xs text-accent">§21.3</span>
+            <span class="font-semibold text-text">Resolution Flow</span>
+          </div>
+          <pre class="text-xs font-mono text-text-muted leading-relaxed overflow-x-auto">{`Robot → RRF: REGISTRY_RESOLVE (type 14)
+  payload: { rrn: "RRN-000000000042" }
+
+RRF → Robot: REGISTRY_RESOLVE_RESULT (type 17)
+  payload: { status: "found", rrn, ruri, verified, tier }
+           { status: "not_found", rrn, error }`}</pre>
+        </div>
+
+        <!-- RRN formats -->
+        <div class="p-4 bg-bg-card border border-border rounded-lg">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="font-mono text-xs text-accent">§21.2.1</span>
+            <span class="font-semibold text-text">Structured URI RRN Format</span>
+          </div>
+          <pre class="text-xs font-mono text-text-muted leading-relaxed overflow-x-auto">{`rrn://[org]/[category]/[model]/[id]   ← 4-seg (recommended)
+rrn://[org]/[category]/[id]           ← 3-seg
+rrn://[org]/[id]                      ← 2-seg legacy (category=robot assumed)
+RRN-000000000042                      ← numeric (always valid, coexists)
+
+Valid categories: robot | component | sensor | assembly
+
+Examples:
+  rrn://craigm26/robot/opencastor-rpi5-hailo/bob-001
+  rrn://acme-corp/sensor/oak-d/cam-007
+  rrn://continuonai/assembly/perception-stack/stack-001`}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Conformance Levels -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">Conformance Levels (v1.3)</h2>
+      <div class="space-y-3">
+        {conformanceLevels.map(cl => (
+          <div class="flex gap-4 p-4 bg-bg-card border border-border rounded-lg">
+            <div class={`flex-shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center font-mono text-sm font-bold ${cl.level === 'L4' ? 'bg-accent/10 border-accent/20 text-accent' : 'bg-white/5 border-border text-text-muted'}`}>{cl.level}</div>
+            <div>
+              <div class="font-semibold text-text mb-0.5">{cl.label}</div>
+              <div class="text-sm text-text-muted">{cl.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Message Type Table -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">Message Types (v1.3 complete)</h2>
+      <div class="overflow-x-auto rounded-lg border border-border">
+        <table class="w-full text-sm font-mono">
+          <thead>
+            <tr class="bg-bg-card border-b border-border">
+              <th class="px-4 py-3 text-left text-text-faint font-medium">Type ID</th>
+              <th class="px-4 py-3 text-left text-text-faint font-medium">Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(msgTypes).map(([id, name]) => (
+              <tr class={`border-b border-border/50 last:border-0 ${(parseInt(id) >= 13) ? 'bg-accent/5' : ''}`}>
+                <td class="px-4 py-2.5 text-text-muted">{id}</td>
+                <td class={`px-4 py-2.5 ${(parseInt(id) >= 13) ? 'text-accent' : 'text-text-muted'}`}>
+                  {name} {(parseInt(id) >= 13 && parseInt(id) !== 15) ? <span class="text-text-faint text-xs ml-1">(v1.3)</span> : ''}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">Resources</h2>
+      <div class="flex flex-wrap gap-3">
+        <a href="/spec" class="px-4 py-2 bg-primary/20 text-accent border border-accent/30 rounded-lg text-sm font-medium hover:bg-primary/30 transition-colors">Full Spec →</a>
+        <a href="/spec/v1.2" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">← v1.2 Snapshot</a>
+        <a href="/spec/section-21" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">§21 Full Section</a>
+        <a href="/changelog" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">Changelog</a>
+      </div>
+    </section>
+
+  </div>
+
+</DocsLayout>

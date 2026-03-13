@@ -1,0 +1,124 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const changes = [
+  { type: 'feat', text: 'AuditChain with HMAC-linked CommitmentRecords (§16)' },
+  { type: 'feat', text: 'HiTL gates — human-in-the-loop safety approval flow (§8)' },
+  { type: 'feat', text: 'Federation protocol — cross-registry robot discovery (§12)' },
+  { type: 'feat', text: 'Commitment chain log verification + castor compliance command' },
+  { type: 'feat', text: 'Registry auto-registration endpoint (§10)' },
+  { type: 'fix',  text: 'ConfidenceGate now rejects exactly-at-threshold values (strict <)' },
+  { type: 'fix',  text: 'RobotURI canonicalization — trailing slashes normalized' },
+  { type: 'chore', text: 'Spec published at rcan.dev/spec (Astro-based site)' },
+  { type: 'feat', text: '§17 Distributed Registry Node Protocol — federated RRN namespace, node identity, resolution' },
+  { type: 'feat', text: '§18 Capability Advertisement Protocol — structured Capability Object Map, standard cap names' },
+  { type: 'feat', text: '§19 Behavior/Skill Invocation Protocol — INVOKE/INVOKE_RESULT message types' },
+  { type: 'feat', text: '§20 Telemetry Field Registry — standard joint, robot-state, sensor field names' },
+  { type: 'feat', text: 'Appendix B WebSocket Transport Binding — full-duplex transport over ws/wss' },
+];
+
+const conformanceLevels = [
+  { level: 'L1', label: 'Basic', desc: 'DISCOVER, STATUS, COMMAND, ERROR; RURI addressing; JWT auth; ConfidenceGate (§7)' },
+  { level: 'L2', label: 'Secure', desc: 'L1 + HiTL gates (§8); Ed25519 MessageSigner (§9); AuditChain with HMAC (§16)' },
+  { level: 'L3', label: 'Federated', desc: 'L2 + commitment chain persistence; cross-registry discovery (§12); capability advertisement (§18)' },
+];
+
+const typeStyle: Record<string, string> = {
+  feat:  'bg-accent/10 text-accent border-accent/20',
+  fix:   'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  chore: 'bg-white/5 text-text-muted/60 border-white/10',
+};
+---
+
+<DocsLayout title="RCAN v1.2 Specification Snapshot" description="RCAN v1.2 — Stable release. Adds AuditChain, HiTL gates, federation, §17–§20 and Appendix B.">
+
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm text-text-muted font-mono mb-8">
+      <a href="/spec" class="hover:text-accent transition-colors">Spec</a>
+      <span>/</span>
+      <span class="text-text">v1.2</span>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-3">
+        <h1 class="font-display text-4xl font-semibold text-text">RCAN v1.2</h1>
+        <span class="px-2 py-0.5 text-xs font-mono rounded border bg-white/5 text-text-muted border-white/10">Stable</span>
+      </div>
+      <p class="text-text-muted mb-1">Released <time datetime="2026-03-12">March 12, 2026</time></p>
+      <p class="text-text-muted leading-relaxed">
+        v1.2 is the first production-ready release with full auditability, human-in-the-loop safety controls,
+        cross-registry federation, and five new protocol sections (§17–§20 + Appendix B).
+        All §17–§20 content is promoted from Draft to Stable in this release.
+      </p>
+    </div>
+
+    <!-- What's New -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">What's New in v1.2</h2>
+      <div class="space-y-2">
+        {changes.map(c => (
+          <div class="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
+            <span class={`text-xs font-mono px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5 ${typeStyle[c.type]}`}>{c.type}</span>
+            <span class="text-text-muted text-sm">{c.text}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Conformance Levels -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">Conformance Levels</h2>
+      <div class="space-y-3">
+        {conformanceLevels.map(cl => (
+          <div class="flex gap-4 p-4 bg-bg-card border border-border rounded-lg">
+            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center font-mono text-sm font-bold text-accent">{cl.level}</div>
+            <div>
+              <div class="font-semibold text-text mb-0.5">{cl.label}</div>
+              <div class="text-sm text-text-muted">{cl.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- New Sections -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">New Protocol Sections</h2>
+      <div class="grid grid-cols-1 gap-3">
+        {[
+          { section: '§12', title: 'Federation Protocol', desc: 'Cross-registry robot discovery. Registry nodes propagate RRN records using a gossip protocol. Conflict resolution via authoritative-registry-wins.' },
+          { section: '§16', title: 'AuditChain', desc: 'HMAC-linked CommitmentRecord log. Each action appends a record sealed with HMAC-SHA256 over the previous record\'s hash. Tamper-evident by construction.' },
+          { section: '§17', title: 'Distributed Registry Node Protocol', desc: 'Federated RRN namespace, node identity, multi-registry resolution.' },
+          { section: '§18', title: 'Capability Advertisement Protocol', desc: 'Structured Capability Object Map. Robots announce what they can do (nav, vision, chat, arm, etc.) in a machine-readable format.' },
+          { section: '§19', title: 'Behavior / Skill Invocation Protocol', desc: 'INVOKE and INVOKE_RESULT message types. Enables callers to request specific behaviors from a robot and receive structured results with status and error codes.' },
+          { section: '§20', title: 'Telemetry Field Registry', desc: 'Standard field names for joint state, robot state, sensor readings, and odometry. Enables interoperable dashboards and log analysis.' },
+          { section: 'Appendix B', title: 'WebSocket Transport Binding', desc: 'Full-duplex transport over ws:// and wss://. Defines frame format, ping/pong keepalive, and reconnection semantics.' },
+        ].map(s => (
+          <div class="p-4 bg-bg-card border border-border rounded-lg">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-mono text-xs text-accent">{s.section}</span>
+              <span class="font-semibold text-text text-sm">{s.title}</span>
+            </div>
+            <p class="text-sm text-text-muted">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">Resources</h2>
+      <div class="flex flex-wrap gap-3">
+        <a href="/spec" class="px-4 py-2 bg-primary/20 text-accent border border-accent/30 rounded-lg text-sm font-medium hover:bg-primary/30 transition-colors">Current Spec (v1.3) →</a>
+        <a href="/spec/v1.1" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">← v1.1 Snapshot</a>
+        <a href="/spec/v1.3" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">v1.3 Snapshot →</a>
+        <a href="/changelog" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">Full Changelog</a>
+      </div>
+    </section>
+
+  </div>
+
+</DocsLayout>
