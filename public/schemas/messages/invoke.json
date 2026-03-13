@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/invoke.json",
+  "title": "INVOKE Message",
+  "description": "RCAN message type 11. Triggers a named skill or behavior on the target robot runtime (§19). The receiver must respond with an INVOKE_RESULT message referencing the same msg_id.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "principal_id",
+    "role_level",
+    "session_token",
+    "skill",
+    "msg_id",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 11,
+      "description": "Identifies this as an INVOKE message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "Target robot's RURI."
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identity of the invoking principal — a user UUID, AI agent ID, or service account name."
+    },
+    "role_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Authorisation level of the principal."
+    },
+    "session_token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Valid JWT session token authorising this invocation."
+    },
+    "skill": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Dot-namespaced skill/behavior name, e.g. 'nav.go_to', 'arm.pick', 'camera.snapshot'."
+    },
+    "params": {
+      "type": "object",
+      "description": "Skill-specific input parameters. Schema varies by skill.",
+      "additionalProperties": true
+    },
+    "msg_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 correlation identifier. The corresponding INVOKE_RESULT must echo this value in its reply_to field."
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum milliseconds the caller will wait for an INVOKE_RESULT. The runtime SHOULD cancel execution and return a timeout result if exceeded. Defaults to 30000 (30 s) when omitted."
+    },
+    "reply_to_ruri": {
+      "type": "string",
+      "description": "Optional RURI where INVOKE_RESULT should be sent. Defaults to the invoking principal's RURI when omitted."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "NORMAL", "HIGH", "SAFETY"],
+      "description": "Message priority. SAFETY priority messages bypass the queue (Safety Invariant 6)."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the INVOKE was sent."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this message envelope."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 11,
+      "ruri": "rcan://rcan.dev/opencastor/rover/abc12345",
+      "principal_id": "agent:anthropic:claude-sonnet-4",
+      "role_level": 2,
+      "session_token": "tok_example",
+      "skill": "nav.go_to",
+      "params": { "x": 3.5, "y": 1.2, "yaw_deg": 90 },
+      "msg_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "timeout_ms": 30000,
+      "priority": "NORMAL",
+      "timestamp_ms": 1741100100000,
+      "message_id": "b2c3d4e5-f6a7-8901-bcde-f01234567891"
+    }
+  ]
+}

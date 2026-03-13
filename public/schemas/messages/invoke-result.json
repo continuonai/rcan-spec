@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/invoke-result.json",
+  "title": "INVOKE_RESULT Message",
+  "description": "RCAN message type 12. Sent by the robot runtime in response to an INVOKE message (§19). Carries the outcome of the skill execution, correlated via the reply_to field back to the original INVOKE msg_id.",
+  "type": "object",
+  "required": [
+    "message_type",
+    "ruri",
+    "reply_to",
+    "status",
+    "timestamp_ms",
+    "message_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "message_type": {
+      "type": "integer",
+      "const": 12,
+      "description": "Identifies this as an INVOKE_RESULT message."
+    },
+    "ruri": {
+      "$ref": "https://rcan.dev/schemas/ruri.json",
+      "description": "RURI of the robot runtime that executed the skill."
+    },
+    "reply_to": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Must match the msg_id of the originating INVOKE message."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "error", "timeout", "not_found"],
+      "description": "Outcome of the skill execution. 'not_found' means the skill name was not registered on this runtime."
+    },
+    "result": {
+      "type": "object",
+      "description": "Skill-specific output. Present when status is 'success'. Schema varies by skill.",
+      "additionalProperties": true
+    },
+    "error": {
+      "type": "string",
+      "description": "Human-readable error message. Present when status is 'error', 'timeout', or 'not_found'."
+    },
+    "duration_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Wall-clock milliseconds elapsed from when the runtime began executing the skill until this result was produced."
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch time in milliseconds when the INVOKE_RESULT was sent."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this message envelope."
+    }
+  },
+  "examples": [
+    {
+      "message_type": 12,
+      "ruri": "rcan://rcan.dev/opencastor/rover/abc12345",
+      "reply_to": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "status": "success",
+      "result": { "reached": true, "final_pos": [3.5, 1.2] },
+      "duration_ms": 4823.1,
+      "timestamp_ms": 1741100105000,
+      "message_id": "c3d4e5f6-a7b8-9012-cdef-012345678902"
+    },
+    {
+      "message_type": 12,
+      "ruri": "rcan://rcan.dev/opencastor/rover/abc12345",
+      "reply_to": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "status": "error",
+      "error": "Path blocked: obstacle detected at [3.1, 1.0]",
+      "duration_ms": 250.4,
+      "timestamp_ms": 1741100100300,
+      "message_id": "d4e5f6a7-b8c9-0123-def0-123456789013"
+    }
+  ]
+}

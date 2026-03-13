@@ -17,14 +17,18 @@ const protobufCode = `message RCANMessage {
   repeated string scope = 12;  // Required scopes for this message
 
   enum MessageType {
-    DISCOVER = 1;
-    STATUS   = 2;
-    COMMAND  = 3;
-    STREAM   = 4;
-    EVENT    = 5;
-    HANDOFF  = 6;
-    ACK      = 7;
-    ERROR    = 8;
+    DISCOVER      = 1;
+    STATUS        = 2;
+    COMMAND       = 3;
+    STREAM        = 4;
+    EVENT         = 5;
+    HANDOFF       = 6;
+    ACK           = 7;
+    ERROR         = 8;
+    AUTHORIZE     = 9;   // HiTL out-of-band authorization (v1.2)
+    PENDING_AUTH  = 10;  // HiTL gate awaiting authorization (v1.2)
+    INVOKE        = 11;  // Skill/behavior invocation (v1.3 §19)
+    INVOKE_RESULT = 12;  // Result of INVOKE (v1.3 §19)
   }
 
   enum Priority {
@@ -304,7 +308,7 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
 // castor swarm status [--json]`;
 ---
 
-<DocsLayout title="Specification v1.3.0" description="RCAN Protocol Specification v1.3.0 Draft — robot addressing, auth, config schema, autonomous actions, sensing, telemetry, swarm, and AI accountability.">
+<DocsLayout title="Specification v1.3.0" description="RCAN Protocol Specification v1.3.0 — robot addressing, auth, config schema, autonomous actions, sensing, telemetry, swarm, and AI accountability.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">RCAN Protocol Specification</h1>
   </div>
@@ -349,7 +353,6 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
       <li><a href="/spec/appendix-b/" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">B.</span> WebSocket Transport Binding</a></li>
       <li><a href="/spec/section-21/" class="hover:text-accent flex items-center gap-2">
         <span class="text-accent/50">21.</span> Robot Registry Integration
-        <span class="text-xs px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 ml-1">Draft</span>
         <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 ml-1">New</span>
       </a></li>
     </ol>
