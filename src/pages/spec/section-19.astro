@@ -71,6 +71,7 @@ const invokeNotFound = `{
       <li><a href="#status-values"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.4</span> Status Values</a></li>
       <li><a href="#error-codes"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.5</span> Error Codes</a></li>
       <li><a href="#integration"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.6</span> Integration with §18</a></li>
+      <li><a href="#invoke-cancel"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">19.7</span> INVOKE_CANCEL</a></li>
     </ol>
   </div>
 
@@ -93,6 +94,7 @@ const invokeNotFound = `{
     <ul>
       <li><strong>INVOKE</strong> — Sent by the client to request execution of a named skill.</li>
       <li><strong>INVOKE_RESULT</strong> — Sent by the robot when the skill completes, fails, or times out.</li>
+      <li><strong>INVOKE_CANCEL</strong> — Sent by the client to cancel an in-progress skill invocation (see §19.7).</li>
     </ul>
 
     <p>Skills are synchronous from the protocol perspective: each INVOKE expects exactly one INVOKE_RESULT correlated via <code>msg_id</code> / <code>reply_to</code>. Long-running skills SHOULD emit intermediate STATUS messages but MUST produce a final INVOKE_RESULT.</p>
@@ -206,6 +208,10 @@ const invokeNotFound = `{
           <td><code>invalid_params</code></td>
           <td>The <code>params</code> object failed validation against the skill's parameter schema. Error code 7004.</td>
         </tr>
+        <tr>
+          <td><code>cancelled</code></td>
+          <td>The skill was aborted in response to an INVOKE_CANCEL message. Error code 7007. See §19.7.</td>
+        </tr>
       </tbody>
     </table>
   </section>
@@ -258,6 +264,12 @@ const invokeNotFound = `{
           <td><code>failure</code></td>
           <td>The skill ran but encountered a runtime error or could not achieve its goal. The <code>error.message</code> field SHOULD describe the cause.</td>
         </tr>
+        <tr>
+          <td><code>7007</code></td>
+          <td><code>SkillCancelled</code></td>
+          <td><code>cancelled</code></td>
+          <td>The skill was aborted because the client sent INVOKE_CANCEL for the originating INVOKE. See §19.7.</td>
+        </tr>
       </tbody>
     </table>
   </section>
@@ -295,6 +307,52 @@ const invokeNotFound = `{
   </section>
 
   <hr />
+
+  <hr />
+
+  <!-- ── §19.7 INVOKE_CANCEL ───────────────────────────────────────────────── -->
+  <section id="invoke-cancel">
+    <h2>19.7 INVOKE_CANCEL Message</h2>
+    <p>The INVOKE_CANCEL message allows a client to request cancellation of an in-progress skill invocation. It is an optional message type that enables cooperative abort for long-running skills.</p>
+
+    <h3>INVOKE_CANCEL Fields</h3>
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>type</code></td><td>string</td><td>MUST</td><td>Literal <code>"INVOKE_CANCEL"</code></td></tr>
+        <tr><td><code>msg_id</code></td><td>string</td><td>MUST</td><td>The <code>msg_id</code> of the original INVOKE message to cancel. MUST match exactly.</td></tr>
+        <tr><td><code>cancel_timeout_ms</code></td><td>integer</td><td>MAY</td><td>Milliseconds the receiver MAY take to gracefully shut down the skill before force-aborting. Defaults to implementation-defined. If omitted, the receiver SHOULD abort as quickly as safely possible.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Semantics</h3>
+    <ul>
+      <li>The client sends INVOKE_CANCEL with <code>msg_id</code> matching the original INVOKE message.</li>
+      <li>The receiver SHOULD abort the skill and MUST send an INVOKE_RESULT with <code>status</code> set to <code>"cancelled"</code> and <code>reply_to</code> equal to the original INVOKE <code>msg_id</code>.</li>
+      <li>If the skill has already completed (successfully or otherwise) before INVOKE_CANCEL arrives, the receiver MUST silently ignore the INVOKE_CANCEL. The previously sent INVOKE_RESULT stands.</li>
+      <li>Implementations MAY define a graceful shutdown period via <code>cancel_timeout_ms</code> during which the skill cleans up state (e.g. stops actuators safely) before the INVOKE_RESULT is emitted.</li>
+      <li>INVOKE_CANCEL does not require a direct acknowledgement beyond the eventual INVOKE_RESULT with <code>status: "cancelled"</code>.</li>
+    </ul>
+
+    <h3>Conformance</h3>
+    <table>
+      <thead>
+        <tr><th>Level</th><th>Requirement</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>L1</td><td>Not required.</td></tr>
+        <tr><td>L2</td><td>Implementations SHOULD accept and process INVOKE_CANCEL messages. Silently ignoring a cancel for an already-completed skill is conformant.</td></tr>
+        <tr><td>L3</td><td>Implementations MUST support INVOKE_CANCEL. The receiver MUST emit INVOKE_RESULT with <code>status: "cancelled"</code> upon successful abort, or the normal result if the skill completed first.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-yellow-300/80 font-semibold mb-2">Implementation Note</p>
+      <p class="text-sm text-yellow-300/70">INVOKE_CANCEL is a best-effort cooperative mechanism. Skills that interact with physical actuators MUST ensure a safe state before emitting the cancelled INVOKE_RESULT, regardless of <code>cancel_timeout_ms</code>. Safety constraints (§16 HiTL gates, §17 Confidence Gating) remain active during cancellation.</p>
+    </div>
+  </section>
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
     <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
