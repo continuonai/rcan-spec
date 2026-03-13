@@ -206,7 +206,7 @@ A federation proof is the signed, authoritative response from a registry confirm
 ```json
 {
   "registry_url": "https://rcan.dev",
-  "rrn": "RRN-00000042",
+  "rrn": "RRN-000000000042",
   "robot_name": "Spot Unit Alpha",
   "registry_pubkey_hint": "sha256:abc123def456...",
   "timestamp_iso": "2026-03-04T15:30:00Z",

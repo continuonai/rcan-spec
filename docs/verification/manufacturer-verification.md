@@ -48,7 +48,7 @@ Community verification confirms the identity data is plausible and community-rev
    ```
    **Example:**
    ```
-   _rcan-verify.robotis.com  TXT  "rrn=RRN-00000001;model=turtlebot3_burger"
+   _rcan-verify.robotis.com  TXT  "rrn=RRN-000000000001;model=turtlebot3_burger"
    ```
 3. RCAN registry will perform a DNS lookup to validate the record before upgrading the tier
 
@@ -74,11 +74,11 @@ Community verification confirms the identity data is plausible and community-rev
 
 ```json
 {
-  "rrn": "RRN-00000001",
+  "rrn": "RRN-000000000001",
   "manufacturer": "ROBOTIS",
   "model": "turtlebot3_burger",
   "timestamp_iso": "2026-01-15T12:00:00Z",
-  "registry_url": "https://rcan.dev/registry/RRN-00000001",
+  "registry_url": "https://rcan.dev/registry/RRN-000000000001",
   "signature": "pending"
 }
 ```
@@ -133,7 +133,7 @@ GET https://rcan.dev/api/v1/verify/{rrn}
 ```json
 {
   "success": true,
-  "rrn": "RRN-00000001",
+  "rrn": "RRN-000000000001",
   "verification_status": "community",
   "verification_date": null,
   "verification_method": null,

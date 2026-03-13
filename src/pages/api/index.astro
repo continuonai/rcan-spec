@@ -149,14 +149,14 @@ curl "https://rcan.dev/api/v1/robots.json?status=active&limit=5"</code></pre>
       <p>Versioned single-robot lookup by RRN. Same as <code>/api/robots/[rrn].json</code> but includes <code>api_version</code>.</p>
 
       <h4>Example Request</h4>
-      <pre><code>curl "https://rcan.dev/api/v1/robots/RRN-00000001.json"</code></pre>
+      <pre><code>curl "https://rcan.dev/api/v1/robots/RRN-000000000001.json"</code></pre>
 
       <h4>Example Response</h4>
       <pre><code>&#123;
   "api_version": "1.0",
   "success": true,
   "data": &#123;
-    "rrn": "RRN-00000001",
+    "rrn": "RRN-000000000001",
     "name": "TurtleBot 3 Burger",
     ...
   &#125;
@@ -183,7 +183,7 @@ const url = `https://rcan.dev/api/v1/ruri/$&#123;encodeURIComponent(ruri)&#125;.
   "api_version": "1.0",
   "success": true,
   "ruri": "rcan://rcan.dev/opencastor/rover/abcdef12",
-  "data": &#123; "rrn": "RRN-00000042", "name": "OpenCastor Rover", ... &#125;
+  "data": &#123; "rrn": "RRN-000000000042", "name": "OpenCastor Rover", ... &#125;
 &#125;</code></pre>
 
       <h4>Error Response (404)</h4>
@@ -409,7 +409,7 @@ curl "https://rcan.dev/api/v1/nodes?prefix=BD"</code></pre>
   "success": true,
   "data": [
     &#123;
-      "rrn": "RRN-00000001",
+      "rrn": "RRN-000000000001",
       "name": "TurtleBot 3 Burger",
       "manufacturer": "ROBOTIS",
       "model": "turtlebot3_burger",
@@ -447,19 +447,19 @@ curl "https://rcan.dev/api/v1/nodes?prefix=BD"</code></pre>
           <tr>
             <td><code>rrn</code></td>
             <td>string</td>
-            <td>Robot Registration Number (e.g., <code>RRN-00000001</code>)</td>
+            <td>Robot Registration Number (e.g., <code>RRN-000000000001</code>)</td>
           </tr>
         </tbody>
       </table>
 
       <h4>Example Request</h4>
-      <pre><code>curl "https://rcan.dev/api/robots/RRN-00000001.json"</code></pre>
+      <pre><code>curl "https://rcan.dev/api/robots/RRN-000000000001.json"</code></pre>
 
       <h4>Example Response</h4>
       <pre><code>&#123;
   "success": true,
   "data": &#123;
-    "rrn": "RRN-00000001",
+    "rrn": "RRN-000000000001",
     "name": "TurtleBot 3 Burger",
     "manufacturer": "ROBOTIS",
     "model": "turtlebot3_burger",
@@ -496,7 +496,7 @@ curl "https://rcan.dev/api/v1/nodes?prefix=BD"</code></pre>
       <pre><code>&#123;
   "success": false,
   "error": "Robot not found",
-  "rrn": "RRN-99999999"
+  "rrn": "RRN-000099999999"
 &#125;</code></pre>
     </article>
 
@@ -532,10 +532,10 @@ curl "https://rcan.dev/api/v1/nodes?prefix=BD"</code></pre>
 
       <h4>Example Usage</h4>
       <pre><code>&lt;!-- Markdown --&gt;
-![RCAN](https://rcan.dev/api/badge/RRN-00000001.svg)
+![RCAN](https://rcan.dev/api/badge/RRN-000000000001.svg)
 
 &lt;!-- HTML --&gt;
-&lt;img src="https://rcan.dev/api/badge/RRN-00000001.svg" alt="RCAN Registry"&gt;</code></pre>
+&lt;img src="https://rcan.dev/api/badge/RRN-000000000001.svg" alt="RCAN Registry"&gt;</code></pre>
     </article>
 
     <article class="endpoint">
@@ -564,7 +564,7 @@ curl "https://rcan.dev/api/v1/nodes?prefix=BD"</code></pre>
       </table>
 
       <h4>Example Usage</h4>
-      <pre><code>curl "https://rcan.dev/api/qr/RRN-00000001.svg?size=300"</code></pre>
+      <pre><code>curl "https://rcan.dev/api/qr/RRN-000000000001.svg?size=300"</code></pre>
     </article>
   </section>
 
@@ -603,7 +603,7 @@ const response = await fetch('https://rcan.dev/api/robots.json?status=active');
 const &#123; data: robots &#125; = await response.json();
 
 // Fetch a specific robot
-const robot = await fetch('https://rcan.dev/api/robots/RRN-00000001.json')
+const robot = await fetch('https://rcan.dev/api/robots/RRN-000000000001.json')
   .then(r =&gt; r.json())
   .then(r =&gt; r.data);
 
@@ -629,7 +629,7 @@ curl https://rcan.dev/api/robots.json
 curl "https://rcan.dev/api/robots.json?status=active&amp;limit=5"
 
 # Get specific robot
-curl https://rcan.dev/api/robots/RRN-00000001.json</code></pre>
+curl https://rcan.dev/api/robots/RRN-000000000001.json</code></pre>
   </section>
 </BaseLayout>
 
