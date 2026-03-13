@@ -10,6 +10,8 @@ const messageSchemas = [
   { file: 'safety.json',       type: 6,  name: 'SAFETY',        desc: 'Highest-priority safety event — STOP, ESTOP, or RESUME' },
   { file: 'authorize.json',    type: 9,  name: 'AUTHORIZE',     desc: '§16 HiTL — approve or reject a pending AI command (OWNER+ only)' },
   { file: 'pending_auth.json', type: 10, name: 'PENDING_AUTH',  desc: '§16 HiTL gate — AI command awaiting human authorization' },
+  { file: 'invoke.json',       type: 11, name: 'INVOKE',        desc: '§19 Behavior/skill invocation request — skill name, parameters, and session context' },
+  { file: 'invoke-result.json', type: 12, name: 'INVOKE_RESULT', desc: '§19 Invocation response — result payload, status, and execution metadata' },
 ];
 
 const coreSchemas = [
