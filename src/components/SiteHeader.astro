@@ -11,6 +11,7 @@ const protocolLinks = [
   { href: '/federation/', label: 'Federation' },
   { href: '/implementations/', label: 'Implementations' },
   { href: '/api/', label: 'API' },
+  { href: 'https://opencastor.com', label: 'OpenCastor ↗', external: true },
 ];
 
 const useCasesLinks = [
@@ -34,6 +35,7 @@ const mobileLinks = [
   { href: '/federation/', label: 'Federation' },
   { href: '/implementations/', label: 'Implementations' },
   { href: '/api/', label: 'API' },
+  { href: 'https://opencastor.com', label: '— OpenCastor', external: true },
   { href: '/use-cases/swarm/', label: 'Use Cases' },
   { href: '/use-cases/swarm/', label: '— Swarm Safety' },
   { href: 'https://robotregistryfoundation.org/registry/', label: 'Browse Registry', external: true },
@@ -176,6 +178,8 @@ function isActive(href: string) {
             <div class="p-1">
               {protocolLinks.map(link => (
                 <a href={link.href}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noopener noreferrer" : undefined}
                   class:list={[
                     "block px-3 py-2 text-sm text-text-muted rounded-lg hover:bg-white/5 hover:text-accent transition-colors",
                     isActive(link.href) ? 'text-accent bg-accent/10' : ''
