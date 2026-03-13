@@ -27,11 +27,14 @@ const protobufCode = `message RCANMessage {
     ERROR         = 8;
     AUTHORIZE     = 9;   // HiTL out-of-band authorization (v1.2)
     PENDING_AUTH  = 10;  // HiTL gate awaiting authorization (v1.2)
-    INVOKE             = 11;  // Skill/behavior invocation (v1.3 §19)
-    INVOKE_RESULT      = 12;  // Result of INVOKE (v1.3 §19)
-    REGISTRY_REGISTER  = 13;  // §21 — register robot with RRF
-    REGISTRY_RESOLVE   = 14;  // §21 — resolve RRN to RURI/metadata
-    INVOKE_CANCEL      = 15;  // §19 — cancel an in-progress skill invocation
+    // §19 Skill Invocation
+    INVOKE             = 11;  // §19.2 — skill/behavior invocation
+    INVOKE_RESULT      = 12;  // §19.3 — result of INVOKE
+    // §21 Registry (wire values 13–14 were assigned before §19.4 was finalised)
+    REGISTRY_REGISTER  = 13;  // §21.4 — register robot with RRF
+    REGISTRY_RESOLVE   = 14;  // §21.5 — resolve RRN to RURI/metadata
+    // §19.4 Cancel — wire value 15 added after §21; logically part of §19
+    INVOKE_CANCEL      = 15;  // §19.4 — cancel an in-progress skill invocation
   }
 
   enum Priority {
