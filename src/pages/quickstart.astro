@@ -268,9 +268,45 @@ await client.cancelInvoke(invocation.msgId);`} />
     </p>
   </div>
 
-  <!-- Step 7 -->
+  <!-- Step 7 — §20 Telemetry Field Registry -->
+  <h2 id="telemetry">
+    <span class="text-accent font-mono text-lg mr-2">07</span>Emit Telemetry (§20)
+  </h2>
+
+  <p>RCAN robots report state via STATUS messages that carry a structured <strong>Robot State</strong> object (§20.3). Joint sensor readings go in the nested <code>joints</code> array (§20.2). All field names, units, and types are defined in the Telemetry Field Registry so consumers can interpret readings without out-of-band documentation.</p>
+
+  <CodeWindow language="python" title="Python — §20 STATUS telemetry" code={`from rcan import RCANClient
+
+async with RCANClient("wss://myrobot.local:8765") as client:
+    await client.publish_status({
+        "ruri": "rcan://myrobot.local",
+        "battery_percent": 82.5,
+        "battery_voltage": 12.4,
+        "uptime_seconds": 3612,
+        "mode": "autonomous",
+        "joints": [
+            {
+                "joint_name": "shoulder_pan",
+                "position_rad": 0.523,
+                "velocity_rad_s": 0.0,
+                "effort_nm": 1.2,
+                "temperature_c": 38.1,
+            }
+        ],
+    })`} />
+
+  <div class="not-prose bg-accent/5 border border-accent/20 rounded-xl p-5 my-6 text-sm">
+    <p class="text-text-muted leading-relaxed">
+      <strong class="text-white">Extensible:</strong> The registry follows an open-world model — you can add
+      custom fields alongside standard ones. Standard fields use the canonical names defined in
+      <a href="/spec/section-20/" class="text-accent hover:underline">§20</a> so dashboards and
+      monitoring tools can process them without configuration.
+    </p>
+  </div>
+
+  <!-- Step 8 -->
   <h2 id="validate">
-    <span class="text-accent font-mono text-lg mr-2">07</span>Validate Your Config
+    <span class="text-accent font-mono text-lg mr-2">08</span>Validate Your Config
   </h2>
 
   <CodeWindow language="bash" title="Terminal" code={`# Check L1/L2/L3 conformance
@@ -300,7 +336,8 @@ castor compliance --config myrobot.rcan.yaml`} />
     {[
       { href: '/spec/', label: 'Protocol Spec', desc: 'Full RCAN v1.3 specification' },
       { href: '/spec/section-19/', label: '§19 Skill Invocation', desc: 'INVOKE, INVOKE_RESULT, INVOKE_CANCEL' },
-      { href: '/conformance/', label: 'Conformance Tests', desc: 'L1/L2/L3 test suite' },
+      { href: '/spec/section-20/', label: '§20 Telemetry Field Registry', desc: 'Robot State, joint telemetry, Prometheus labels' },
+      { href: '/conformance/', label: 'Conformance Tests', desc: 'L1/L2/L3/L4 test suite' },
       { href: 'https://github.com/continuonai/rcan-py', label: 'rcan-py on GitHub', desc: 'Python SDK source + issues' },
       { href: 'https://github.com/continuonai/rcan-ts', label: 'rcan-ts on GitHub', desc: 'TypeScript SDK source + issues' },
       { href: 'https://opencastor.com', label: 'OpenCastor', desc: 'Robot runtime with RCAN built in' },
