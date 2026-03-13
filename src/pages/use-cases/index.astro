@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="RCAN Use Cases"
+  description="Explore real-world use cases for the RCAN protocol — from multi-robot swarms to edge deployment and AI accountability."
+>
+
+  <section class="relative py-24 border-b border-white/5">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-mono mb-8">
+        <span>📖</span> Use Cases
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+        Real-world applications of <span class="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">RCAN</span>
+      </h1>
+      <p class="text-lg text-text-muted max-w-2xl mx-auto">
+        See how RCAN's open protocol enables safe, auditable, and interoperable robot communication across a range of deployment scenarios.
+      </p>
+    </div>
+  </section>
+
+  <section class="max-w-4xl mx-auto px-6 py-16">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
+
+      <a href="/use-cases/swarm/" class="group block bg-white/[.03] hover:bg-white/[.06] border border-white/10 hover:border-cyan-500/30 rounded-xl p-6 transition-all">
+        <div class="text-3xl mb-4">🤖🤝🤖</div>
+        <h2 class="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">Swarm Safety</h2>
+        <p class="text-sm text-text-muted">Build multi-robot systems with cryptographic trust, RRN-based peer verification, and commitment chain audit trails.</p>
+        <div class="mt-4 text-xs font-mono text-cyan-500">→ View use case</div>
+      </a>
+
+      <div class="block bg-white/[.02] border border-white/5 rounded-xl p-6 opacity-60">
+        <div class="text-3xl mb-4">🏭</div>
+        <h2 class="text-lg font-bold text-white mb-2">Industrial Floor</h2>
+        <p class="text-sm text-text-muted">Coordinate heterogeneous robot fleets in manufacturing with RBAC, safe-stop, and federated registries.</p>
+        <div class="mt-4 text-xs font-mono text-text-faint">Coming soon</div>
+      </div>
+
+      <div class="block bg-white/[.02] border border-white/5 rounded-xl p-6 opacity-60">
+        <div class="text-3xl mb-4">🧠</div>
+        <h2 class="text-lg font-bold text-white mb-2">AI Accountability</h2>
+        <p class="text-sm text-text-muted">Enforce §16 AI Governance — model identity, confidence gates, HiTL authorization, and immutable thought logs.</p>
+        <div class="mt-4 text-xs font-mono text-text-faint">Coming soon</div>
+      </div>
+
+      <div class="block bg-white/[.02] border border-white/5 rounded-xl p-6 opacity-60">
+        <div class="text-3xl mb-4">🌐</div>
+        <h2 class="text-lg font-bold text-white mb-2">Edge Deployment</h2>
+        <p class="text-sm text-text-muted">Run RCAN on Raspberry Pi, Jetson, and other edge hardware with mDNS discovery and offline audit chains.</p>
+        <div class="mt-4 text-xs font-mono text-text-faint">Coming soon</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="max-w-4xl mx-auto px-6 pb-16 text-center">
+    <p class="text-text-muted text-sm">
+      Have a use case to share? <a href="https://github.com/continuonai/rcan-spec/issues" class="text-cyan-400 hover:underline">Open an issue</a> on the spec repo.
+    </p>
+  </section>
+
+</BaseLayout>
