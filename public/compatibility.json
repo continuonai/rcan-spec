@@ -2,12 +2,20 @@
   "updated": "2026-03-13",
   "spec_versions": [
     {
-      "version": "1.3",
+      "version": "1.4",
       "status": "current",
+      "rcan_py": ">=0.4.0",
+      "rcan_ts": ">=0.4.0",
+      "opencastor": ">=2026.3.13.12",
+      "notes": "57-page spec; \u00a71\u2013\u00a716 fully expanded; REGISTRY_REGISTER_RESULT (\u00a721.6) MessageType=16; REGISTRY_RESOLVE_RESULT (\u00a721.7) MessageType=17; structured RRN URI rrn://[org]/[category]/[model]/[id]; Appendix F"
+    },
+    {
+      "version": "1.3",
+      "status": "archived",
       "rcan_py": ">=0.3.0",
       "rcan_ts": ">=0.3.0",
       "opencastor": ">=2026.3.13.0",
-      "notes": "§18-20 + Appendix B stable; §21 Registry Integration; conformance L4; INVOKE_CANCEL (§19.4) MessageType=15; REGISTRY_REGISTER (§21.4) MessageType=13; REGISTRY_RESOLVE (§21.5) MessageType=14; OpenCastor ref impl v2026.3.13.x"
+      "notes": "\u00a718-20 + Appendix B stable; \u00a721 Registry Integration; conformance L4; INVOKE_CANCEL (\u00a719.4) MessageType=15; REGISTRY_REGISTER (\u00a721.4) MessageType=13; REGISTRY_RESOLVE (\u00a721.5) MessageType=14; OpenCastor ref impl v2026.3.13.x"
     },
     {
       "version": "1.2",
@@ -15,7 +23,7 @@
       "rcan_py": ">=0.2.0",
       "rcan_ts": ">=0.2.0",
       "opencastor": ">=2026.3.7.0",
-      "notes": "Adds §17–§20 + Appendix B (Distributed Registry, Capability Advertisement, INVOKE, Telemetry Fields, WebSocket)"
+      "notes": "Adds \u00a717\u2013\u00a720 + Appendix B (Distributed Registry, Capability Advertisement, INVOKE, Telemetry Fields, WebSocket)"
     },
     {
       "version": "1.1",
@@ -23,7 +31,7 @@
       "rcan_py": "0.1.x",
       "rcan_ts": "0.1.x",
       "opencastor": "2026.2.x",
-      "notes": "AI Accountability Layer (§16)"
+      "notes": "AI Accountability Layer (\u00a716)"
     },
     {
       "version": "1.0",
