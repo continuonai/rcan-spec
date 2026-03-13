@@ -5,7 +5,7 @@ import CodeWindow from '../../components/CodeWindow.astro';
 const registryRegisterMsg = `{
   "type": "REGISTRY_REGISTER",
   "payload": {
-    "rrn": "RRN-00000042",
+    "rrn": "RRN-000000000042",
     "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
     "public_key": "MCowBQYDK2VwAyEA...",
     "metadata": {
@@ -19,7 +19,7 @@ const registryRegisterMsg = `{
 const registryRegisterResult = `{
   "type": "REGISTRY_REGISTER_RESULT",
   "payload": {
-    "rrn": "RRN-00000042",
+    "rrn": "RRN-000000000042",
     "status": "registered",
     "verification_tier": "community"
   }
@@ -28,14 +28,14 @@ const registryRegisterResult = `{
 const registryResolveMsg = `{
   "type": "REGISTRY_RESOLVE",
   "payload": {
-    "query": "RRN-00000042"
+    "query": "RRN-000000000042"
   }
 }`;
 
 const registryResolveResult = `{
   "type": "REGISTRY_RESOLVE_RESULT",
   "payload": {
-    "rrn": "RRN-00000042",
+    "rrn": "RRN-000000000042",
     "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
     "status": "active",
     "verification_tier": "verified",
@@ -63,15 +63,15 @@ POST /api/v1/verify
 }
 
 # Response — robot promoted to "verified" tier
-{"status": "verified", "rrn": "RRN-00000042", "verification_tier": "verified"}`;
+{"status": "verified", "rrn": "RRN-000000000042", "verification_tier": "verified"}`;
 
 const ruriLookup = `# RURI → RRN
 GET /api/v1/resolve?ruri=rcan://rcan.dev/continuonai/opencastor-rpi5/bob
-→ {"rrn": "RRN-00000042", "status": "active", "verification_tier": "verified"}
+→ {"rrn": "RRN-000000000042", "status": "active", "verification_tier": "verified"}
 
 # RRN → RURI
-GET /api/v1/robots/RRN-00000042
-→ {"rrn": "RRN-00000042", "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob", ...}`;
+GET /api/v1/robots/RRN-000000000042
+→ {"rrn": "RRN-000000000042", "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob", ...}`;
 
 const registryRegisterSchema = `{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -79,7 +79,7 @@ const registryRegisterSchema = `{
   "type": "object",
   "required": ["ruri", "public_key"],
   "properties": {
-    "rrn":        { "type": "string", "pattern": "^RRN(-[A-Z]{2,6})?-[0-9A-F]{8}$" },
+    "rrn":        { "type": "string", "pattern": "^RRN(-[A-Z]{2,6})?-[0-9A-F]{12}$" },
     "ruri":       { "type": "string", "pattern": "^rcan://" },
     "public_key": { "type": "string", "description": "Ed25519 public key, base64url-encoded" },
     "metadata": {
@@ -101,7 +101,7 @@ const registryResolveSchema = `{
   "properties": {
     "query": {
       "type": "string",
-      "description": "RRN (e.g. RRN-00000042) or RURI (e.g. rcan://...) to resolve"
+      "description": "RRN (e.g. RRN-000000000042) or RURI (e.g. rcan://...) to resolve"
     }
   }
 }`;
@@ -113,7 +113,7 @@ metadata:
   robot_uuid: "550e8400-e29b-41d4-a716-446655440000"
 
 registry:
-  rrn: "RRN-00000042"
+  rrn: "RRN-000000000042"
   registry_url: "https://robotregistryfoundation.org/api/v1"`;
 ---
 
@@ -166,7 +166,7 @@ registry:
     <p>Robot runtimes implementing RCAN operate under two independent identity systems:</p>
     <ul>
       <li><strong>RURI</strong> (<code>rcan://rcan.dev/continuonai/opencastor-rpi5/bob</code>) — the protocol-level address used in every RCAN message (§2). Assigned by the runtime operator; unique within the registry host's namespace.</li>
-      <li><strong>RRN</strong> (<code>RRN-00000042</code>) — a globally unique, registry-assigned opaque identifier. Issued by the Robot Registry after registration. Stable across network changes, renames, and ownership transfers.</li>
+      <li><strong>RRN</strong> (<code>RRN-000000000042</code>) — a globally unique, registry-assigned opaque identifier. Issued by the Robot Registry after registration. Stable across network changes, renames, and ownership transfers.</li>
     </ul>
     <p>§21 defines:</p>
     <ul>
@@ -198,7 +198,7 @@ registry:
   <!-- ── §21.2 RRN ↔ RURI Mapping ─────────────────────────────────────────── -->
   <section id="rrn-ruri-mapping">
     <h2>21.2 RRN ↔ RURI Mapping</h2>
-    <p>An RRN (<code>RRN-00000001</code>) is a globally unique, registry-assigned opaque identifier. A RURI (<code>rcan://rcan.dev/continuonai/opencastor-rpi5/bob</code>) is the RCAN address used at the protocol level.</p>
+    <p>An RRN (<code>RRN-000000000001</code>) is a globally unique, registry-assigned opaque identifier. A RURI (<code>rcan://rcan.dev/continuonai/opencastor-rpi5/bob</code>) is the RCAN address used at the protocol level.</p>
 
     <h3>Canonical Association</h3>
     <p>A robot MAY associate one or more RURIs with its RRN. The association is stored in the registry and discoverable via the registry resolution API. The primary RURI is the address currently used in RCAN messages.</p>
