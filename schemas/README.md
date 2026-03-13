@@ -26,6 +26,9 @@ Machine-verifiable [JSON Schema draft-07](https://json-schema.org/specification-
 | `ruri.json` | Robot Uniform Resource Identifier (RURI) string schema |
 | `commitment.json` | QuantumLink-Sim cryptographic commitment record |
 | `rcan-config.json` | `.rcan.yaml` robot configuration file |
+| `invoke-message.json` | §19 INVOKE message — request execution of a named skill/behavior |
+| `invoke-result.json` | §19 INVOKE_RESULT message — robot response after skill execution |
+| `joint-telemetry.json` | §20 Joint Telemetry object — single snapshot of joint sensor readings |
 
 ---
 
