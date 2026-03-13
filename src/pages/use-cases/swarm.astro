@@ -101,7 +101,7 @@ import CodeWindow from '../../components/CodeWindow.astro';
             icon: '🪪',
             title: 'Identity Layer',
             subtitle: 'RRN + Verification Tiers',
-            desc: 'Every robot receives a globally unique Robot Registration Number (RRN) registered at rcan.dev. Verification tiers (community → verified → certified → accredited) give swarm members a cryptographically anchored trust signal. Before accepting any command, a robot can call <code class="text-cyan-300 bg-white/5 px-1 rounded">castor node resolve &lt;rrn&gt;</code> to check a peer\'s certification level in real time.',
+            desc: 'Every robot receives a globally unique Robot Registration Number (RRN) registered at <a href="https://robotregistryfoundation.org" class="text-cyan-300 hover:underline">robotregistryfoundation.org</a>. Verification tiers (community → verified → certified → accredited) give swarm members a cryptographically anchored trust signal. Before accepting any command, a robot can call <code class="text-cyan-300 bg-white/5 px-1 rounded">castor node resolve &lt;rrn&gt;</code> to check a peer\'s certification level in real time.',
             tags: ['RRN-BD-000000000042', '⬜ community', '🟡 verified', '🔵 certified', '✅ accredited'],
           },
           {
@@ -312,7 +312,7 @@ print(f"📝 Logged to chain: {record.content_hash[:16]}...")`}
             check: '✅',
             title: 'Valid RRN',
             desc: 'RCAN config present with a registered, globally unique Robot Registration Number.',
-            tag: 'rcan.dev/registry',
+            tag: 'robotregistryfoundation.org/registry',
           },
           {
             check: '✅',

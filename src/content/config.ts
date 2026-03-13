@@ -3,7 +3,7 @@ import { defineCollection, z } from 'astro:content';
 const robotsCollection = defineCollection({
   type: 'data',
   schema: z.object({
-    rrn: z.string().regex(/^RRN-\d{8}$/, 'RRN must be in format RRN-XXXXXXXX'),
+    rrn: z.string().regex(/^RRN-([A-Z0-9]{2,8}-)?\d{8,16}$/, 'RRN must be in format RRN-XXXXXXXX, RRN-NNNNNNNNNNNN, or RRN-PREFIX-NNNNNNNNNNNN'),
     name: z.string().min(1),
     manufacturer: z.string().min(1),
     model: z.string().min(1),
