@@ -20,7 +20,7 @@ RCAN provides:
 from rcan import RURI, RCANClient, Role
 
 # Parse a robot's address
-ruri = RURI.parse("rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6")
+ruri = RURI.parse("rcan://example.com/acme/companion-v1/d3a4b5c6")
 
 # Connect and authenticate
 client = RCANClient(client_id="my-app")
