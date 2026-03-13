@@ -7,6 +7,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <h1>Conformance Test Suite <span style="font-size:0.55em;color:var(--color-text-muted);font-weight:400;">v1.3</span></h1>
   <p>A conforming RCAN implementation <strong>MUST</strong> pass all tests at the level it claims. Levels are cumulative — an <strong>L3</strong> implementation must also pass <strong>L1</strong> and <strong>L2</strong>.</p>
 
+  <div class="flex flex-wrap items-center gap-4 mb-6 px-4 py-3 bg-white/[.04] border border-white/10 rounded-lg text-sm">
+    <span class="text-text-faint uppercase text-[0.7rem] tracking-widest font-semibold self-center flex-shrink-0">Legend</span>
+    <span class="text-text-muted"><strong class="text-emerald-400">✅</strong> — Implementation MUST produce this result <span class="text-text-faint">(success / valid / accepted)</span></span>
+    <span class="text-text-muted"><strong class="text-red-400">❌</strong> — Implementation MUST produce this <em>rejection</em> — the error path <strong class="text-text">is</strong> the correct behaviour <span class="text-text-faint">(❌ ≠ failing test)</span></span>
+  </div>
+
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:2rem 0;">
     <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
       <div style="font-size:.75rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">Level 1</div>
