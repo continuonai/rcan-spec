@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const schemaYaml = `# Required fields
-rrn: "RRN-XXXXXXXX"                    # Assigned by registry
+rrn: "RRN-XXXXXXXXXXXX"                    # Assigned by registry
 name: "Robot Name"                      # Human-readable name
 manufacturer: "Company Name"            # Manufacturer/organization
 model: "model-identifier"               # Unique model ID
@@ -85,7 +85,7 @@ tags: ["mobile", "ros2", "research"]    # Discovery tags`;
           <tr>
             <td><code>rrn</code></td>
             <td>string</td>
-            <td>Robot Registration Number (format: RRN-XXXXXXXX)</td>
+            <td>Robot Registration Number (format: RRN-XXXXXXXXXXXX)</td>
           </tr>
           <tr>
             <td><code>name</code></td>
@@ -175,7 +175,7 @@ tags: ["mobile", "ros2", "research"]    # Discovery tags`;
     <section>
       <h2>Validation Rules</h2>
       <ul>
-        <li><code>rrn</code> must match pattern <code>^RRN-\d&#123;8&#125;$</code></li>
+        <li><code>rrn</code> must match pattern <code>^RRN-\d&#123;12&#125;$</code></li>
         <li><code>production_year</code> must be between 1950 and 2100</li>
         <li><code>submitted_date</code> must match <code>YYYY-MM-DD</code></li>
         <li>All URL fields must be valid URLs</li>
@@ -185,7 +185,7 @@ tags: ["mobile", "ros2", "research"]    # Discovery tags`;
 
     <section>
       <h2>Example: Minimal Registration</h2>
-      <pre><code>rrn: "RRN-00000011"
+      <pre><code>rrn: "RRN-000000000011"
 name: "My Robot"
 manufacturer: "My Company"
 model: "my-robot-v1"
@@ -196,7 +196,7 @@ tags: ["mobile", "education"]</code></pre>
 
     <section>
       <h2>Example: Complete Registration</h2>
-      <pre><code>rrn: "RRN-00000012"
+      <pre><code>rrn: "RRN-000000000012"
 name: "Advanced Research Platform"
 manufacturer: "RoboTech Labs"
 model: "arp-2000"
