@@ -10,7 +10,7 @@ RCAN spec versions follow `MAJOR.MINOR.PATCH`:
 | **MINOR** | Additive, backwards-compatible changes | New optional message fields, new conformance level, new §16 sub-provision |
 | **PATCH** | Clarifications, editorial fixes, no behaviour change | Fixing ambiguous prose, correcting a table, adding examples |
 
-Current version: **v1.2** (MAJOR.MINOR; PATCH omitted when 0)
+Current version: **v1.3** (MAJOR.MINOR; PATCH omitted when 0)
 
 ## Backwards Compatibility Guarantee
 
@@ -44,7 +44,7 @@ Every MAJOR version is supported with security fixes for a minimum of **3 years*
 
 | Version | Release | LTS Until | Status |
 |---------|---------|-----------|--------|
-| v1.x | 2026-01 | 2029-01 | ✅ Active LTS |
+| v1.x | 2026-01 | 2029-01 | ✅ Active LTS (current: v1.3) |
 
 ## What Changes Between Versions
 

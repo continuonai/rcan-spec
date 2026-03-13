@@ -259,13 +259,13 @@ python3 scripts/conformance/check_l1.py \
     <h3>Machine-Readable Test Cases</h3>
     <p>
       The full test suite is in
-      <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/rcan-conformance-v1.2.json"><code>scripts/conformance/rcan-conformance-v1.2.json</code></a>.
+      <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/rcan-conformance-v1.3.json"><code>scripts/conformance/rcan-conformance-v1.3.json</code></a>.
       Drive your own harness against it:
     </p>
 
     <pre><code class="language-python">import json
 
-with open("scripts/conformance/rcan-conformance-v1.2.json") as f:
+with open("scripts/conformance/rcan-conformance-v1.3.json") as f:
     suite = json.load(f)
 
 for level, tests in suite["levels"].items():
