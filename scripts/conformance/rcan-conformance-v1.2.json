@@ -1,7 +1,7 @@
 {
   "version": "1.2",
   "description": "RCAN Protocol Conformance Test Suite",
-  "spec_ref": "https://rcan.continuon.cloud/spec/",
+  "spec_ref": "https://rcan.dev/spec/",
   "levels": {
     "L1": [
       {

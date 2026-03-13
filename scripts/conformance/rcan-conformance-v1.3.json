@@ -1,7 +1,7 @@
 {
   "version": "1.3",
   "description": "RCAN Protocol Conformance Test Suite",
-  "spec_ref": "https://rcan.continuon.cloud/spec/",
+  "spec_ref": "https://rcan.dev/spec/",
   "changelog": "v1.3 adds INVOKE/INVOKE_RESULT message type tests (§19), §21 registry integration tests (now Stable), and a mDNS version TXT record update.",
   "levels": {
     "L1": [

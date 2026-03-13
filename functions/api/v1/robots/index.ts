@@ -169,7 +169,7 @@ function slugify(s: string): string {
 
 /** Validate RCAN URI format */
 function validateUri(manufacturer: string, model: string, version: string, deviceId: string): string {
-  return `rcan://registry.rcan.dev/${slugify(manufacturer)}/${slugify(model)}/${slugify(version)}/${slugify(deviceId)}`;
+  return `rcan://rcan.dev/${slugify(manufacturer)}/${slugify(model)}/${slugify(version)}/${slugify(deviceId)}`;
 }
 
 /** Extract Bearer token from Authorization header */
