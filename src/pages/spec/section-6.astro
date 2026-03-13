@@ -1,8 +1,46 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const invariants = [
+  {
+    num: 1,
+    title: 'Local safety always wins',
+    body: 'No remote command can bypass on-device safety checks, bounds checking, or emergency-stop state.',
+  },
+  {
+    num: 2,
+    title: 'Graceful degradation',
+    body: 'Network loss MUST trigger a safe-stop within one latency_budget_ms interval, not undefined behavior.',
+  },
+  {
+    num: 3,
+    title: 'Audit trail',
+    body: 'All COMMAND and CONFIG messages MUST be logged with: principal identity, RURI, timestamp (ms), message_id, outcome (ok/blocked/error).',
+  },
+  {
+    num: 4,
+    title: 'Rate limiting',
+    body: 'Commands MUST be throttled per role per source RURI (see §2 role table).',
+  },
+  {
+    num: 5,
+    title: 'Timeout enforcement',
+    body: 'Control sessions expire per session TTL (see §2). Explicit renewal MUST be required before timeout; implicit renewal MUST NOT occur.',
+  },
+  {
+    num: 6,
+    title: 'SAFETY priority bypass',
+    body: 'Messages with Priority.SAFETY MUST skip rate-limiting queues and be processed before any other message.',
+  },
+  {
+    num: 7,
+    title: 'Prompt injection defense',
+    body: 'Implementations that forward NL instructions to an LLM MUST scan for injection patterns before calling the model. A ScanVerdict.BLOCK result MUST return an error Thought without calling the model.',
+  },
+];
 ---
 
-<DocsLayout title="§6 Safety Invariants" description="RCAN §6 — Safety Invariants. A set of non-negotiable safety rules that all RCAN implementations MUST enforce regardless of role or scope. This section covers emergency stop (ESTOP) propagation, SAFETY-priority message handling, rate-limit immunity for safety messages, and the physical safety boundary contract.">
+<DocsLayout title="§6 Safety Invariants" description="RCAN §6 — Safety Invariants. Protocol requirements for safe robot operation: local supremacy, graceful degradation, audit trail, rate limiting, and prompt injection defense.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§6 Safety Invariants</h1>
   </div>
@@ -18,23 +56,107 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
-  <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
-    <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> A set of non-negotiable safety rules that all RCAN implementations MUST enforce regardless of role or scope. This section covers emergency stop (ESTOP) propagation, SAFETY-priority message handling, rate-limit immunity for safety messages, and the physical safety boundary contract.
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6.1</span> Overview</a></li>
+      <li><a href="#invariants"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6.2</span> The Seven Invariants</a></li>
+      <li><a href="#enforcement" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6.3</span> Enforcement Layer</a></li>
+      <li><a href="#crossref"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6.4</span> Cross-References</a></li>
+    </ol>
+  </div>
+
+  <div class="not-prose bg-red-500/5 border border-red-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-red-300/90">
+      <strong class="text-red-400">These are protocol requirements, not suggestions.</strong> Implementations
+      that violate any invariant in this section are non-conformant. Safety invariants take precedence over
+      all other sections of this specification.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>6.1 Overview</h2>
+    <p>
+      Safety in RCAN is a layered concern. Hardware safety systems (emergency stops, physical limits) are
+      outside the protocol's scope. This section defines the <em>protocol-level</em> safety properties
+      that all RCAN implementations MUST maintain.
     </p>
-    <a href="/spec/#safety" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §6 in Full Specification →
-    </a>
-  </div>
+    <p>
+      Safety invariants apply regardless of the requesting principal's role. An OWNER cannot command a robot
+      to bypass local safety checks. A CREATOR cannot disable network-loss graceful degradation. The
+      invariants are unconditional.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="invariants">
+    <h2>6.2 The Seven Invariants</h2>
+    <div class="not-prose space-y-4">
+      {invariants.map(inv => (
+        <div class="bg-bg-card border border-border rounded-xl p-5">
+          <div class="flex items-start gap-4">
+            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 font-bold text-sm">{inv.num}</span>
+            <div>
+              <h3 class="font-bold text-text mb-1">{inv.title}</h3>
+              <p class="text-text-muted text-sm leading-relaxed">{inv.body}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="enforcement">
+    <h2>6.3 Enforcement Layer</h2>
+    <p>
+      Safety invariants MUST be enforced in the RCAN runtime layer, <em>before</em> payloads reach
+      application code or driver adapters. The enforcement order is:
+    </p>
+    <ol>
+      <li><strong>Token validation</strong> (§5) — reject unauthenticated requests</li>
+      <li><strong>Role &amp; scope check</strong> (§2) — reject insufficient privilege</li>
+      <li><strong>Rate limiting</strong> (Invariant 4) — drop excess requests</li>
+      <li><strong>Prompt injection scan</strong> (Invariant 7) — block suspicious NL instructions</li>
+      <li><strong>Confidence gate</strong> (§16.2) — block or escalate low-confidence commands</li>
+      <li><strong>HiTL gate</strong> (§16.3) — pause for human authorization if required</li>
+      <li><strong>Audit log write</strong> (Invariant 3) — record before dispatch</li>
+      <li><strong>Driver dispatch</strong> — only reached if all above pass</li>
+    </ol>
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Network loss:</strong> Invariant 2 requires that the robot
+      monitors connection health. Implementations SHOULD use a heartbeat mechanism with a timeout of
+      <code>latency_budget_ms × 2</code> before triggering safe-stop.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="crossref">
+    <h2>6.4 Cross-References</h2>
+    <ul>
+      <li><strong>§2</strong> — Role table with rate limits and session TTLs (Invariants 4 &amp; 5)</li>
+      <li><strong>§3</strong> — Priority.SAFETY message handling (Invariant 6)</li>
+      <li><strong>§8</strong> — <code>agent.latency_budget_ms</code> config key (Invariant 2)</li>
+      <li><strong>§16</strong> — AI Accountability: confidence gates, HiTL gates, audit records (Invariants 3 &amp; 7)</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-5/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §5 Authentication</a>
-    <a href="/spec/section-7/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§7 Federation →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-5/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §5 Authentication
+    </a>
+    <a href="/spec/section-7/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §7 Federation →
+    </a>
   </div>
 </DocsLayout>

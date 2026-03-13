@@ -1,0 +1,101 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const changes = [
+  { type: 'feat', text: '§1–§16 dedicated section pages — 16 core spec sections promoted from stub redirects to full dedicated pages with content, tables, code examples, and cross-references' },
+  { type: 'feat', text: 'CLAUDE.md agent context files added to all ecosystem repos (OpenCastor, rcan-py, rcan-spec, RRF) — standardizes agent onboarding' },
+  { type: 'chore', text: 'Compatibility: OpenCastor ≥2026.3.13.11, rcan-py ≥0.4.0 (SPEC_VERSION=1.4), rcan-ts ≥0.3.0' },
+];
+
+const sectionPages = [
+  { num: '§1',  title: 'Robot URI (RURI)',        href: '/spec/section-1/' },
+  { num: '§2',  title: 'Role-Based Access Control', href: '/spec/section-2/' },
+  { num: '§3',  title: 'Message Format',           href: '/spec/section-3/' },
+  { num: '§4',  title: 'Discovery (mDNS)',         href: '/spec/section-4/' },
+  { num: '§5',  title: 'Authentication',           href: '/spec/section-5/' },
+  { num: '§6',  title: 'Safety Invariants',        href: '/spec/section-6/' },
+  { num: '§7',  title: 'Federation',               href: '/spec/section-7/' },
+  { num: '§8',  title: 'Robot Config (RCAN File)', href: '/spec/section-8/' },
+  { num: '§9',  title: 'Capabilities',             href: '/spec/section-9/' },
+  { num: '§10', title: 'Autonomous Navigation',    href: '/spec/section-10/' },
+  { num: '§11', title: 'Behavior Scripts',         href: '/spec/section-11/' },
+  { num: '§12', title: 'Depth & Sensing',          href: '/spec/section-12/' },
+  { num: '§13', title: 'Telemetry Streaming',      href: '/spec/section-13/' },
+  { num: '§14', title: 'Provider Management',      href: '/spec/section-14/' },
+  { num: '§15', title: 'Swarm Coordination',       href: '/spec/section-15/' },
+  { num: '§16', title: 'AI Accountability',        href: '/spec/section-16/' },
+];
+
+const typeStyle: Record<string, string> = {
+  feat:  'bg-accent/10 text-accent border-accent/20',
+  fix:   'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  chore: 'bg-white/5 text-text-muted/60 border-white/10',
+};
+---
+
+<DocsLayout title="RCAN v1.4 Specification Snapshot" description="RCAN v1.4 — Latest stable release. §1–§16 receive dedicated section pages with full content.">
+
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm text-text-muted font-mono mb-8">
+      <a href="/spec" class="hover:text-accent transition-colors">Spec</a>
+      <span>/</span>
+      <span class="text-text">v1.4</span>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-3">
+        <h1 class="font-display text-4xl font-semibold text-text">RCAN v1.4</h1>
+        <span class="px-2 py-0.5 text-xs font-mono rounded border bg-accent/15 text-accent border-accent/30">Latest</span>
+      </div>
+      <p class="text-text-muted mb-1">Released <time datetime="2026-03-13">March 13, 2026</time></p>
+      <p class="text-text-muted leading-relaxed">
+        v1.4 completes the spec documentation layer: all 16 core spec sections (§1–§16) now have
+        dedicated standalone pages with full content, field tables, code examples, and cross-references.
+        Previously these were stub redirect pages pointing back to the monolithic spec.
+        v1.4 also standardizes agent onboarding across the ecosystem with CLAUDE.md context files.
+      </p>
+    </div>
+
+    <!-- What's New -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">What's New in v1.4</h2>
+      <div class="space-y-2">
+        {changes.map(c => (
+          <div class="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
+            <span class={`text-xs font-mono px-1.5 py-0.5 rounded border flex-shrink-0 mt-0.5 ${typeStyle[c.type]}`}>{c.type}</span>
+            <span class="text-text-muted text-sm">{c.text}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- New Section Pages -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">New Dedicated Section Pages</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {sectionPages.map(s => (
+          <a href={s.href} class="flex items-center gap-3 p-3 bg-bg-card border border-border rounded-lg hover:border-accent/30 transition-colors group">
+            <span class="font-mono text-xs text-accent flex-shrink-0 w-8">{s.num}</span>
+            <span class="text-sm text-text-muted group-hover:text-text transition-colors">{s.title}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="mb-12">
+      <h2 class="font-display text-2xl font-semibold text-text mb-6 pb-2 border-b border-border">Resources</h2>
+      <div class="flex flex-wrap gap-3">
+        <a href="/spec" class="px-4 py-2 bg-primary/20 text-accent border border-accent/30 rounded-lg text-sm font-medium hover:bg-primary/30 transition-colors">Full Spec →</a>
+        <a href="/spec/v1.3" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">← v1.3 Snapshot</a>
+        <a href="/changelog" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">Changelog</a>
+        <a href="/conformance" class="px-4 py-2 border border-border text-text-muted rounded-lg text-sm font-medium hover:text-accent hover:border-accent/30 transition-colors">Conformance Tests</a>
+      </div>
+    </section>
+
+  </div>
+
+</DocsLayout>

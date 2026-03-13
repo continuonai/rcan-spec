@@ -1,8 +1,70 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const protobufCode = `message RCANMessage {
+  string version        = 1;   // "1.3.0"
+  string message_id     = 2;   // UUID v4
+  string source_ruri    = 3;   // Sender RURI
+  string target_ruri    = 4;   // Recipient RURI or "broadcast"
+  string auth_token     = 5;   // JWT session token (optional for DISCOVER)
+  MessageType type      = 6;
+  bytes payload         = 7;   // Type-specific JSON payload
+  int64 timestamp_ms    = 8;
+  int32 ttl_ms          = 9;   // Time-to-live (0 = no expiry)
+  Priority priority     = 10;
+  string reply_to       = 11;  // RURI to reply to (optional)
+  repeated string scope = 12;  // Required scopes for this message
+
+  enum MessageType {
+    DISCOVER      = 1;
+    STATUS        = 2;
+    COMMAND       = 3;
+    STREAM        = 4;
+    EVENT         = 5;
+    HANDOFF       = 6;
+    ACK           = 7;
+    ERROR         = 8;
+    AUTHORIZE     = 9;   // HiTL out-of-band authorization (v1.2)
+    PENDING_AUTH  = 10;  // HiTL gate awaiting authorization (v1.2)
+    // §19 Skill Invocation
+    INVOKE             = 11;  // §19.2 — skill/behavior invocation
+    INVOKE_RESULT      = 12;  // §19.3 — result of INVOKE
+    // §21 Registry (wire values 13–14 were assigned before §19.4 was finalised)
+    REGISTRY_REGISTER  = 13;  // §21.4 — register robot with RRF
+    REGISTRY_RESOLVE   = 14;  // §21.5 — resolve RRN to RURI/metadata
+    // §19.4 Cancel — wire value 15 added after §21; logically part of §19
+    INVOKE_CANCEL      = 15;  // §19.4 — cancel an in-progress skill invocation
+  }
+
+  enum Priority {
+    LOW    = 1;
+    NORMAL = 2;
+    HIGH   = 3;
+    SAFETY = 4;  // Always processed first; cannot be rate-limited
+  }
+}`;
+
+const payloadTypes = [
+  { type: 'DISCOVER',          scope: 'none',    fields: 'capabilities[], ruri' },
+  { type: 'STATUS',            scope: 'status',  fields: 'state, battery_v, loop_latency_ms' },
+  { type: 'COMMAND',           scope: 'control', fields: 'instruction, image_b64 (optional)' },
+  { type: 'STREAM',            scope: 'stream',  fields: 'See §13 Telemetry Streaming' },
+  { type: 'EVENT',             scope: 'status',  fields: 'event_type, data' },
+  { type: 'HANDOFF',           scope: 'control', fields: 'target_ruri, reason' },
+  { type: 'ACK',               scope: '—',       fields: 'ref_id, ok' },
+  { type: 'ERROR',             scope: '—',       fields: 'code, message, ref_id' },
+  { type: 'AUTHORIZE',         scope: 'control', fields: 'ref_message_id (str), decision ("approve"|"deny")' },
+  { type: 'PENDING_AUTH',      scope: 'none',    fields: 'pending_id, action_type, description, timeout_remaining_ms' },
+  { type: 'INVOKE',            scope: 'control', fields: 'skill_id (str), params (obj), timeout_ms (int) — §19.2' },
+  { type: 'INVOKE_RESULT',     scope: '—',       fields: 'reply_to, status ("success"|"failure"|"timeout"|"cancelled"), result (obj) — §19.3' },
+  { type: 'REGISTRY_REGISTER', scope: 'admin',   fields: 'rrn (str), ruri (str), metadata (obj) — §21.4' },
+  { type: 'REGISTRY_RESOLVE',  scope: 'status',  fields: 'rrn (str) — §21.5; response carries ruri, metadata' },
+  { type: 'INVOKE_CANCEL',     scope: 'control', fields: 'payload.msg_id (str) — §19.4; msg_id of the INVOKE to cancel' },
+];
 ---
 
-<DocsLayout title="§3 Message Format" description="RCAN §3 — Message Format. All RCAN communication uses a common protobuf envelope (RCANMessage) with versioning, source/target RURIs, JWT auth token, message type, binary payload, TTL, and priority. This section defines the complete schema, all MessageType variants (DISCOVER through INVOKE_RESULT), and Priority levels.">
+<DocsLayout title="§3 Message Format" description="RCAN §3 — Message Format. Defines the common message envelope, all MessageType values, Priority levels, and per-type payload schemas.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§3 Message Format</h1>
   </div>
@@ -18,23 +80,120 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3.1</span> Overview</a></li>
+      <li><a href="#envelope"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3.2</span> Message Envelope</a></li>
+      <li><a href="#payload-types" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3.3</span> Payload Types</a></li>
+      <li><a href="#priority"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3.4</span> Priority Levels</a></li>
+      <li><a href="#encoding"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3.5</span> Encoding Requirements</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> All RCAN communication uses a common protobuf envelope (RCANMessage) with versioning, source/target RURIs, JWT auth token, message type, binary payload, TTL, and priority. This section defines the complete schema, all MessageType variants (DISCOVER through INVOKE_RESULT), and Priority levels.
+      <strong class="text-cyan-400">Overview:</strong> All RCAN messages use a common envelope. Implementations MUST support
+      JSON encoding; Protobuf encoding is RECOMMENDED for bandwidth-constrained links. The envelope carries
+      identity, routing, auth, and type metadata — the payload is type-specific.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>3.1 Overview</h2>
+    <p>
+      Every RCAN message — whether sent over WebSocket, HTTP, or a future transport — shares the same
+      envelope structure. The envelope provides: sender and recipient identification (via RURI), authentication
+      (JWT token), message type routing, a TTL for expiry, priority for queue ordering, and an optional
+      reply-to address.
     </p>
-    <a href="/spec/#messages" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §3 in Full Specification →
-    </a>
-  </div>
+  </section>
+
+  <hr />
+
+  <section id="envelope">
+    <h2>3.2 Message Envelope</h2>
+    <p>The normative definition is expressed in Protobuf 3. JSON serialization follows field names exactly.</p>
+    <div class="not-prose">
+      <CodeWindow code={protobufCode} language="protobuf" title="message_envelope.proto" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="payload-types">
+    <h2>3.3 Payload Types</h2>
+    <p>
+      The <code>type</code> field determines how the <code>payload</code> bytes are interpreted.
+      Each type requires a minimum scope; messages without sufficient scope MUST be rejected with an
+      <code>ERROR</code> response.
+    </p>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">MessageType</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Required Scope</th>
+            <th class="text-left py-3 text-text-muted font-medium">Payload Fields</th>
+          </tr>
+        </thead>
+        <tbody>
+          {payloadTypes.map(p => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{p.type}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{p.scope}</td>
+              <td class="py-3 text-text-muted text-xs">{p.fields}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="priority">
+    <h2>3.4 Priority Levels</h2>
+    <ul>
+      <li><strong>LOW (1)</strong> — Background telemetry, non-urgent status updates.</li>
+      <li><strong>NORMAL (2)</strong> — Standard commands and queries.</li>
+      <li><strong>HIGH (3)</strong> — Time-sensitive commands; may preempt NORMAL queue.</li>
+      <li><strong>SAFETY (4)</strong> — Emergency stop, safety commands. MUST skip rate-limiting queues and be processed before any other message. Cannot be rate-limited per §6.</li>
+    </ul>
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Safety invariant:</strong> Messages with <code>Priority.SAFETY</code>
+      bypass all rate limiting and queue ahead of all other messages. Implementations MUST NOT delay SAFETY messages
+      regardless of queue backpressure.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="encoding">
+    <h2>3.5 Encoding Requirements</h2>
+    <ul>
+      <li>Implementations MUST support JSON encoding for all message types.</li>
+      <li>Protobuf 3 encoding is RECOMMENDED for bandwidth-constrained or high-frequency links.</li>
+      <li>When using JSON, field names MUST match Protobuf field names exactly (no camelCase conversion).</li>
+      <li>The <code>message_id</code> field MUST be a UUID v4. Implementations MUST reject messages with duplicate <code>message_id</code> values within a session (idempotency guard).</li>
+      <li><code>timestamp_ms</code> is Unix time in milliseconds. Implementations SHOULD validate that timestamps are within ±30 seconds of local time to guard against replay attacks.</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-2/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §2 Role-Based Access Control</a>
-    <a href="/spec/section-4/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§4 Discovery (mDNS) →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-2/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §2 Role-Based Access Control
+    </a>
+    <a href="/spec/section-4/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §4 Discovery (mDNS) →
+    </a>
   </div>
 </DocsLayout>

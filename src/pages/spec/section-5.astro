@@ -1,8 +1,48 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const jwtExample = `{
+  "sub":   "550e8400-e29b-41d4-a716-446655440000",
+  "iss":   "rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6",
+  "aud":   "rcan://continuon.cloud/continuon/companion-v1/*",
+  "role":  "owner",
+  "scope": ["status", "control", "config", "training"],
+  "fleet": ["d3a4b5c6", "a1b2c3d4"],
+  "exp":   1735689600,
+  "iat":   1735603200
+}`;
+
+const gatewayJwtExample = `{
+  "sub":  "alice",
+  "role": "operator",
+  "iss":  "opencastor-gateway",
+  "exp":  1735689600,
+  "iat":  1735603200
+}
+
+/* Gateway roles map to RCAN roles:
+   admin    → OWNER  (level 4)
+   operator → LEASEE (level 3)
+   viewer   → GUEST  (level 1)  */`;
+
+const tokenEndpoint = `POST /auth/token
+Body:  { "username": "alice", "password": "..." }
+Reply: { "access_token": "...", "token_type": "bearer", "role": "operator" }`;
+
+const jwtClaims = [
+  { claim: 'sub',   req: 'MUST',   desc: 'Subject — UUID v4 of the principal (device or user)' },
+  { claim: 'iss',   req: 'MUST',   desc: 'Issuer — RURI of the issuing robot or gateway' },
+  { claim: 'aud',   req: 'MUST',   desc: 'Audience — RURI (or wildcard) of the target robot' },
+  { claim: 'role',  req: 'MUST',   desc: 'RCAN role string: owner, leasee, user, guest, creator' },
+  { claim: 'scope', req: 'MUST',   desc: 'Array of granted scopes (status, control, config, training, admin)' },
+  { claim: 'exp',   req: 'MUST',   desc: 'Expiry time (Unix seconds)' },
+  { claim: 'iat',   req: 'MUST',   desc: 'Issued-at time (Unix seconds)' },
+  { claim: 'fleet', req: 'SHOULD', desc: 'Array of device-id values this token is valid for' },
+];
 ---
 
-<DocsLayout title="§5 Authentication" description="RCAN §5 — Authentication. RCAN uses JWT bearer tokens for stateless, cryptographically verifiable authentication. This section defines required JWT claims (sub, iss, aud, role, scope, exp), signing algorithm requirements, token renewal flows, and how robots validate tokens against the issuer's public key.">
+<DocsLayout title="§5 Authentication" description="RCAN §5 — Authentication. Defines RCAN JWT structure, gateway tokens, verification order, and the token endpoint.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§5 Authentication</h1>
   </div>
@@ -18,23 +58,129 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5.1</span> Overview</a></li>
+      <li><a href="#rcan-jwt"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5.2</span> RCAN JWT (Device-Level)</a></li>
+      <li><a href="#gateway-jwt"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5.3</span> Gateway JWT (Operator-Level)</a></li>
+      <li><a href="#verification"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5.4</span> Verification Order</a></li>
+      <li><a href="#token-endpoint" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5.5</span> Token Endpoint</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> RCAN uses JWT bearer tokens for stateless, cryptographically verifiable authentication. This section defines required JWT claims (sub, iss, aud, role, scope, exp), signing algorithm requirements, token renewal flows, and how robots validate tokens against the issuer's public key.
+      <strong class="text-cyan-400">Overview:</strong> RCAN uses JWT (JSON Web Tokens) for authentication. Two token
+      types are defined: a full RCAN JWT (carrying role, scope, fleet claims) and a simplified gateway JWT
+      for human operators. All tokens MUST be validated before any message is dispatched.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>5.1 Overview</h2>
+    <p>
+      Authentication in RCAN is token-based. The <code>auth_token</code> field in the message envelope (§3)
+      carries a JWT. Robots MUST validate the token before processing any message type that requires a scope.
+      <code>DISCOVER</code> messages are the only type exempt from token validation.
     </p>
-    <a href="/spec/#auth" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §5 in Full Specification →
-    </a>
-  </div>
+    <p>
+      When <code>rcan_protocol.enable_jwt: true</code> is set in the robot config, all non-DISCOVER messages
+      without a valid token MUST be rejected with an <code>ERROR</code> response.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="rcan-jwt">
+    <h2>5.2 RCAN JWT (Device-Level)</h2>
+    <p>Full RCAN tokens include all identity, role, scope, and fleet claims:</p>
+    <div class="not-prose">
+      <CodeWindow code={jwtExample} language="json" title="rcan_session_token.jwt" />
+    </div>
+
+    <h3>Required claims</h3>
+    <div class="not-prose overflow-x-auto mt-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Claim</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Requirement</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {jwtClaims.map(c => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{c.claim}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{c.req}</td>
+              <td class="py-3 text-text-muted text-xs">{c.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="gateway-jwt">
+    <h2>5.3 Gateway JWT (Operator-Level)</h2>
+    <p>
+      Implementations MAY also issue simplified gateway tokens for human operators. These MUST be mapped
+      to a RCAN role before authorization decisions are made:
+    </p>
+    <div class="not-prose">
+      <CodeWindow code={gatewayJwtExample} language="json" title="gateway_token.jwt" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="verification">
+    <h2>5.4 Verification Order</h2>
+    <p>Implementations MUST validate tokens in this order:</p>
+    <ol>
+      <li>Validate JWT signature (HMAC-SHA256 minimum; RS256 recommended for production)</li>
+      <li>Check <code>exp</code> and <code>iat</code> claims</li>
+      <li>Verify <code>aud</code> matches the robot's RURI (wildcard matching allowed — §1.5)</li>
+      <li>Map <code>role</code> to RCAN level; check level ≥ required for requested scope</li>
+      <li>If <code>fleet</code> is present, verify target device-id is in the list</li>
+    </ol>
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Algorithm note:</strong> HMAC-SHA256 is acceptable for development
+      and LAN deployments. Production systems with remote principals MUST use RS256 (asymmetric) to prevent
+      shared-secret leakage across untrusted networks.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="token-endpoint">
+    <h2>5.5 Token Endpoint</h2>
+    <p>Implementations SHOULD expose a token endpoint for gateway authentication:</p>
+    <div class="not-prose">
+      <CodeWindow code={tokenEndpoint} language="http" title="auth-token-endpoint.http" />
+    </div>
+    <p>
+      The response token MUST be a valid JWT carrying the <code>role</code> mapped from the gateway role
+      system. The <code>token_type</code> field MUST be <code>"bearer"</code>.
+    </p>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-4/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §4 Discovery (mDNS)</a>
-    <a href="/spec/section-6/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§6 Safety Invariants →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-4/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §4 Discovery (mDNS)
+    </a>
+    <a href="/spec/section-6/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §6 Safety Invariants →
+    </a>
   </div>
 </DocsLayout>

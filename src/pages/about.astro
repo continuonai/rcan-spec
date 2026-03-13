@@ -12,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="mb-16">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Protocol v1.3 · March 2026
+        Protocol v1.4 · March 2026
       </div>
       <h1 class="text-4xl md:text-5xl font-bold text-text mb-6 leading-tight">
         The open protocol for<br/>
@@ -117,7 +117,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="absolute left-4 top-0 bottom-0 w-px bg-white/10"></div>
         {[
           { version: "v1.2", status: "archived", label: "Archived", desc: "AI Accountability Layer (§16): confidence gates, HiTL gates, model identity, thought log. Ed25519 signing. Commitment chain. §17–§20 + Appendix B (Distributed Registry, Capability Advertisement, INVOKE, Telemetry Fields, WebSocket)." },
-          { version: "v1.3", status: "live", label: "Current", desc: "§17–§20 + Appendix B promoted to Stable. §21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake. Conformance L4." },
+          { version: "v1.4", status: "live", label: "Current", desc: "§1–§16 dedicated section pages — all 16 core spec sections now have standalone pages with full content, code examples, and cross-references. CLAUDE.md agent context files added to all ecosystem repos." },
+          { version: "v1.3", status: "archived", label: "Archived", desc: "§17–§20 + Appendix B promoted to Stable. §21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake. Conformance L4." },
           { version: "v2.0", status: "vision", label: "Vision", desc: "Signed firmware manifests, supply chain attestation, ISO/TC 299 liaison, EU AI Act §16 reference implementation." },
         ].map(item => (
           <div class="flex gap-6 mb-8 relative pl-10">

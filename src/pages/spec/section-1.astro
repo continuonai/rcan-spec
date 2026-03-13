@@ -1,8 +1,36 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const ruriCanonical = `# Canonical form (with registry)
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6
+rcan://continuon.cloud/continuon/companion-v1/d3a4b5c6/arm
+rcan://my-server.lan/acme/bot-x1/a1b2c3d4:9000/teleop
+
+# Local shorthand (no registry; implies local.rcan)
+rcan://acme.bot-x1.a1b2c3d4        # → rcan://local.rcan/acme/bot-x1/a1b2c3d4
+rcan://opencastor.rover.abc123/nav  # → rcan://local.rcan/opencastor/rover/abc123/nav
+
+# Special addresses
+rcan://local.rcan/discovered/192.168.1.42:8080  # mDNS-discovered device`;
+
+const ruriRegex = `# Canonical RURI
+^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\d{1,5}))?(/[a-z][a-z0-9/-]*)?$
+
+# Local shorthand  (authority contains dots, no path segments for identity)
+^rcan://([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)\.([a-z0-9]{4,36})(/[a-z][a-z0-9/-]*)?$`;
+
+const components = [
+  { name: 'registry',      desc: 'Root registry domain (continuon.cloud, local.rcan)',                   req: 'Canonical only' },
+  { name: 'manufacturer',  desc: 'Manufacturer or organisation namespace',                                req: 'Yes' },
+  { name: 'model',         desc: 'Robot model identifier',                                                req: 'Yes' },
+  { name: 'device-id',     desc: 'UUID or 8-char hex short-form; dot-form uses any alphanumeric slug',   req: 'Yes' },
+  { name: 'port',          desc: 'Communication port (default: 8000)',                                    req: 'No' },
+  { name: 'capability',    desc: 'Specific endpoint path (e.g. /arm, /nav)',                              req: 'No' },
+];
 ---
 
-<DocsLayout title="§1 Robot URI (RURI)" description="RCAN §1 — Robot URI (RURI). Every robot on the RCAN network has a globally unique Robot URI (RURI). This section defines the two syntactic forms — canonical (with registry) and local shorthand — along with component definitions, validation regex patterns, and wildcard matching rules for JWT audience claims.">
+<DocsLayout title="§1 Robot URI (RURI)" description="RCAN §1 — Robot URI (RURI). Every robot on the RCAN network has a globally unique Robot URI (RURI). Defines canonical and shorthand forms, components, and validation patterns.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§1 Robot URI (RURI)</h1>
   </div>
@@ -18,23 +46,138 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.1</span> Overview</a></li>
+      <li><a href="#forms"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.2</span> Syntactic Forms</a></li>
+      <li><a href="#components"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.3</span> Components</a></li>
+      <li><a href="#validation"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.4</span> Validation Patterns</a></li>
+      <li><a href="#wildcards"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.5</span> Wildcard Matching</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> Every robot on the RCAN network has a globally unique Robot URI (RURI). This section defines the two syntactic forms — canonical (with registry) and local shorthand — along with component definitions, validation regex patterns, and wildcard matching rules for JWT audience claims.
+      <strong class="text-cyan-400">Overview:</strong> Every robot on the RCAN network has a globally unique Robot URI (RURI).
+      Two syntactic forms are valid: a canonical form (for cloud/registry deployments) and a local shorthand
+      (for LAN-only deployments). Parsers MUST support both forms.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Jump to the full specification for complete context and cross-references.
+  <hr />
+
+  <section id="overview">
+    <h2>1.1 Overview</h2>
+    <p>
+      The Robot URI (RURI) is the primary identifier for any RCAN-capable device. It uniquely identifies
+      a robot across registries, networks, and time. RURIs appear in JWT <code>aud</code> claims, message
+      envelopes, mDNS TXT records, and audit logs.
     </p>
-    <a href="/spec/#ruri" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §1 in Full Specification →
-    </a>
-  </div>
+    <p>
+      A RURI is always prefixed with the <code>rcan://</code> scheme. The authority section distinguishes
+      canonical from shorthand form: canonical URIs contain exactly one forward slash after the authority
+      (registry domain), while shorthand URIs use dot-separated segments and no registry.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="forms">
+    <h2>1.2 Syntactic Forms</h2>
+
+    <h3>Canonical form</h3>
+    <p>Used when a registry domain is available (cloud or self-hosted):</p>
+    <pre><code>rcan://&lt;registry&gt;/&lt;manufacturer&gt;/&lt;model&gt;/&lt;device-id&gt;[:&lt;port&gt;][/&lt;capability&gt;]</code></pre>
+
+    <h3>Local shorthand</h3>
+    <p>
+      When no registry domain is needed (LAN-only deployments), the authority section uses dot-separated
+      segments. Parsers MUST expand this to the canonical form with <code>local.rcan</code> as the registry:
+    </p>
+    <pre><code>rcan://&lt;manufacturer&gt;.&lt;model&gt;.&lt;instance&gt;[/&lt;capability&gt;]</code></pre>
+    <p>
+      Example: <code>rcan://opencastor.rover.abc123</code> expands to
+      <code>rcan://local.rcan/opencastor/rover/abc123</code>
+    </p>
+
+    <div class="not-prose">
+      <CodeWindow code={ruriCanonical} language="bash" title="ruri-examples.txt" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="components">
+    <h2>1.3 Components</h2>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Component</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Description</th>
+            <th class="text-left py-3 text-text-muted font-medium">Required</th>
+          </tr>
+        </thead>
+        <tbody>
+          {components.map(c => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{c.name}</td>
+              <td class="py-3 pr-4 text-text-muted">{c.desc}</td>
+              <td class="py-3 text-text-faint text-xs">{c.req}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="validation">
+    <h2>1.4 Validation Patterns</h2>
+    <p>Implementations MUST use the following regex patterns to validate RURIs before processing:</p>
+    <div class="not-prose">
+      <CodeWindow code={ruriRegex} language="text" title="ruri-validation.regex" />
+    </div>
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Note:</strong> The device-id segment accepts either a full UUID v4
+      (<code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>) or an 8-character lowercase hex short-form.
+      The dot-form shorthand accepts any alphanumeric slug of 4–36 characters.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="wildcards">
+    <h2>1.5 Wildcard Matching</h2>
+    <p>
+      The <code>*</code> character MAY appear in any segment for <strong>audience matching in JWT tokens</strong>.
+      Wildcards are only valid in JWT <code>aud</code> claims — not in operational message routing.
+    </p>
+    <p>Examples:</p>
+    <ul>
+      <li><code>rcan://continuon.cloud/continuon/companion-v1/*</code> — grants access to all devices of that model</li>
+      <li><code>rcan://continuon.cloud/continuon/*/d3a4b5c6</code> — grants access to a specific device across all models of that manufacturer</li>
+      <li><code>rcan://local.rcan/*/*/abc123</code> — grants access to a specific device on any local registry</li>
+    </ul>
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80">
+        <strong class="text-cyan-400">Cross-reference:</strong> Wildcard matching is used in §5 Authentication
+        to validate the <code>aud</code> claim of JWT tokens. See also §2 for fleet-scoped tokens.
+      </p>
+    </div>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← Full Specification</a>
-    <a href="/spec/section-2/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§2 Role-Based Access Control →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-2/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §2 Role-Based Access Control →
+    </a>
   </div>
 </DocsLayout>

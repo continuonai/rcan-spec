@@ -3,10 +3,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v1.3',
+    version: 'v1.4',
     date: '2026-03-13',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'feat', text: '§1–§16 dedicated section pages — all 16 spec sections now have standalone dedicated pages with full content, tables, code examples, and cross-references' },
+      { type: 'feat', text: 'CLAUDE.md agent context files added to all ecosystem repos (OpenCastor, rcan-py, rcan-spec, RRF)' },
+      { type: 'chore', text: 'Compatibility matrix updated for OpenCastor ≥2026.3.13.11, rcan-py ≥0.4.0, rcan-ts ≥0.3.0' },
+    ],
+  },
+    {
+    version: 'v1.3',
+    date: '2026-03-13',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'feat', text: '§17–§20 + Appendix B promoted from Draft to Stable' },
       { type: 'feat', text: '§21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake' },

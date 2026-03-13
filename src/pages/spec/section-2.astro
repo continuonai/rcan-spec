@@ -1,8 +1,31 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const roles = [
+  { role: 'CREATOR', level: 5, rateLimit: 'Unlimited', ttl: 'None',  perms: 'Full hardware/software control, OTA push, safety override' },
+  { role: 'OWNER',   level: 4, rateLimit: '1000/min',  ttl: '8 h',   perms: 'Configuration, skill installation, user management' },
+  { role: 'LEASEE',  level: 3, rateLimit: '500/min',   ttl: '2 h',   perms: 'Time-bound operational control, cannot change ownership' },
+  { role: 'USER',    level: 2, rateLimit: '100/min',   ttl: '1 h',   perms: 'Operational control within allowed modes' },
+  { role: 'GUEST',   level: 1, rateLimit: '10/min',    ttl: '5 min', perms: 'Status viewing, read-only telemetry, text chat' },
+];
+
+const scopes = [
+  { scope: 'status',   minRole: 'GUEST',   grants: 'Read health, telemetry, sensor data' },
+  { scope: 'control',  minRole: 'USER',    grants: 'Issue commands, drive motors, run behaviors' },
+  { scope: 'config',   minRole: 'OWNER',   grants: 'Modify RCAN config, reload, OTA' },
+  { scope: 'training', minRole: 'OWNER',   grants: 'Submit episodes, trigger learner, export data' },
+  { scope: 'admin',    minRole: 'CREATOR', grants: 'Safety overrides, hardware resets, key rotation' },
+];
+
+const gatewayRoles = [
+  { gw: 'admin',    rcan: 'OWNER (4)',  scopes: 'status, control, config, training' },
+  { gw: 'operator', rcan: 'LEASEE (3)', scopes: 'status, control' },
+  { gw: 'viewer',   rcan: 'GUEST (1)',  scopes: 'status' },
+];
 ---
 
-<DocsLayout title="§2 Role-Based Access Control" description="RCAN §2 — Role-Based Access Control. RCAN defines a five-level role hierarchy (GUEST → USER → LEASEE → OWNER → CREATOR) where higher roles inherit all lower-role permissions. This section specifies per-role rate limits, session TTLs, fine-grained scope identifiers, and the gateway role mapping for human operators.">
+<DocsLayout title="§2 Role-Based Access Control" description="RCAN §2 — Role-Based Access Control. Defines the five-level role hierarchy, fine-grained scopes, and gateway role mapping.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§2 Role-Based Access Control</h1>
   </div>
@@ -18,23 +41,160 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.1</span> Overview</a></li>
+      <li><a href="#role-hierarchy" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.2</span> Role Hierarchy</a></li>
+      <li><a href="#scopes"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.3</span> Scopes</a></li>
+      <li><a href="#gateway-roles"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.4</span> Gateway Roles</a></li>
+      <li><a href="#conformance"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.5</span> Conformance Requirements</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> RCAN defines a five-level role hierarchy (GUEST → USER → LEASEE → OWNER → CREATOR) where higher roles inherit all lower-role permissions. This section specifies per-role rate limits, session TTLs, fine-grained scope identifiers, and the gateway role mapping for human operators.
+      <strong class="text-cyan-400">Overview:</strong> RCAN defines a five-level role hierarchy. Higher roles inherit
+      all permissions of lower roles. Roles are embedded in JWT tokens and enforced at the protocol layer
+      before any command reaches the driver.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>2.1 Overview</h2>
+    <p>
+      Access control in RCAN operates on two axes: <strong>roles</strong> (coarse-grained trust levels) and
+      <strong>scopes</strong> (fine-grained permission grants). Both are carried in JWT tokens and validated
+      before any message is dispatched.
     </p>
-    <a href="/spec/#roles" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §2 in Full Specification →
-    </a>
-  </div>
+    <p>
+      Role inheritance is strict: a principal with role OWNER also has all permissions of LEASEE, USER,
+      and GUEST. Roles are not additive across tokens; the highest role in the current session's token applies.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="role-hierarchy">
+    <h2>2.2 Role Hierarchy</h2>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Role</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Level</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Rate Limit</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Session TTL</th>
+            <th class="text-left py-3 text-text-muted font-medium">Key Permissions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {roles.map(r => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono font-bold text-accent text-xs">{r.role}</td>
+              <td class="py-3 pr-4 text-text">{r.level}</td>
+              <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.rateLimit}</td>
+              <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.ttl}</td>
+              <td class="py-3 text-text-muted text-xs">{r.perms}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">TTL enforcement:</strong> Control sessions expire per session TTL.
+      Explicit renewal MUST be required before timeout. Implicit renewal MUST NOT occur. See §6 Safety Invariants.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="scopes">
+    <h2>2.3 Scopes</h2>
+    <p>Scopes are fine-grained permissions included in JWT tokens. A scope is only valid if the principal's
+    role meets or exceeds the minimum role for that scope.</p>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Scope</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Minimum Role</th>
+            <th class="text-left py-3 text-text-muted font-medium">Grants</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scopes.map(s => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{s.scope}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{s.minRole}</td>
+              <td class="py-3 text-text-muted text-xs">{s.grants}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="gateway-roles">
+    <h2>2.4 Gateway Roles</h2>
+    <p>
+      Implementations MAY expose a simplified three-level gateway role system for human operators,
+      mapped onto RCAN roles as follows:
+    </p>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Gateway Role</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">RCAN Role</th>
+            <th class="text-left py-3 text-text-muted font-medium">Default Scopes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {gatewayRoles.map(g => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{g.gw}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{g.rcan}</td>
+              <td class="py-3 text-text-muted text-xs">{g.scopes}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="conformance">
+    <h2>2.5 Conformance Requirements</h2>
+    <ul>
+      <li>Implementations MUST enforce role-based rate limiting per source RURI.</li>
+      <li>Session TTLs MUST be enforced. Expired sessions MUST be rejected with an <code>ERROR</code> response.</li>
+      <li><code>AUTHORIZE</code> messages MUST be issued by principals with OWNER (level 4) or CREATOR (level 5) role.
+          Any attempt from a lower role MUST be audited and rejected. See §16.3.</li>
+      <li>Messages with <code>Priority.SAFETY</code> MUST skip rate-limiting queues (§6).</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-1/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §1 Robot URI (RURI)</a>
-    <a href="/spec/section-3/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§3 Message Format →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-1/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §1 Robot URI (RURI)
+    </a>
+    <a href="/spec/section-3/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §3 Message Format →
+    </a>
   </div>
 </DocsLayout>

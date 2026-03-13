@@ -1,8 +1,14 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const registryExamples = [
+  { ruri: 'rcan://continuon.cloud/...', desc: 'Managed service (Continuon cloud registry)' },
+  { ruri: 'rcan://my-local-server.lan/...', desc: 'Self-hosted registry on a private LAN server' },
+  { ruri: 'rcan://robotics-co-op.org/...', desc: 'Community-run registry' },
+];
 ---
 
-<DocsLayout title="§7 Federation" description="RCAN §7 — Federation. Robots can communicate securely across registry boundaries via the RCAN federation protocol. This section defines inter-registry trust establishment, cross-domain RURI resolution, message routing between federated nodes, and the mutual authentication handshake.">
+<DocsLayout title="§7 Federation" description="RCAN §7 — Federation. RCAN is federated like email, not centralised like a platform. Defines the Right to Redirect and Local Supremacy principles.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§7 Federation</h1>
   </div>
@@ -18,23 +24,138 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7.1</span> Overview</a></li>
+      <li><a href="#registry-model"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7.2</span> Registry Model</a></li>
+      <li><a href="#right-to-redirect" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7.3</span> The Right to Redirect</a></li>
+      <li><a href="#local-supremacy" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7.4</span> Local Supremacy</a></li>
+      <li><a href="#crossref"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7.5</span> Cross-References</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> Robots can communicate securely across registry boundaries via the RCAN federation protocol. This section defines inter-registry trust establishment, cross-domain RURI resolution, message routing between federated nodes, and the mutual authentication handshake.
+      <strong class="text-cyan-400">Overview:</strong> RCAN is <strong>federated like email</strong>, not centralised
+      like a platform. Any organisation can run its own registry. Robots can migrate between registries.
+      Local discovery always works, even if the cloud registry is unavailable.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>7.1 Overview</h2>
+    <p>
+      Federation means that no single organisation controls the RCAN namespace. The <code>rcan://</code>
+      scheme is open; anyone can operate a registry at their own domain. Robots are identified by their full
+      RURI including the registry domain — just as email addresses are identified by their domain.
     </p>
-    <a href="/spec/#federation" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §7 in Full Specification →
-    </a>
-  </div>
+    <p>
+      This design prevents vendor lock-in: a robot purchased from one manufacturer can be migrated to a
+      community registry without hardware changes. The robot's local capabilities remain intact regardless
+      of what happens to any upstream registry.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="registry-model">
+    <h2>7.2 Registry Model</h2>
+    <p>RCAN supports multiple co-existing registries:</p>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">RURI Prefix</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {registryExamples.map(r => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{r.ruri}</td>
+              <td class="py-3 text-text-muted text-xs">{r.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4">
+      The <code>local.rcan</code> pseudo-registry is reserved for LAN-only deployments. RURIs with
+      <code>local.rcan</code> MUST NOT be routed to any external network; they are valid only within the
+      local broadcast domain.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="right-to-redirect">
+    <h2>7.3 The Right to Redirect</h2>
+    <div class="not-prose bg-bg-card border border-border rounded-xl p-6 mb-6">
+      <blockquote class="border-l-4 border-accent pl-4 text-text-muted italic">
+        <strong class="text-text not-italic">The Right to Redirect:</strong> An OWNER (level 4) can always
+        change the robot's upstream registry without losing local discovery.
+      </blockquote>
+    </div>
+    <p>
+      This means:
+    </p>
+    <ul>
+      <li>Changing the <code>rcan_protocol.registry</code> config key is a valid OWNER operation.</li>
+      <li>After a registry change, mDNS broadcast continues with the new RURI (§4).</li>
+      <li>Existing session tokens from the old registry MUST be invalidated after the change.</li>
+      <li>No third party (including the previous registry operator) can prevent an OWNER from migrating.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="local-supremacy">
+    <h2>7.4 Local Supremacy</h2>
+    <div class="not-prose bg-bg-card border border-border rounded-xl p-6 mb-6">
+      <blockquote class="border-l-4 border-accent pl-4 text-text-muted italic">
+        <strong class="text-text not-italic">Local Supremacy:</strong> Even if the cloud registry deletes
+        your ID, <code>_rcan._tcp.local</code> discovery always works.
+      </blockquote>
+    </div>
+    <p>
+      The robot's mDNS advertisement (§4) operates independently of any cloud registry. A robot that is
+      removed from a cloud registry continues to be discoverable on the LAN and continues to operate
+      normally. Cloud deregistration MUST NOT disable local functionality.
+    </p>
+    <p>
+      This also applies to network outages: an RCAN robot MUST degrade gracefully on internet loss (§6
+      Invariant 2) and continue to accept local commands from LAN principals with valid local-registry tokens.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="crossref">
+    <h2>7.5 Cross-References</h2>
+    <ul>
+      <li><strong>§1</strong> — RURI canonical form and local.rcan pseudo-registry</li>
+      <li><strong>§4</strong> — mDNS discovery (local supremacy mechanism)</li>
+      <li><strong>§6</strong> — Graceful degradation on network loss (Safety Invariant 2)</li>
+      <li><strong>§21</strong> — Robot Registry Integration: RRN↔RURI canonical mapping and registry handshake</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-6/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §6 Safety Invariants</a>
-    <a href="/spec/section-8/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§8 Robot Config (RCAN File) →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-6/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §6 Safety Invariants
+    </a>
+    <a href="/spec/section-8/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §8 Robot Config (RCAN File) →
+    </a>
   </div>
 </DocsLayout>

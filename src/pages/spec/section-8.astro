@@ -1,8 +1,87 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const rcanConfig = `rcan_version: "1.3.0"
+
+metadata:
+  robot_name:   "Alex"
+  robot_uuid:   "550e8400-e29b-41d4-a716-446655440000"
+  author:       "craigm26"
+  license:      "Apache-2.0"
+  manufacturer: "opencastor"
+  model:        "rover"
+  tags:         [rpi5, camera, i2c, rover]
+
+agent:
+  provider:          "huggingface"
+  model:             "Qwen/Qwen2.5-VL-7B-Instruct"
+  latency_budget_ms: 3000
+  safety_stop:       true
+
+provider_fallback:
+  enabled:          true
+  provider:         "ollama"
+  model:            "llama3.2:3b"
+  quota_cooldown_s: 3600
+  alert_channel:    "telegram"
+
+physics:
+  type: "differential_drive"
+  dof:  2
+  wheel_circumference_m:  0.21
+  turn_time_per_deg_s:    0.008
+
+drivers:
+  - protocol: "pca9685"
+    port:     "/dev/i2c-1"
+    address:  "0x40"
+    channels:
+      left_motor:  0
+      right_motor: 1
+
+camera:
+  type:          "oakd"
+  resolution:    [640, 480]
+  framerate:     30
+  depth_enabled: true
+
+rcan_protocol:
+  port:         8000
+  capabilities: [nav, vision, chat, teleop, status]
+  enable_mdns:  true
+  enable_jwt:   true`;
+
+const agentGatesConfig = `agent:
+  confidence_gates:
+    - scope: control
+      min_confidence: 0.5
+      on_fail: escalate   # escalate | block | allow
+    - scope: nav
+      min_confidence: 0.7
+      on_fail: block
+    - scope: admin
+      min_confidence: 0.95
+      on_fail: block
+  hitl_gates:
+    - action_types: [arm_deploy]
+      require_auth: true
+      auth_timeout_ms: 30000
+      on_timeout: block   # block | allow
+      notify: [whatsapp]`;
+
+const topLevelKeys = [
+  { key: 'rcan_version', type: 'string (semver)', desc: 'Spec version this config targets' },
+  { key: 'metadata',     type: 'object',          desc: 'Identity: robot_name, robot_uuid, author, license' },
+  { key: 'agent',        type: 'object',          desc: 'LLM provider, model, latency budget, safety flags' },
+  { key: 'physics',      type: 'object',          desc: 'Kinematic type, DoF, chassis dimensions' },
+  { key: 'drivers',      type: 'array (≥1)',      desc: 'Hardware driver configurations' },
+  { key: 'network',      type: 'object',          desc: 'Telemetry and remote access flags' },
+  { key: 'rcan_protocol',type: 'object',          desc: 'Port, capabilities, mDNS, JWT flags' },
+];
 ---
 
-<DocsLayout title="§8 Robot Config (RCAN File)" description="RCAN §8 — Robot Config (RCAN File). The .rcan.yaml configuration file defines a robot's identity, capabilities, AI/brain provider, safety settings, security keys, and messaging parameters. This section specifies the full schema, required vs. optional fields, and config loading and validation rules at startup.">
+<DocsLayout title="§8 Robot Config (RCAN File)" description="RCAN §8 — Robot Configuration File. Defines the .rcan.yaml schema, required top-level keys, and optional blocks for AI gates, camera, swarm, and provider fallback.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§8 Robot Config (RCAN File)</h1>
   </div>
@@ -18,23 +97,129 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.1</span> Overview</a></li>
+      <li><a href="#required-keys" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.2</span> Required Top-Level Keys</a></li>
+      <li><a href="#example"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.3</span> Reference Example</a></li>
+      <li><a href="#ai-gates"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.4</span> AI Gate Configuration (v1.2)</a></li>
+      <li><a href="#optional"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.5</span> Optional Blocks</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> The .rcan.yaml configuration file defines a robot's identity, capabilities, AI/brain provider, safety settings, security keys, and messaging parameters. This section specifies the full schema, required vs. optional fields, and config loading and validation rules at startup.
+      <strong class="text-cyan-400">Overview:</strong> A RCAN config file (extension <code>.rcan.yaml</code>) is the
+      primary artifact that describes a robot. It defines identity, hardware drivers, LLM agent configuration,
+      network settings, and capability declarations. Implementations MUST validate configs against the published
+      JSON Schema before starting any runtime.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>8.1 Overview</h2>
+    <p>
+      The <code>.rcan.yaml</code> file is the single source of truth for a robot's configuration. It is
+      human-readable, version-controlled, and schema-validated. One robot = one config file.
     </p>
-    <a href="/spec/#config" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §8 in Full Specification →
-    </a>
-  </div>
+    <p>
+      Implementations MUST validate configs against the JSON Schema published at
+      <a href="https://rcan.dev/schema/rcan.schema.json" class="text-accent hover:underline">rcan.dev/schema/rcan.schema.json</a>
+      before starting any runtime. A config that fails schema validation MUST prevent the runtime from starting.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="required-keys">
+    <h2>8.2 Required Top-Level Keys</h2>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Key</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Type</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {topLevelKeys.map(k => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{k.key}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{k.type}</td>
+              <td class="py-3 text-text-muted text-xs">{k.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="example">
+    <h2>8.3 Reference Example</h2>
+    <div class="not-prose">
+      <CodeWindow code={rcanConfig} language="yaml" title="alex.rcan.yaml" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="ai-gates">
+    <h2>8.4 AI Gate Configuration (v1.2)</h2>
+    <p>
+      The <code>agent</code> block accepts two optional keys introduced in v1.2 for AI-driven robots:
+      <code>confidence_gates</code> and <code>hitl_gates</code>. Both are arrays of gate objects evaluated
+      at command dispatch time. See §16 for full behavioral specification.
+    </p>
+    <div class="not-prose">
+      <CodeWindow code={agentGatesConfig} language="yaml" title="agent-gates.rcan.yaml" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="optional">
+    <h2>8.5 Optional Blocks</h2>
+    <p>
+      The full JSON Schema includes the following optional config blocks. These extend the robot's
+      capabilities without requiring changes to the required keys:
+    </p>
+    <ul>
+      <li><code>tiered_brain</code> — multi-layer LLM stack (reactive / fast / planner)</li>
+      <li><code>reactive</code> — rule-based pre-filter for common actions</li>
+      <li><code>learner</code> — online learning and episode recording</li>
+      <li><code>camera</code> — camera type, resolution, framerate, depth</li>
+      <li><code>audio</code> — microphone and TTS configuration</li>
+      <li><code>channels</code> — notification channels (telegram, whatsapp, etc.)</li>
+      <li><code>swarm</code> — swarm membership and coordination (§15)</li>
+      <li><code>ros2</code> — ROS2 bridge configuration</li>
+      <li><code>provider_fallback</code> — quota fallback provider (§14)</li>
+      <li><code>offline_fallback</code> — offline fallback provider (§14)</li>
+    </ul>
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80">
+        <strong class="text-cyan-400">Schema reference:</strong> Full JSON Schema at
+        <a href="https://rcan.dev/schema/rcan.schema.json" class="text-accent hover:underline">rcan.dev/schema/rcan.schema.json</a>
+      </p>
+    </div>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-7/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §7 Federation</a>
-    <a href="/spec/section-9/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§9 Capabilities →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-7/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §7 Federation
+    </a>
+    <a href="/spec/section-9/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §9 Capabilities →
+    </a>
   </div>
 </DocsLayout>
