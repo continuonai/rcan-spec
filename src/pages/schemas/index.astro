@@ -12,6 +12,7 @@ const messageSchemas = [
   { file: 'pending_auth.json', type: 10, name: 'PENDING_AUTH',  desc: '§16 HiTL gate — AI command awaiting human authorization' },
   { file: 'invoke.json',       type: 11, name: 'INVOKE',        desc: '§19 Behavior/skill invocation request — skill name, parameters, and session context' },
   { file: 'invoke-result.json', type: 12, name: 'INVOKE_RESULT', desc: '§19 Invocation response — result payload, status, and execution metadata' },
+  { file: 'invoke-cancel.json', type: 15, name: 'INVOKE_CANCEL', desc: '§19.4 Best-effort cancellation of an in-flight INVOKE — correlates by cancel_msg_id' },
 ];
 
 const coreSchemas = [
