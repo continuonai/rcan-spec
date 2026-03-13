@@ -1,8 +1,65 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const aiAuditRecord = `{
+  "principal": "operator@rcan://local.rcan/opencastor/rover/abc123",
+  "ruri": "rcan://local.rcan/opencastor/rover/abc123",
+  "timestamp_ms": 1740721482934,
+  "message_id": "a3f7c1d9",
+  "event": "COMMAND",
+  "outcome": "ok",
+  "ai": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "model_version": "2026-02",
+    "layer": "planner",
+    "confidence": 0.87,
+    "inference_latency_ms": 1240,
+    "thought_id": "th_8f3a2c...",
+    "escalated": false
+  }
+}`;
+
+const thoughtLogResponse = `GET /api/thoughts/<thought_id>
+→ {
+    "id": "th_8f3a2c...",
+    "timestamp_ms": 1740721482100,
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "layer": "planner",
+    "instruction": "Move toward the open doorway",
+    "context_snapshot": { "...": "..." },
+    "action": { "type": "move", "linear_x": 0.4 },
+    "confidence": 0.87,
+    "reasoning": "<omitted — requires config scope>",
+    "escalated_from": null
+  }`;
+
+const aiFields = [
+  { field: 'ai.provider',            req: 'MUST',          type: 'string',        desc: 'Non-empty string identifying the LLM provider (e.g. "anthropic", "openai", "ollama").' },
+  { field: 'ai.model',               req: 'MUST',          type: 'string',        desc: 'Model identifier as returned by or configured for the provider.' },
+  { field: 'ai.model_version',       req: 'SHOULD',        type: 'string',        desc: 'Model version or snapshot date (e.g. "2026-02").' },
+  { field: 'ai.layer',               req: 'SHOULD',        type: 'string',        desc: 'One of reactive, fast, or planner; or originating agent name for multi-agent systems.' },
+  { field: 'ai.confidence',          req: 'SHOULD',        type: 'float [0–1]',   desc: 'Self-reported or harness-computed confidence. MUST be omitted (not defaulted to 1.0) if unavailable.' },
+  { field: 'ai.inference_latency_ms', req: 'SHOULD',       type: 'number',        desc: 'Wall-clock time for the inference call in milliseconds.' },
+  { field: 'ai.thought_id',          req: 'SHOULD',        type: 'string',        desc: 'Unique ID enabling correlation with the full Thought log (§16.4).' },
+  { field: 'ai.escalated',           req: 'MUST if present', type: 'bool',        desc: 'true if produced after automatic escalation from a lower brain layer; false otherwise (do not omit).' },
+];
+
+const onFailBehaviors = [
+  { value: 'block',    behavior: 'Command MUST NOT be dispatched. An ERROR response with code CONFIDENCE_GATE_FAIL MUST be returned.' },
+  { value: 'escalate', behavior: 'Command MUST be re-submitted to the next higher brain layer before dispatch. If no higher layer is available, equivalent to block.' },
+  { value: 'allow',    behavior: 'Command proceeds. The gate miss MUST be noted in the audit record with "gate_bypassed": true.' },
+];
+
+const onTimeoutBehaviors = [
+  { value: 'block', behavior: 'Command is dropped; ERROR returned; event audited.' },
+  { value: 'allow', behavior: 'Command is dispatched after timeout with "hitl_timeout_bypass": true in the audit record.' },
+];
 ---
 
-<DocsLayout title="§16 AI Accountability" description="RCAN §16 — AI Accountability. Every AI-generated action must be traceable and auditable. This section defines the Human-in-the-Loop (HiTL) authorization gate, commitment records, the AUTHORIZE/PENDING_AUTH message flow, and the append-only audit log requirements for all AI-driven robots.">
+<DocsLayout title="§16 AI Accountability" description="RCAN §16 — AI Accountability. Defines model identity in audit records, confidence gates, Human-in-the-Loop gates, and the Thought Log for full reasoning auditability.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§16 AI Accountability</h1>
   </div>
@@ -18,23 +75,214 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">16.1</span> Overview</a></li>
+      <li><a href="#model-identity" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">16.2</span> Model Identity in Audit Records</a></li>
+      <li><a href="#confidence-gates" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">16.3</span> Confidence Gates</a></li>
+      <li><a href="#hitl-gates"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">16.4</span> Human-in-the-Loop Gates</a></li>
+      <li><a href="#thought-log"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">16.5</span> Thought Log</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> Every AI-generated action must be traceable and auditable. This section defines the Human-in-the-Loop (HiTL) authorization gate, commitment records, the AUTHORIZE/PENDING_AUTH message flow, and the append-only audit log requirements for all AI-driven robots.
+      <strong class="text-cyan-400">Overview:</strong> As RCAN robots become AI-driven rather than rule-driven, the
+      reasoning layer becomes a first-class safety surface. §6 defines what was commanded; §16 defines requirements
+      for recording <em>how</em> a command was produced, gating dispatch on model confidence, and requiring
+      human authorization for high-risk actions.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>16.1 Overview</h2>
+    <p>
+      All features in this section are backwards-compatible with v1.1 implementations. New audit fields
+      are SHOULD; gate behavior is opt-in via config. Implementations that do not use AI inference are
+      unaffected by this section.
     </p>
-    <a href="/spec/#ai-accountability" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §16 in Full Specification →
-    </a>
-  </div>
+    <p>
+      The three mechanisms defined here are complementary:
+    </p>
+    <ul>
+      <li><strong>Model Identity</strong> — record which AI model produced a command and with what confidence.</li>
+      <li><strong>Confidence Gates</strong> — automatically block or escalate low-confidence commands.</li>
+      <li><strong>HiTL Gates</strong> — require explicit human approval for high-risk action types.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="model-identity">
+    <h2>16.2 Model Identity in Audit Records</h2>
+    <p>
+      If a COMMAND message was produced by an AI inference call, implementations SHOULD include an
+      <code>ai</code> block in the audit record alongside the existing §6 fields.
+    </p>
+
+    <h3>Schema</h3>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Field</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Requirement</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Type</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {aiFields.map(f => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{f.field}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{f.req}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-faint">{f.type}</td>
+              <td class="py-3 text-text-muted text-xs">{f.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="mt-6">Example extended audit record</h3>
+    <div class="not-prose">
+      <CodeWindow code={aiAuditRecord} language="json" title="audit-record-v1.2.json" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="confidence-gates">
+    <h2>16.3 Confidence Gates</h2>
+    <p>
+      Implementations MAY declare confidence gates under <code>agent.confidence_gates</code> in the
+      <code>.rcan.yaml</code> config file. A gate is a protocol-level constraint that blocks or escalates
+      low-confidence commands before they reach the driver layer.
+    </p>
+
+    <h3>Gate evaluation</h3>
+    <ol>
+      <li>Before dispatching any COMMAND with a gated scope, the runtime MUST evaluate the corresponding gate.</li>
+      <li>If <code>ai.confidence</code> is present and below <code>min_confidence</code>, the gate fails.</li>
+      <li>If <code>ai.confidence</code> is absent and a gate is declared for that scope, the gate defaults to
+      the <code>on_fail</code> behavior (treat missing confidence as a gate miss).</li>
+    </ol>
+
+    <h3><code>on_fail</code> behaviors</h3>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Value</th>
+            <th class="text-left py-3 text-text-muted font-medium">Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          {onFailBehaviors.map(b => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs font-bold">{b.value}</td>
+              <td class="py-3 text-text-muted text-xs">{b.behavior}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="hitl-gates">
+    <h2>16.4 Human-in-the-Loop Gates</h2>
+    <p>
+      Implementations MAY declare Human-in-the-Loop (HiTL) gates under <code>agent.hitl_gates</code>
+      in the <code>.rcan.yaml</code> config file. A HiTL gate requires explicit human authorization
+      before a matched command is dispatched.
+    </p>
+
+    <h3>Gate trigger sequence</h3>
+    <p>
+      When <code>require_auth: true</code> is declared and an incoming command's action type matches
+      an entry in <code>action_types</code>:
+    </p>
+    <ol>
+      <li>The implementation MUST NOT dispatch the command immediately.</li>
+      <li>The implementation MUST emit a <code>PENDING_AUTH</code> message to all channels listed in
+      <code>notify</code>, including the original <code>message_id</code>, <code>action_type</code>,
+      a human-readable description, and the <code>auth_timeout_ms</code>.</li>
+      <li>The implementation MUST await an <code>AUTHORIZE</code> message from a principal with OWNER
+      (level 4) or CREATOR (level 5) role within <code>auth_timeout_ms</code> milliseconds.</li>
+      <li>On <code>decision: approve</code> — the command is dispatched and both the original command
+      and the <code>AUTHORIZE</code> message are logged in the audit chain.</li>
+      <li>On <code>decision: deny</code> or timeout expiry — the command is dropped, an <code>ERROR</code>
+      is returned to the originating principal, and the event is audited.</li>
+    </ol>
+
+    <h3><code>on_timeout</code> behaviors</h3>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Value</th>
+            <th class="text-left py-3 text-text-muted font-medium">Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          {onTimeoutBehaviors.map(b => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs font-bold">{b.value}</td>
+              <td class="py-3 text-text-muted text-xs">{b.behavior}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Role enforcement:</strong> <code>AUTHORIZE</code> messages
+      from principals below OWNER role MUST be rejected. A rejected <code>AUTHORIZE</code> attempt MUST
+      be audited (see §2). All gate events (trigger, approve, deny, timeout) MUST be written to the
+      audit log with the original <code>message_id</code>.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="thought-log">
+    <h2>16.5 Thought Log</h2>
+    <p>
+      Implementations SHOULD expose a queryable Thought log to enable full reasoning auditability and
+      correlation with command audit records.
+    </p>
+
+    <div class="not-prose">
+      <CodeWindow code={thoughtLogResponse} language="json" title="thought-log-response.json" />
+    </div>
+
+    <h3>Access control</h3>
+    <ul>
+      <li>The endpoint MUST require at minimum <code>status</code> scope to read any Thought record.</li>
+      <li>The <code>reasoning</code> field MUST be omitted from the response unless the caller holds
+      <code>config</code> scope (OWNER or higher). This prevents prompt extraction by lower-privilege
+      principals who have operational access but not configuration access.</li>
+      <li>Implementations that do not expose the Thought log MUST return <code>404</code> or
+      <code>501 Not Implemented</code> at this path.</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-15/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §15 Swarm Coordination</a>
-    <a href="/spec/section-17/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§17 Distributed Registry Node Protocol →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-15/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §15 Swarm Coordination
+    </a>
+    <a href="/spec/section-17/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §17 Distributed Registry Node Protocol →
+    </a>
   </div>
 </DocsLayout>

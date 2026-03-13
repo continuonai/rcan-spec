@@ -1,8 +1,42 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const telemetryWs = `// WS /ws/telemetry?token=<jwt>
+// Server pushes at 5 Hz (200 ms interval)
+{
+  "ts":              1735603215123,    // Unix ms
+  "loop_latency_ms": 412,
+  "loop_count":      8423,
+  "battery_v":       7.4,             // null if not available
+  "provider":        "huggingface",
+  "using_fallback":  false,
+  "obstacles": {
+    "left_cm":    45,
+    "center_cm":  82,
+    "right_cm":   38,
+    "nearest_cm": 38
+  },
+  "nav_running":     false,
+  "behavior_name":   null,
+  "paused":          false
+}`;
+
+const fields = [
+  { field: 'ts',               req: 'MUST',   type: 'int (Unix ms)',  desc: 'Server timestamp at message emission.' },
+  { field: 'loop_latency_ms',  req: 'MUST',   type: 'number',         desc: 'Duration of the last perception-action loop iteration.' },
+  { field: 'loop_count',       req: 'MUST',   type: 'int',            desc: 'Total loop iterations since runtime start.' },
+  { field: 'paused',           req: 'MUST',   type: 'bool',           desc: 'Whether the perception-action loop is currently paused.' },
+  { field: 'provider',         req: 'SHOULD', type: 'string',         desc: 'Active LLM provider name (e.g. "huggingface").' },
+  { field: 'using_fallback',   req: 'SHOULD', type: 'bool',           desc: 'Whether the fallback provider is currently active (§14).' },
+  { field: 'battery_v',        req: 'SHOULD', type: 'number | null',  desc: 'Battery voltage in Volts; null if not available.' },
+  { field: 'obstacles',        req: 'SHOULD', type: 'object | null',  desc: 'Obstacle zone schema from §12. null if no depth hardware.' },
+  { field: 'nav_running',      req: 'SHOULD', type: 'bool',           desc: 'Whether a nav job is currently executing (§10).' },
+  { field: 'behavior_name',    req: 'SHOULD', type: 'string | null',  desc: 'Name of the currently running behavior, or null (§11).' },
+];
 ---
 
-<DocsLayout title="§13 Telemetry Streaming" description="RCAN §13 — Telemetry Streaming. Robots publish continuous telemetry via the STREAM message type. This section defines the telemetry field registry, subscription model, sampling intervals, backpressure handling rules, and the schemas for battery, pose, velocity, and custom telemetry payloads.">
+<DocsLayout title="§13 Telemetry Streaming" description="RCAN §13 — Telemetry Streaming. Defines the WebSocket telemetry endpoint, push rate, authentication, and required field schema.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§13 Telemetry Streaming</h1>
   </div>
@@ -18,23 +52,132 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.1</span> Overview</a></li>
+      <li><a href="#endpoint"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.2</span> WebSocket Endpoint</a></li>
+      <li><a href="#schema"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.3</span> Message Schema</a></li>
+      <li><a href="#auth"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.4</span> Authentication</a></li>
+      <li><a href="#crossref"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">13.5</span> Cross-References</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> Robots publish continuous telemetry via the STREAM message type. This section defines the telemetry field registry, subscription model, sampling intervals, backpressure handling rules, and the schemas for battery, pose, velocity, and custom telemetry payloads.
+      <strong class="text-cyan-400">Overview:</strong> Implementations MUST expose a WebSocket endpoint at
+      <code>/ws/telemetry</code> that pushes robot state at a configurable rate (default: 5 Hz). The telemetry
+      stream aggregates loop metrics, battery state, obstacle data, provider status, and navigation state
+      into a single JSON object per frame.
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>13.1 Overview</h2>
+    <p>
+      The telemetry stream is the primary real-time data channel between a robot and monitoring clients.
+      It is push-based (server → client) and designed for dashboards, logging systems, and LLM context windows.
     </p>
-    <a href="/spec/#telemetry" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §13 in Full Specification →
-    </a>
-  </div>
+    <p>
+      The default push rate is 5 Hz (200 ms interval). Implementations MAY support configurable rates
+      via a query parameter, but MUST default to 5 Hz. Rates above 20 Hz are NOT RECOMMENDED as they
+      may saturate LAN bandwidth for lightweight embedded clients.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="endpoint">
+    <h2>13.2 WebSocket Endpoint</h2>
+    <p>The endpoint is:</p>
+    <div class="not-prose bg-bg-alt border border-white/10 rounded-lg p-4 font-mono text-sm my-4">
+      <span class="text-cyan-400">wss://robot:8000/ws/telemetry?token=&lt;jwt&gt;</span>
+    </div>
+    <ul>
+      <li>The port MUST match <code>rcan_protocol.port</code> from the robot's config (default: 8000).</li>
+      <li>TLS (wss://) is RECOMMENDED for remote connections; ws:// is acceptable on LAN.</li>
+      <li>The server MUST send JSON-encoded text frames. Binary frames are not defined for this endpoint.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="schema">
+    <h2>13.3 Message Schema</h2>
+    <div class="not-prose">
+      <CodeWindow code={telemetryWs} language="json" title="telemetry-message.json" />
+    </div>
+
+    <h3>Field requirements</h3>
+    <div class="not-prose overflow-x-auto mt-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Field</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Requirement</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Type</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fields.map(f => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{f.field}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{f.req}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-faint">{f.type}</td>
+              <td class="py-3 text-text-muted text-xs">{f.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="auth">
+    <h2>13.4 Authentication</h2>
+    <p>
+      The WebSocket endpoint SHOULD accept a <code>token</code> query parameter. The token MUST be a
+      valid RCAN JWT (§5) with at least <code>status</code> scope.
+    </p>
+    <ul>
+      <li>When <code>rcan_protocol.enable_jwt: true</code>, unauthenticated connections MUST be rejected
+      with HTTP 401 during the WebSocket upgrade handshake.</li>
+      <li>When <code>rcan_protocol.enable_jwt: false</code>, unauthenticated connections MAY be accepted
+      (development/LAN mode only).</li>
+      <li>Token expiry MUST be checked at connection time. Expired tokens MUST be rejected.</li>
+      <li>Implementations SHOULD NOT re-validate the token on every push frame (once per connection is sufficient).</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="crossref">
+    <h2>13.5 Cross-References</h2>
+    <ul>
+      <li><strong>§12</strong> — Obstacle zone schema (<code>obstacles</code> field)</li>
+      <li><strong>§14</strong> — Provider management (<code>provider</code>, <code>using_fallback</code> fields)</li>
+      <li><strong>§10</strong> — Navigation state (<code>nav_running</code> field)</li>
+      <li><strong>§11</strong> — Behavior state (<code>behavior_name</code> field)</li>
+      <li><strong>§20</strong> — Telemetry Field Registry (extended joint telemetry schema)</li>
+      <li><strong>Appendix B</strong> — WebSocket Transport Binding (TLS, framing, reconnect)</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-12/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §12 Depth & Sensing</a>
-    <a href="/spec/section-14/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§14 Provider Management →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-12/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §12 Depth &amp; Sensing
+    </a>
+    <a href="/spec/section-14/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §14 Provider Management →
+    </a>
   </div>
 </DocsLayout>

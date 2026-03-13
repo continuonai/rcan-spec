@@ -1,8 +1,25 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const fallbackConfig = `provider_fallback:
+  enabled:          true
+  provider:         "ollama"        # target fallback provider
+  model:            "llama3.2:3b"
+  quota_cooldown_s: 3600            # seconds before retrying primary
+  alert_channel:    "telegram"      # channel to notify on switch
+
+offline_fallback:
+  enabled:         true
+  provider:        "ollama"
+  model:           "llama3.2:3b"
+  check_interval_s: 30
+  alert_channel:   "telegram"`;
+
+const healthCheck = `health_check() → { "ok": bool, "latency_ms": float, "error": str | null }`;
 ---
 
-<DocsLayout title="§14 Provider Management" description="RCAN §14 — Provider Management. RCAN supports pluggable AI and service providers (LLMs, vision models, TTS, STT). This section defines the provider registry schema, how providers are declared in the RCAN config, health-check contracts, and the fallback chain when a primary provider is unavailable.">
+<DocsLayout title="§14 Provider Management" description="RCAN §14 — Provider Management. Defines quota fallback, offline fallback, health check interface, and alert channel configuration for LLM provider resilience.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">§14 Provider Management</h1>
   </div>
@@ -18,23 +35,116 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </a>
   </div>
 
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#overview"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.1</span> Overview</a></li>
+      <li><a href="#quota-fallback"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.2</span> Quota Fallback</a></li>
+      <li><a href="#offline-fallback"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.3</span> Offline Fallback</a></li>
+      <li><a href="#config"            class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.4</span> Config Blocks</a></li>
+      <li><a href="#health-check"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">14.5</span> Health Check Interface</a></li>
+    </ol>
+  </div>
+
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> RCAN supports pluggable AI and service providers (LLMs, vision models, TTS, STT). This section defines the provider registry schema, how providers are declared in the RCAN config, health-check contracts, and the fallback chain when a primary provider is unavailable.
+      <strong class="text-cyan-400">Overview:</strong> An RCAN robot runtime manages one or more LLM "brains" and
+      MUST handle provider failures gracefully. Two fallback strategies are defined: quota fallback
+      (for billing/rate-limit errors) and offline fallback (for network loss).
     </p>
   </div>
 
-  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-8 mb-10 text-center">
-    <p class="text-text-muted mb-6 text-sm">
-      This section is part of the main RCAN Protocol Specification page. Individual section pages are planned for v1.4.
+  <hr />
+
+  <section id="overview">
+    <h2>14.1 Overview</h2>
+    <p>
+      LLM providers are external dependencies that can fail for various reasons: quota exhaustion,
+      rate limiting, network outages, or service disruptions. RCAN defines protocol-level resilience
+      strategies so that robots continue to operate when their primary provider is unavailable.
     </p>
-    <a href="/spec/#providers" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
-      Read §14 in Full Specification →
-    </a>
-  </div>
+    <p>
+      Both fallback strategies are transparent to the controller: the robot continues to accept commands
+      and produce responses. The telemetry stream (§13) exposes <code>provider</code> and
+      <code>using_fallback</code> fields so monitoring systems can observe provider state.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="quota-fallback">
+    <h2>14.2 Quota Fallback (<code>provider_fallback</code>)</h2>
+    <p>
+      When the primary provider returns a quota or billing error (HTTP 402/429 or keywords:
+      <em>credits exhausted</em>, <em>rate limit</em>, <em>quota</em>), the runtime MUST:
+    </p>
+    <ol>
+      <li>Switch transparently to the configured <code>provider_fallback</code> provider.</li>
+      <li>Record the switch timestamp in the audit log.</li>
+      <li>Alert the operator via the configured <code>alert_channel</code>.</li>
+      <li>After <code>quota_cooldown_s</code> seconds, attempt to restore the primary provider on the next request.</li>
+    </ol>
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm"><strong class="text-yellow-400">Detection:</strong> Implementations MUST detect quota errors
+      both by HTTP status code (402, 429) and by case-insensitive substring matching on the error message body.
+      Not all providers return consistent status codes for quota exhaustion.</p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="offline-fallback">
+    <h2>14.3 Offline Fallback (<code>offline_fallback</code>)</h2>
+    <p>
+      When the runtime detects internet loss (via HTTP reachability check), it MUST switch
+      to a local provider (Ollama, llama.cpp, MLX, etc.) automatically. The switch back to cloud
+      occurs after connectivity is restored and verified.
+    </p>
+    <ul>
+      <li>Reachability checks SHOULD be performed every <code>check_interval_s</code> seconds.</li>
+      <li>A single failed check SHOULD NOT trigger fallback — implementations SHOULD require 2–3 consecutive failures.</li>
+      <li>After switching back to the primary provider, the runtime MUST re-check connectivity before
+      each request until 5 consecutive successful checks have been recorded.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="config">
+    <h2>14.4 Config Blocks</h2>
+    <div class="not-prose">
+      <CodeWindow code={fallbackConfig} language="yaml" title="provider-fallback.rcan.yaml" />
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="health-check">
+    <h2>14.5 Health Check Interface</h2>
+    <p>All provider adapters MUST implement a <code>health_check()</code> method:</p>
+    <div class="not-prose">
+      <CodeWindow code={healthCheck} language="typescript" title="provider-health-check.ts" />
+    </div>
+    <ul>
+      <li>The runtime SHOULD call <code>health_check()</code> on the fallback provider at startup.</li>
+      <li>The result MUST be surfaced at <code>GET /api/provider/health</code>.</li>
+      <li>A failed health check on the fallback provider at startup SHOULD log a warning but MUST NOT
+      prevent the runtime from starting (the primary may still be healthy).</li>
+      <li>The <code>latency_ms</code> field provides round-trip inference latency for monitoring purposes.</li>
+    </ul>
+  </section>
+
+  <hr />
 
   <div class="not-prose mt-12 flex flex-wrap gap-4">
-    <a href="/spec/section-13/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">← §13 Telemetry Streaming</a>
-    <a href="/spec/section-15/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">§15 Swarm Coordination →</a>
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/section-13/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← §13 Telemetry Streaming
+    </a>
+    <a href="/spec/section-15/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §15 Swarm Coordination →
+    </a>
   </div>
 </DocsLayout>
