@@ -674,3 +674,275 @@ describe("validateManifest", () => {
     expect(validateManifest({ ...valid, description: "extra", capabilities: ["nav"] })).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §19 — INVOKE / INVOKE_RESULT validation
+// Covers: message structure, status values, error codes, reply_to correlation,
+//         and INVOKE_CANCEL structure (issue #107)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Mirrors the INVOKE message validator that an RCAN node would apply */
+function validateInvoke(msg: unknown): boolean {
+  if (typeof msg !== "object" || msg === null) return false;
+  const m = msg as Record<string, unknown>;
+  if (m.type !== "INVOKE") return false;
+  if (typeof m.msg_id !== "string" || !m.msg_id) return false;
+  const p = m.payload as Record<string, unknown> | undefined;
+  if (!p || typeof p.behavior !== "string" || !p.behavior) return false;
+  return true;
+}
+
+/** Mirrors the INVOKE_RESULT message validator */
+function validateInvokeResult(msg: unknown): boolean {
+  if (typeof msg !== "object" || msg === null) return false;
+  const m = msg as Record<string, unknown>;
+  if (m.type !== "INVOKE_RESULT") return false;
+  if (typeof m.msg_id !== "string" || !m.msg_id) return false;
+  // reply_to is the correlation field (§19.3) — must reference originating INVOKE msg_id
+  if (typeof m.reply_to !== "string" || !m.reply_to) return false;
+  const p = m.payload as Record<string, unknown> | undefined;
+  if (!p) return false;
+  const validStatuses = ["success", "failure", "timeout", "cancelled"];
+  if (!validStatuses.includes(p.status as string)) return false;
+  return true;
+}
+
+/** INVOKE_CANCEL validator (§19.4) */
+function validateInvokeCancel(msg: unknown): boolean {
+  if (typeof msg !== "object" || msg === null) return false;
+  const m = msg as Record<string, unknown>;
+  if (m.type !== "INVOKE_CANCEL") return false;
+  const p = m.payload as Record<string, unknown> | undefined;
+  // payload.msg_id = the msg_id of the INVOKE to cancel
+  if (!p || typeof p.msg_id !== "string" || !p.msg_id) return false;
+  return true;
+}
+
+describe("§19 INVOKE message validation", () => {
+  it("accepts a well-formed INVOKE", () => {
+    expect(validateInvoke({
+      type: "INVOKE", msg_id: "abc-001",
+      payload: { behavior: "navigate_to", params: { x: 1.0, y: 2.0 } },
+    })).toBe(true);
+  });
+
+  it("rejects INVOKE without behavior in payload", () => {
+    expect(validateInvoke({
+      type: "INVOKE", msg_id: "abc-002",
+      payload: { params: {} },
+    })).toBe(false);
+  });
+
+  it("rejects INVOKE without msg_id", () => {
+    expect(validateInvoke({
+      type: "INVOKE",
+      payload: { behavior: "wave" },
+    })).toBe(false);
+  });
+
+  it("rejects wrong type", () => {
+    expect(validateInvoke({
+      type: "STATUS", msg_id: "abc-003",
+      payload: { behavior: "wave" },
+    })).toBe(false);
+  });
+
+  it("rejects non-object input", () => {
+    expect(validateInvoke("INVOKE")).toBe(false);
+    expect(validateInvoke(null)).toBe(false);
+  });
+});
+
+describe("§19 INVOKE_RESULT message validation", () => {
+  const base = {
+    type: "INVOKE_RESULT",
+    msg_id: "res-001",
+    reply_to: "abc-001",
+    payload: { status: "success", result: { reached: true } },
+  };
+
+  it("accepts a well-formed success result", () => {
+    expect(validateInvokeResult(base)).toBe(true);
+  });
+
+  it("accepts all valid status values", () => {
+    for (const status of ["success", "failure", "timeout", "cancelled"]) {
+      expect(validateInvokeResult({ ...base, payload: { status } })).toBe(true);
+    }
+  });
+
+  it("rejects invalid status value", () => {
+    expect(validateInvokeResult({ ...base, payload: { status: "pending" } })).toBe(false);
+    expect(validateInvokeResult({ ...base, payload: { status: "" } })).toBe(false);
+  });
+
+  it("rejects missing reply_to (correlation field §19.3)", () => {
+    const { reply_to: _r, ...noReplyTo } = base;
+    expect(validateInvokeResult(noReplyTo)).toBe(false);
+  });
+
+  it("rejects empty reply_to", () => {
+    expect(validateInvokeResult({ ...base, reply_to: "" })).toBe(false);
+  });
+
+  it("reply_to must match originating INVOKE msg_id", () => {
+    // Structural check: reply_to is a non-empty string matching the INVOKE's msg_id
+    const invoke = { type: "INVOKE", msg_id: "invoke-xyz", payload: { behavior: "wave" } };
+    const result = { ...base, reply_to: invoke.msg_id };
+    expect(result.reply_to).toBe(invoke.msg_id);
+    expect(validateInvokeResult(result)).toBe(true);
+  });
+
+  it("rejects missing payload", () => {
+    const { payload: _p, ...noPayload } = base;
+    expect(validateInvokeResult(noPayload)).toBe(false);
+  });
+});
+
+describe("§19 INVOKE_CANCEL message validation", () => {
+  it("accepts a well-formed INVOKE_CANCEL", () => {
+    expect(validateInvokeCancel({
+      type: "INVOKE_CANCEL",
+      payload: { msg_id: "abc-001" },
+    })).toBe(true);
+  });
+
+  it("rejects INVOKE_CANCEL without payload.msg_id", () => {
+    expect(validateInvokeCancel({
+      type: "INVOKE_CANCEL",
+      payload: {},
+    })).toBe(false);
+  });
+
+  it("rejects INVOKE_CANCEL without payload", () => {
+    expect(validateInvokeCancel({ type: "INVOKE_CANCEL" })).toBe(false);
+  });
+
+  it("rejects wrong type", () => {
+    expect(validateInvokeCancel({ type: "INVOKE", payload: { msg_id: "x" } })).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §20 — Telemetry Field Registry validation
+// Covers: standard field name validation, field structure, joint state,
+//         robot state, sensor fields, odometry  (issue #107)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const STANDARD_JOINT_FIELDS = new Set([
+  "joint.position", "joint.velocity", "joint.effort",
+  "joint.temperature", "joint.current",
+]);
+
+const STANDARD_ROBOT_STATE_FIELDS = new Set([
+  "robot.mode", "robot.battery_pct", "robot.estop",
+  "robot.pose.x", "robot.pose.y", "robot.pose.z",
+  "robot.pose.yaw", "robot.velocity.linear", "robot.velocity.angular",
+]);
+
+const STANDARD_SENSOR_FIELDS = new Set([
+  "sensor.imu.accel.x", "sensor.imu.accel.y", "sensor.imu.accel.z",
+  "sensor.imu.gyro.x", "sensor.imu.gyro.y", "sensor.imu.gyro.z",
+  "sensor.lidar.range", "sensor.camera.fps", "sensor.camera.width", "sensor.camera.height",
+]);
+
+const STANDARD_ODOMETRY_FIELDS = new Set([
+  "odom.x", "odom.y", "odom.z",
+  "odom.vx", "odom.vy", "odom.omega",
+]);
+
+function isTelemetryFieldValid(field: string): boolean {
+  return (
+    STANDARD_JOINT_FIELDS.has(field) ||
+    STANDARD_ROBOT_STATE_FIELDS.has(field) ||
+    STANDARD_SENSOR_FIELDS.has(field) ||
+    STANDARD_ODOMETRY_FIELDS.has(field) ||
+    field.startsWith("x.") // custom extension namespace
+  );
+}
+
+function validateTelemetryFrame(frame: unknown): boolean {
+  if (typeof frame !== "object" || frame === null) return false;
+  const f = frame as Record<string, unknown>;
+  if (typeof f.ruri !== "string" || !f.ruri) return false;
+  if (typeof f.timestamp_ms !== "number") return false;
+  if (typeof f.fields !== "object" || f.fields === null) return false;
+  return true;
+}
+
+describe("§20 Telemetry — standard field name registry", () => {
+  it("accepts all standard joint fields", () => {
+    for (const field of STANDARD_JOINT_FIELDS) {
+      expect(isTelemetryFieldValid(field)).toBe(true);
+    }
+  });
+
+  it("accepts all standard robot-state fields", () => {
+    for (const field of STANDARD_ROBOT_STATE_FIELDS) {
+      expect(isTelemetryFieldValid(field)).toBe(true);
+    }
+  });
+
+  it("accepts all standard sensor fields", () => {
+    for (const field of STANDARD_SENSOR_FIELDS) {
+      expect(isTelemetryFieldValid(field)).toBe(true);
+    }
+  });
+
+  it("accepts all odometry fields", () => {
+    for (const field of STANDARD_ODOMETRY_FIELDS) {
+      expect(isTelemetryFieldValid(field)).toBe(true);
+    }
+  });
+
+  it("accepts custom extension fields (x. namespace)", () => {
+    expect(isTelemetryFieldValid("x.hailo.confidence")).toBe(true);
+    expect(isTelemetryFieldValid("x.custom.field")).toBe(true);
+  });
+
+  it("rejects unknown non-namespaced fields", () => {
+    expect(isTelemetryFieldValid("battery_level")).toBe(false);
+    expect(isTelemetryFieldValid("speed")).toBe(false);
+    expect(isTelemetryFieldValid("")).toBe(false);
+  });
+});
+
+describe("§20 Telemetry — frame structure validation", () => {
+  const validFrame = {
+    ruri: "rcan://rcan.dev/craigm26/opencastor-rpi5-hailo/bob-001",
+    timestamp_ms: 1710000000000,
+    fields: {
+      "robot.battery_pct": 87.4,
+      "robot.mode": "autonomous",
+      "odom.x": 1.23,
+    },
+  };
+
+  it("accepts a well-formed telemetry frame", () => {
+    expect(validateTelemetryFrame(validFrame)).toBe(true);
+  });
+
+  it("rejects frame without ruri", () => {
+    const { ruri: _r, ...noRuri } = validFrame;
+    expect(validateTelemetryFrame(noRuri)).toBe(false);
+  });
+
+  it("rejects frame without timestamp_ms", () => {
+    const { timestamp_ms: _t, ...noTs } = validFrame;
+    expect(validateTelemetryFrame(noTs)).toBe(false);
+  });
+
+  it("rejects frame without fields", () => {
+    const { fields: _f, ...noFields } = validFrame;
+    expect(validateTelemetryFrame(noFields)).toBe(false);
+  });
+
+  it("rejects non-object input", () => {
+    expect(validateTelemetryFrame(null)).toBe(false);
+    expect(validateTelemetryFrame("frame")).toBe(false);
+  });
+
+  it("timestamp_ms must be a number (not a string)", () => {
+    expect(validateTelemetryFrame({ ...validFrame, timestamp_ms: "1710000000000" })).toBe(false);
+  });
+});
