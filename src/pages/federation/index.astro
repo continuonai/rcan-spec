@@ -8,17 +8,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 >
 
   <!-- ─── HERO ───────────────────────────────────────────────────── -->
-  <h1>Federated Robot Registry <span style="display:block;font-size:0.5em;color:var(--color-text-muted,#888);font-weight:400;margin-top:.35rem;">No Single Point of Control</span></h1>
+  <h1>Federated Robot Registry <span class="block text-[0.5em] text-text-muted font-normal mt-1.5">No Single Point of Control</span></h1>
 
-  <p style="font-size:1.1rem;max-width:680px;line-height:1.7;">
+  <p class="text-[1.1rem] max-w-[680px] leading-[1.7]">
     RCAN robot identity is <strong>federated</strong> — like DNS. Anyone can host a registry. Every robot's address encodes its authoritative registry directly in the RURI, so resolution never requires a central intermediary.
   </p>
 
-  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin:1.5rem 0 2.5rem;">
-    <a href="/governance" style="display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:.5rem;color:inherit;text-decoration:none;font-size:.9rem;">
+  <div class="flex gap-4 flex-wrap my-6 mb-10">
+    <a href="/governance" class="inline-flex items-center gap-1.5 px-4 py-2 bg-white/[.06] border border-white/[.12] rounded-lg text-[.9rem] text-inherit no-underline">
       ⚖️ Governance Charter
     </a>
-    <a href="https://github.com/continuonai/rcan-spec/blob/main/docs/federation/federation-protocol.md" style="display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:.5rem;color:inherit;text-decoration:none;font-size:.9rem;">
+    <a href="https://github.com/continuonai/rcan-spec/blob/main/docs/federation/federation-protocol.md" class="inline-flex items-center gap-1.5 px-4 py-2 bg-white/[.06] border border-white/[.12] rounded-lg text-[.9rem] text-inherit no-underline">
       📄 Full Protocol Spec
     </a>
   </div>
@@ -30,15 +30,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <h2>The Registry Is in the Address</h2>
     <p>A RURI carries the authoritative registry in its scheme — no lookup table required.</p>
 
-    <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.5rem 2rem;margin:1.5rem 0;overflow-x:auto;">
-      <div style="font-family:monospace;font-size:1.05rem;letter-spacing:.01em;white-space:nowrap;">
-        <span style="color:#60a5fa;">rcan://</span><span style="color:#f59e0b;font-weight:700;">robots.acme-corp.com</span><span style="color:#a3e635;">/acme/logistics-bot/</span><span style="color:#c084fc;">lgb-00a1b2c3</span>
+    <div class="bg-bg-alt border border-white/10 rounded-xl px-8 py-6 my-6 overflow-x-auto">
+      <div class="font-mono text-[1.05rem] tracking-[.01em] whitespace-nowrap">
+        <span class="text-blue-400">rcan://</span><span class="text-amber-400 font-bold">robots.acme-corp.com</span><span class="text-lime-400">/acme/logistics-bot/</span><span class="text-purple-400">lgb-00a1b2c3</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-top:1rem;font-size:.8rem;color:var(--color-text-muted,#888);">
-        <div><span style="color:#60a5fa;">scheme</span><br/>Always <code>rcan://</code></div>
-        <div><span style="color:#f59e0b;">registry</span><br/>Authoritative registry host</div>
-        <div><span style="color:#a3e635;">manufacturer / model</span><br/>Namespace within registry</div>
-        <div><span style="color:#c084fc;">device-id</span><br/>Unique identifier (≥ 8 chars)</div>
+      <div class="grid grid-cols-4 gap-2 mt-4 text-[.8rem] text-text-muted">
+        <div><span class="text-blue-400">scheme</span><br/>Always <code>rcan://</code></div>
+        <div><span class="text-amber-400">registry</span><br/>Authoritative registry host</div>
+        <div><span class="text-lime-400">manufacturer / model</span><br/>Namespace within registry</div>
+        <div><span class="text-purple-400">device-id</span><br/>Unique identifier (≥ 8 chars)</div>
       </div>
     </div>
 
@@ -53,70 +53,70 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <p>Resolution follows a deterministic chain. Each step is attempted in order; the first success wins.</p>
 
     <!-- Resolution chain visual -->
-    <div style="margin:2rem 0;display:flex;flex-direction:column;gap:0;align-items:flex-start;max-width:560px;">
+    <div class="my-8 flex flex-col items-start max-w-[560px]">
 
       <!-- Step 1 -->
-      <div style="display:flex;align-items:stretch;width:100%;">
-        <div style="display:flex;flex-direction:column;align-items:center;width:2.5rem;flex-shrink:0;">
-          <div style="width:2rem;height:2rem;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;">1</div>
-          <div style="width:2px;flex:1;background:rgba(255,255,255,.12);margin:.25rem 0;"></div>
+      <div class="flex items-stretch w-full">
+        <div class="flex flex-col items-center w-10 flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0">1</div>
+          <div class="w-0.5 flex-1 bg-white/[.12] my-1"></div>
         </div>
-        <div style="flex:1;margin-left:1rem;padding-bottom:1.5rem;">
-          <div style="font-weight:700;font-size:.95rem;">Local Cache</div>
-          <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.2rem;">Check in-memory or on-disk cache. If a valid, non-expired federation proof exists → return it.</div>
-          <div style="display:inline-block;margin-top:.4rem;padding:.2rem .6rem;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:.35rem;font-size:.75rem;color:#86efac;">Cache hit: ≈0 ms</div>
+        <div class="flex-1 ml-4 pb-6">
+          <div class="font-bold text-[.95rem]">Local Cache</div>
+          <div class="text-[.85rem] text-text-muted mt-1">Check in-memory or on-disk cache. If a valid, non-expired federation proof exists → return it.</div>
+          <div class="inline-block mt-1.5 px-2.5 py-0.5 bg-green-500/[.12] border border-green-500/25 rounded-[.35rem] text-xs text-green-300">Cache hit: ≈0 ms</div>
         </div>
       </div>
 
       <!-- Step 2 -->
-      <div style="display:flex;align-items:stretch;width:100%;">
-        <div style="display:flex;flex-direction:column;align-items:center;width:2.5rem;flex-shrink:0;">
-          <div style="width:2rem;height:2rem;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;">2</div>
-          <div style="width:2px;flex:1;background:rgba(255,255,255,.12);margin:.25rem 0;"></div>
+      <div class="flex items-stretch w-full">
+        <div class="flex flex-col items-center w-10 flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-violet-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0">2</div>
+          <div class="w-0.5 flex-1 bg-white/[.12] my-1"></div>
         </div>
-        <div style="flex:1;margin-left:1rem;padding-bottom:1.5rem;">
-          <div style="font-weight:700;font-size:.95rem;">Parse Registry from RURI</div>
-          <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.2rem;">Extract the registry hostname directly from the RURI. No central lookup needed.</div>
-          <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.08);border-radius:.4rem;padding:.5rem .75rem;margin-top:.5rem;font-family:monospace;font-size:.8rem;">
-            <span style="color:#f59e0b;">robots.acme-corp.com</span> ← parsed from RURI
+        <div class="flex-1 ml-4 pb-6">
+          <div class="font-bold text-[.95rem]">Parse Registry from RURI</div>
+          <div class="text-[.85rem] text-text-muted mt-1">Extract the registry hostname directly from the RURI. No central lookup needed.</div>
+          <div class="bg-bg-alt border border-white/[.08] rounded-[.4rem] px-3 py-2 mt-2 font-mono text-[.8rem]">
+            <span class="text-amber-400">robots.acme-corp.com</span> ← parsed from RURI
           </div>
         </div>
       </div>
 
       <!-- Step 3 -->
-      <div style="display:flex;align-items:stretch;width:100%;">
-        <div style="display:flex;flex-direction:column;align-items:center;width:2.5rem;flex-shrink:0;">
-          <div style="width:2rem;height:2rem;border-radius:50%;background:#0891b2;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;">3</div>
-          <div style="width:2px;flex:1;background:rgba(255,255,255,.12);margin:.25rem 0;"></div>
+      <div class="flex items-stretch w-full">
+        <div class="flex flex-col items-center w-10 flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-cyan-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0">3</div>
+          <div class="w-0.5 flex-1 bg-white/[.12] my-1"></div>
         </div>
-        <div style="flex:1;margin-left:1rem;padding-bottom:1.5rem;">
-          <div style="font-weight:700;font-size:.95rem;">Query Registry API</div>
-          <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.2rem;">HTTP GET to the registry's REST API. The registry returns a signed <strong>Federation Proof</strong>.</div>
-          <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.08);border-radius:.4rem;padding:.5rem .75rem;margin-top:.5rem;font-family:monospace;font-size:.78rem;word-break:break-all;">
+        <div class="flex-1 ml-4 pb-6">
+          <div class="font-bold text-[.95rem]">Query Registry API</div>
+          <div class="text-[.85rem] text-text-muted mt-1">HTTP GET to the registry's REST API. The registry returns a signed <strong>Federation Proof</strong>.</div>
+          <div class="bg-bg-alt border border-white/[.08] rounded-[.4rem] px-3 py-2 mt-2 font-mono text-[.78rem] break-all">
             GET https://robots.acme-corp.com/api/rcan/v1/robots/RRN-00042
           </div>
         </div>
       </div>
 
       <!-- Step 4 -->
-      <div style="display:flex;align-items:stretch;width:100%;">
-        <div style="display:flex;flex-direction:column;align-items:center;width:2.5rem;flex-shrink:0;">
-          <div style="width:2rem;height:2rem;border-radius:50%;background:#15803d;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;">4</div>
-          <div style="width:2px;flex:1;background:rgba(255,255,255,.12);margin:.25rem 0;"></div>
+      <div class="flex items-stretch w-full">
+        <div class="flex flex-col items-center w-10 flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0">4</div>
+          <div class="w-0.5 flex-1 bg-white/[.12] my-1"></div>
         </div>
-        <div style="flex:1;margin-left:1rem;padding-bottom:1.5rem;">
-          <div style="font-weight:700;font-size:.95rem;">Federation Proof Returned</div>
-          <div style="font-size:.85rem;color:var(--color-text-muted,#888);margin-top:.2rem;">A signed JSON object confirms the robot's identity, registration status, and audit chain. Cache it for future lookups.</div>
+        <div class="flex-1 ml-4 pb-6">
+          <div class="font-bold text-[.95rem]">Federation Proof Returned</div>
+          <div class="text-[.85rem] text-text-muted mt-1">A signed JSON object confirms the robot's identity, registration status, and audit chain. Cache it for future lookups.</div>
         </div>
       </div>
 
       <!-- Step 5 fallback -->
-      <div style="display:flex;align-items:stretch;width:100%;opacity:.65;">
-        <div style="display:flex;flex-direction:column;align-items:center;width:2.5rem;flex-shrink:0;">
-          <div style="width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#aaa;flex-shrink:0;">↓</div>
+      <div class="flex items-stretch w-full opacity-[.65]">
+        <div class="flex flex-col items-center w-10 flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-white/[.12] border border-white/20 flex items-center justify-center font-bold text-[.85rem] text-[#aaa] flex-shrink-0">↓</div>
         </div>
-        <div style="flex:1;margin-left:1rem;">
-          <div style="font-size:.85rem;color:var(--color-text-muted,#888);">If registry unreachable: fall back to <code>rcan.dev</code> (if configured) · else return <code>REGISTRY_UNREACHABLE</code></div>
+        <div class="flex-1 ml-4">
+          <div class="text-[.85rem] text-text-muted">If registry unreachable: fall back to <code>rcan.dev</code> (if configured) · else return <code>REGISTRY_UNREACHABLE</code></div>
         </div>
       </div>
 
@@ -158,53 +158,53 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <section>
     <h2>Three Registry Types</h2>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1.5rem 0;">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4 my-6">
 
       <!-- Root -->
-      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
-        <div style="font-size:.7rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">Root Registry</div>
-        <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:.5rem;"><code>rcan.dev</code></div>
-        <div style="font-size:.85rem;color:var(--color-text-muted,#888);line-height:1.6;margin-bottom:.75rem;">
-          Operated by the RCAN Working Group. Acts as registry of last resort and bootstrap anchor for federation. Governed by an <a href="/governance" style="color:inherit;">independent body</a>.
+      <div class="bg-bg-alt border border-white/10 rounded-xl p-5">
+        <div class="text-[.7rem] font-bold text-text-muted uppercase tracking-[.08em] mb-1.5">Root Registry</div>
+        <div class="text-base font-bold text-white mb-2"><code>rcan.dev</code></div>
+        <div class="text-[.85rem] text-text-muted leading-relaxed mb-3">
+          Operated by the RCAN Working Group. Acts as registry of last resort and bootstrap anchor for federation. Governed by an <a href="/governance" class="text-inherit">independent body</a>.
         </div>
-        <div style="font-family:monospace;font-size:.78rem;color:#a3e635;background:rgba(163,230,53,.06);border:1px solid rgba(163,230,53,.15);border-radius:.35rem;padding:.4rem .6rem;word-break:break-all;">
+        <div class="font-mono text-[.78rem] text-lime-400 bg-lime-400/[.06] border border-lime-400/[.15] rounded-[.35rem] px-2.5 py-1.5 break-all">
           rcan://rcan.dev/boston-dynamics/spot/bd001a2b3c
         </div>
-        <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
-          <span style="font-size:.7rem;padding:.15rem .5rem;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:.25rem;color:#93c5fd;">Public internet</span>
-          <span style="font-size:.7rem;padding:.15rem .5rem;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:.25rem;color:#93c5fd;">Governed</span>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="text-[.7rem] px-2 py-[.15rem] bg-blue-400/[.12] border border-blue-400/25 rounded-[.25rem] text-blue-300">Public internet</span>
+          <span class="text-[.7rem] px-2 py-[.15rem] bg-blue-400/[.12] border border-blue-400/25 rounded-[.25rem] text-blue-300">Governed</span>
         </div>
       </div>
 
       <!-- Organisational -->
-      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
-        <div style="font-size:.7rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">Organisational Registry</div>
-        <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:.5rem;"><code>my-org.com</code></div>
-        <div style="font-size:.85rem;color:var(--color-text-muted,#888);line-height:1.6;margin-bottom:.75rem;">
+      <div class="bg-bg-alt border border-white/10 rounded-xl p-5">
+        <div class="text-[.7rem] font-bold text-text-muted uppercase tracking-[.08em] mb-1.5">Organisational Registry</div>
+        <div class="text-base font-bold text-white mb-2"><code>my-org.com</code></div>
+        <div class="text-[.85rem] text-text-muted leading-relaxed mb-3">
           Hosted by a manufacturer, enterprise, or research institution. Authoritative for its own namespace. Registers with root for global discoverability.
         </div>
-        <div style="font-family:monospace;font-size:.78rem;color:#a3e635;background:rgba(163,230,53,.06);border:1px solid rgba(163,230,53,.15);border-radius:.35rem;padding:.4rem .6rem;word-break:break-all;">
+        <div class="font-mono text-[.78rem] text-lime-400 bg-lime-400/[.06] border border-lime-400/[.15] rounded-[.35rem] px-2.5 py-1.5 break-all">
           rcan://robots.acme-corp.com/acme/bot/lgb-00a1b2c3
         </div>
-        <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
-          <span style="font-size:.7rem;padding:.15rem .5rem;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);border-radius:.25rem;color:#fcd34d;">Self-hosted</span>
-          <span style="font-size:.7rem;padding:.15rem .5rem;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);border-radius:.25rem;color:#fcd34d;">Federated</span>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="text-[.7rem] px-2 py-[.15rem] bg-amber-500/[.12] border border-amber-500/25 rounded-[.25rem] text-amber-300">Self-hosted</span>
+          <span class="text-[.7rem] px-2 py-[.15rem] bg-amber-500/[.12] border border-amber-500/25 rounded-[.25rem] text-amber-300">Federated</span>
         </div>
       </div>
 
       <!-- Local -->
-      <div style="background:var(--color-bg-alt,#111);border:1px solid rgba(255,255,255,.1);border-radius:.75rem;padding:1.25rem;">
-        <div style="font-size:.7rem;font-weight:700;color:var(--color-text-muted,#888);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">Local Registry</div>
-        <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:.5rem;"><code>local.rcan</code></div>
-        <div style="font-size:.85rem;color:var(--color-text-muted,#888);line-height:1.6;margin-bottom:.75rem;">
+      <div class="bg-bg-alt border border-white/10 rounded-xl p-5">
+        <div class="text-[.7rem] font-bold text-text-muted uppercase tracking-[.08em] mb-1.5">Local Registry</div>
+        <div class="text-base font-bold text-white mb-2"><code>local.rcan</code></div>
+        <div class="text-[.85rem] text-text-muted leading-relaxed mb-3">
           Runs on a private network — LAN, robot cell, or air-gapped facility. Discovered via mDNS (<code>_rcan-registry._tcp</code>). No internet required.
         </div>
-        <div style="font-family:monospace;font-size:.78rem;color:#a3e635;background:rgba(163,230,53,.06);border:1px solid rgba(163,230,53,.15);border-radius:.35rem;padding:.4rem .6rem;word-break:break-all;">
+        <div class="font-mono text-[.78rem] text-lime-400 bg-lime-400/[.06] border border-lime-400/[.15] rounded-[.35rem] px-2.5 py-1.5 break-all">
           rcan://local.rcan/opencastor/rover/abc12345
         </div>
-        <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
-          <span style="font-size:.7rem;padding:.15rem .5rem;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:.25rem;color:#86efac;">Offline-capable</span>
-          <span style="font-size:.7rem;padding:.15rem .5rem;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);border-radius:.25rem;color:#86efac;">mDNS</span>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="text-[.7rem] px-2 py-[.15rem] bg-green-500/[.12] border border-green-500/25 rounded-[.25rem] text-green-300">Offline-capable</span>
+          <span class="text-[.7rem] px-2 py-[.15rem] bg-green-500/[.12] border border-green-500/25 rounded-[.25rem] text-green-300">mDNS</span>
         </div>
       </div>
 
@@ -218,15 +218,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <h2>Run Your Own Registry</h2>
     <p>Five steps to launch an RCAN-conformant federated registry.</p>
 
-    <div style="display:flex;flex-direction:column;gap:1.25rem;margin:1.5rem 0;">
+    <div class="flex flex-col gap-5 my-6">
 
       <!-- Step 1 -->
-      <div style="display:flex;gap:1rem;align-items:flex-start;">
-        <div style="width:2rem;height:2rem;border-radius:.4rem;background:#1d4ed8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;margin-top:.1rem;">1</div>
-        <div style="flex:1;">
-          <div style="font-weight:700;margin-bottom:.3rem;">Implement the RCAN Registry API</div>
-          <div style="font-size:.875rem;color:var(--color-text-muted,#888);margin-bottom:.5rem;">Your registry must expose these REST endpoints at your chosen <code>api_base</code>:</div>
-          <pre style="margin:0;"><code>GET  {`{api_base}`}/robots/{`{rrn}`}           → federation proof
+      <div class="flex gap-4 items-start">
+        <div class="w-8 h-8 rounded-[.4rem] bg-blue-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0 mt-0.5">1</div>
+        <div class="flex-1">
+          <div class="font-bold mb-1">Implement the RCAN Registry API</div>
+          <div class="text-sm text-text-muted mb-2">Your registry must expose these REST endpoints at your chosen <code>api_base</code>:</div>
+          <pre class="m-0"><code>GET  {`{api_base}`}/robots/{`{rrn}`}           → federation proof
 GET  {`{api_base}`}/robots?manufacturer=...  → robot list
 POST {`{api_base}`}/robots                  → register robot
 GET  {`{api_base}`}/status                  → health check</code></pre>
@@ -234,24 +234,24 @@ GET  {`{api_base}`}/status                  → health check</code></pre>
       </div>
 
       <!-- Step 2 -->
-      <div style="display:flex;gap:1rem;align-items:flex-start;">
-        <div style="width:2rem;height:2rem;border-radius:.4rem;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;margin-top:.1rem;">2</div>
-        <div style="flex:1;">
-          <div style="font-weight:700;margin-bottom:.3rem;">Generate and Publish Your Key Pair</div>
-          <div style="font-size:.875rem;color:var(--color-text-muted,#888);margin-bottom:.5rem;">Registry federation proofs must be signed. Generate an Ed25519 key pair:</div>
-          <pre style="margin:0;"><code class="language-bash">openssl genpkey -algorithm ed25519 -out registry-private.pem
+      <div class="flex gap-4 items-start">
+        <div class="w-8 h-8 rounded-[.4rem] bg-violet-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0 mt-0.5">2</div>
+        <div class="flex-1">
+          <div class="font-bold mb-1">Generate and Publish Your Key Pair</div>
+          <div class="text-sm text-text-muted mb-2">Registry federation proofs must be signed. Generate an Ed25519 key pair:</div>
+          <pre class="m-0"><code class="language-bash">openssl genpkey -algorithm ed25519 -out registry-private.pem
 openssl pkey -in registry-private.pem -pubout -out registry-public.pem
 # Serve registry-public.pem at /.well-known/rcan-registry.pub</code></pre>
         </div>
       </div>
 
       <!-- Step 3 -->
-      <div style="display:flex;gap:1rem;align-items:flex-start;">
-        <div style="width:2rem;height:2rem;border-radius:.4rem;background:#0891b2;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;margin-top:.1rem;">3</div>
-        <div style="flex:1;">
-          <div style="font-weight:700;margin-bottom:.3rem;">Publish <code>/.well-known/rcan-registry.json</code></div>
-          <div style="font-size:.875rem;color:var(--color-text-muted,#888);margin-bottom:.5rem;">This descriptor lets other registries and resolvers discover your registry's capabilities:</div>
-          <pre style="margin:0;"><code>{`{
+      <div class="flex gap-4 items-start">
+        <div class="w-8 h-8 rounded-[.4rem] bg-cyan-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0 mt-0.5">3</div>
+        <div class="flex-1">
+          <div class="font-bold mb-1">Publish <code>/.well-known/rcan-registry.json</code></div>
+          <div class="text-sm text-text-muted mb-2">This descriptor lets other registries and resolvers discover your registry's capabilities:</div>
+          <pre class="m-0"><code>{`{
   "name":           "ACME Robotics Registry",
   "operator":       "ACME Corporation",
   "rcan_version":   "1.3",
@@ -263,33 +263,33 @@ openssl pkey -in registry-private.pem -pubout -out registry-public.pem
       </div>
 
       <!-- Step 4 -->
-      <div style="display:flex;gap:1rem;align-items:flex-start;">
-        <div style="width:2rem;height:2rem;border-radius:.4rem;background:#15803d;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;margin-top:.1rem;">4</div>
-        <div style="flex:1;">
-          <div style="font-weight:700;margin-bottom:.3rem;">Validate Conformance</div>
-          <div style="font-size:.875rem;color:var(--color-text-muted,#888);margin-bottom:.5rem;">Run the RCAN conformance checker to verify your implementation before registering:</div>
-          <pre style="margin:0;"><code class="language-bash">python3 scripts/conformance/check_l1.py \
+      <div class="flex gap-4 items-start">
+        <div class="w-8 h-8 rounded-[.4rem] bg-green-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0 mt-0.5">4</div>
+        <div class="flex-1">
+          <div class="font-bold mb-1">Validate Conformance</div>
+          <div class="text-sm text-text-muted mb-2">Run the RCAN conformance checker to verify your implementation before registering:</div>
+          <pre class="m-0"><code class="language-bash">python3 scripts/conformance/check_l1.py \
   --host your-registry.example.com \
   --port 443 \
   --registry-mode</code></pre>
-          <div style="margin-top:.5rem;font-size:.8rem;"><a href="/conformance">→ Conformance test details</a></div>
+          <div class="mt-2 text-[.8rem]"><a href="/conformance">→ Conformance test details</a></div>
         </div>
       </div>
 
       <!-- Step 5 -->
-      <div style="display:flex;gap:1rem;align-items:flex-start;">
-        <div style="width:2rem;height:2rem;border-radius:.4rem;background:#b45309;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;margin-top:.1rem;">5</div>
-        <div style="flex:1;">
-          <div style="font-weight:700;margin-bottom:.3rem;">Register with the Root</div>
-          <div style="font-size:.875rem;color:var(--color-text-muted,#888);margin-bottom:.5rem;">Submit your registry to <code>rcan.dev</code> to join the global federation index:</div>
-          <pre style="margin:0;"><code>{`POST https://rcan.dev/api/rcan/v1/federation/registries
+      <div class="flex gap-4 items-start">
+        <div class="w-8 h-8 rounded-[.4rem] bg-amber-700 flex items-center justify-center font-bold text-[.85rem] text-white flex-shrink-0 mt-0.5">5</div>
+        <div class="flex-1">
+          <div class="font-bold mb-1">Register with the Root</div>
+          <div class="text-sm text-text-muted mb-2">Submit your registry to <code>rcan.dev</code> to join the global federation index:</div>
+          <pre class="m-0"><code>{`POST https://rcan.dev/api/rcan/v1/federation/registries
 Content-Type: application/json
 
 {
   "registry_url":   "https://your-registry.example.com",
   "well_known_url": "https://your-registry.example.com/.well-known/rcan-registry.json"
 }`}</code></pre>
-          <div style="margin-top:.5rem;font-size:.8rem;color:var(--color-text-muted,#888);">The root registry fetches your descriptor, verifies conformance, and adds you to the federation index.</div>
+          <div class="mt-2 text-[.8rem] text-text-muted">The root registry fetches your descriptor, verifies conformance, and adds you to the federation index.</div>
         </div>
       </div>
 
