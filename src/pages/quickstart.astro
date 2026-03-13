@@ -220,9 +220,57 @@ castor register --config myrobot.rcan.yaml`} />
     });
   </script>
 
-  <!-- Step 6 -->
+  <!-- Step 6 — §19 Skill Invocation -->
+  <h2 id="invoke">
+    <span class="text-accent font-mono text-lg mr-2">06</span>Invoke a Skill (§19)
+  </h2>
+
+  <p>Once your robot is connected, you can invoke named skills using the <code>INVOKE</code> message type (§19.2). The caller sends an <code>INVOKE</code> frame; the robot replies with <code>INVOKE_RESULT</code> (§19.3).</p>
+
+  <CodeWindow language="python" title="Python — §19 INVOKE" code={`import asyncio
+from rcan import RCANClient
+
+async def main():
+    async with RCANClient("wss://myrobot.local:8765") as client:
+        # Invoke the pick_and_place skill with a 5 s timeout
+        result = await client.invoke(
+            skill="pick_and_place",
+            params={"target": "red_cube"},
+            timeout_ms=5000,
+        )
+        print(result.status)   # "success" | "failure" | "timeout" | "cancelled"
+        print(result.result)   # skill-specific output dict
+
+asyncio.run(main())`} />
+
+  <CodeWindow language="typescript" title="TypeScript — §19 INVOKE" code={`import { RCANClient } from '@continuonai/rcan-ts';
+
+const client = new RCANClient('wss://myrobot.local:8765');
+await client.connect();
+
+const result = await client.invoke('pick_and_place', {
+  params: { target: 'red_cube' },
+  timeoutMs: 5000,
+});
+console.log(result.status);  // "success" | "failure" | "timeout" | "cancelled"
+console.log(result.result);  // skill output
+
+// Cancel an in-flight invocation (§19.4)
+const invocation = client.invoke('navigate', { params: { goal: 'kitchen' } });
+await client.cancelInvoke(invocation.msgId);`} />
+
+  <div class="not-prose bg-accent/5 border border-accent/20 rounded-xl p-5 my-6 text-sm">
+    <p class="text-text-muted leading-relaxed">
+      <strong class="text-white">Wire values:</strong> <code class="text-accent">INVOKE = 11</code>,
+      <code class="text-accent">INVOKE_RESULT = 12</code>, <code class="text-accent">INVOKE_CANCEL = 15</code>.
+      See <a href="/spec/section-19/" class="text-accent hover:underline">§19 full spec</a> for error codes,
+      cancellation semantics, and the Capability Advertisement integration.
+    </p>
+  </div>
+
+  <!-- Step 7 -->
   <h2 id="validate">
-    <span class="text-accent font-mono text-lg mr-2">06</span>Validate Your Config
+    <span class="text-accent font-mono text-lg mr-2">07</span>Validate Your Config
   </h2>
 
   <CodeWindow language="bash" title="Terminal" code={`# Check L1/L2/L3 conformance
@@ -251,6 +299,7 @@ castor compliance --config myrobot.rcan.yaml`} />
   <div class="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
     {[
       { href: '/spec/', label: 'Protocol Spec', desc: 'Full RCAN v1.3 specification' },
+      { href: '/spec/section-19/', label: '§19 Skill Invocation', desc: 'INVOKE, INVOKE_RESULT, INVOKE_CANCEL' },
       { href: '/conformance/', label: 'Conformance Tests', desc: 'L1/L2/L3 test suite' },
       { href: 'https://github.com/continuonai/rcan-py', label: 'rcan-py on GitHub', desc: 'Python SDK source + issues' },
       { href: 'https://github.com/continuonai/rcan-ts', label: 'rcan-ts on GitHub', desc: 'TypeScript SDK source + issues' },
