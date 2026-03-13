@@ -2,7 +2,7 @@
 """
 RCAN L1 Conformance Checker
 ============================
-Tests an RCAN endpoint for L1 (Core) conformance against rcan-conformance-v1.2.json.
+Tests an RCAN endpoint for L1 (Core) conformance against rcan-conformance-v1.3.json.
 
 Usage:
     python3 check_l1.py --host 127.0.0.1 --port 8080
@@ -327,7 +327,7 @@ def print_report(results: List[TestResult]) -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="RCAN L1 Core Conformance Checker (rcan-conformance-v1.2)"
+        description="RCAN L1 Core Conformance Checker (rcan-conformance-v1.3)"
     )
     parser.add_argument("--host", default="127.0.0.1", help="RCAN endpoint host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8080, help="RCAN endpoint port (default: 8080)")

@@ -3,10 +3,10 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 import CodeWindow from '../../components/CodeWindow.astro';
 
 const connectHandshake = `// Client → Server (first message after WS open)
-{"type":"CONNECT","ruri":"rcan://robot.local","version":"1.2","caps":{"move":{"version":"1.0"}}}
+{"type":"CONNECT","ruri":"rcan://robot.local","version":"1.3","caps":{"move":{"version":"1.0"}}}
 
 // Server → Client (success)
-{"type":"CONNECT_ACK","session_id":"sess_abc123","server_version":"1.2"}
+{"type":"CONNECT_ACK","session_id":"sess_abc123","server_version":"1.3"}
 
 // Server → Client (failure — closes WS with code 4001)
 {"type":"ERROR","code":8001,"name":"ConnectionRefused","message":"Auth token missing"}`;
