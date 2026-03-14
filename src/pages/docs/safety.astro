@@ -209,6 +209,51 @@ brain:
     </section>
 
     <section>
+      <h2>Brain Watchdog (watchdog.timeout_s)</h2>
+      <p>The brain watchdog implements invariant <code>SOFTWARE_001</code>: if the AI brain becomes unresponsive for <code>timeout_s</code> seconds, the RCAN runtime performs a controlled stop — all motors halt and the robot enters a safe idle state until the brain reconnects and sends an explicit <code>ESTOP_CLEAR</code>.</p>
+
+      <h3>How It Works</h3>
+      <p>The runtime expects a heartbeat from the AI brain at least once every <code>timeout_s</code> seconds. If no heartbeat arrives within the window:</p>
+      <ol>
+        <li>The runtime logs a <code>WATCHDOG_TIMEOUT</code> safety event to the audit trail.</li>
+        <li>All actuator outputs are set to their safe/zero state.</li>
+        <li>The robot transitions to <code>ESTOP</code> state, blocking further commands.</li>
+        <li>An operator must issue an authenticated <code>ESTOP_CLEAR</code> before motion resumes.</li>
+      </ol>
+
+      <h3>Configuration</h3>
+      <p>Add a <code>watchdog</code> block to your <code>.rcan.yaml</code>:</p>
+      <pre><code>watchdog:
+  timeout_s: 10     # Default: 10s. Max recommended: 30s.
+  enabled: true     # Set to false only for local development (not recommended in production)</code></pre>
+
+      <div class="callout">
+        <strong>Recommended range:</strong> 5–30 seconds. Values below 5 s may cause spurious trips on slow hardware; values above 30 s leave the robot unguarded for too long if the brain crashes.
+      </div>
+
+      <h3>Field Reference</h3>
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>watchdog.timeout_s</code></td>
+            <td>10</td>
+            <td>Seconds without brain heartbeat before controlled stop is triggered.</td>
+          </tr>
+          <tr>
+            <td><code>watchdog.enabled</code></td>
+            <td>true</td>
+            <td>Enable/disable the watchdog. Disabling is strongly discouraged for production deployments.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>See the full <a href="/schemas/rcan-config.json">rcan-config.json schema</a> for the complete <code>watchdog</code> object definition.</p>
+    </section>
+
+    <section>
       <h2>Conformance Badges</h2>
       <p>RCAN-compliant robots can display conformance badges to signal their safety posture. Badges are available for:</p>
       <ul>

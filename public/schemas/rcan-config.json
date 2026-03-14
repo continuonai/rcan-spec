@@ -339,6 +339,26 @@
       }
     },
 
+    "watchdog": {
+      "type": "object",
+      "description": "Brain watchdog configuration. If the AI brain is unresponsive for timeout_s seconds, the runtime performs a controlled stop.",
+      "additionalProperties": false,
+      "properties": {
+        "timeout_s": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 10,
+          "description": "Seconds before brain watchdog triggers a controlled stop. Default: 10."
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable the brain watchdog. Disabling is not recommended for production."
+        }
+      }
+    },
+
     "messaging": {
       "type": "object",
       "description": "External messaging surface configuration for HiTL notifications.",
