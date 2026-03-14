@@ -1,0 +1,315 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Safety Conformance" description="RCAN §6/§16 safety invariants, Protocol 66, hardware safety capabilities, and conformance requirements.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Safety Conformance</h1>
+    <p class="lead">OpenCastor implements a layered safety model grounded in RCAN §6 (Safety Invariants) and §16 (Protocol 66). These invariants are non-negotiable — they cannot be overridden by AI-generated commands, remote operators, or runtime configuration changes.</p>
+
+    <section>
+      <h2>Protocol 66</h2>
+      <p>Protocol 66 is RCAN's safety manifest protocol. Any RCAN-compliant robot must expose its safety capabilities and invariant status via a well-known endpoint so operators, fleets, and registries can verify the robot's safety posture at runtime.</p>
+
+      <h3>Safety Manifest Endpoint</h3>
+      <pre><code>GET /api/safety/manifest</code></pre>
+
+      <p>Returns a JSON document describing:</p>
+      <ul>
+        <li>Which of the 5 safety invariants are active</li>
+        <li>Hardware safety capabilities (physical e-stop, watchdog MCU, SIL level, etc.)</li>
+        <li>Current safety envelope values (max speed, estop distance, watchdog timeout)</li>
+        <li>Audit trail status and last event timestamp</li>
+      </ul>
+
+      <pre><code>&#123;
+  "protocol": 66,
+  "rcan_version": "1.4",
+  "invariants": &#123;
+    "local_safety_wins": true,
+    "safety_messages_bypass_queues": true,
+    "estop_requires_explicit_clear": true,
+    "ai_cannot_override_safety": true,
+    "audit_trail_complete": true
+  &#125;,
+  "hardware_safety": &#123;
+    "physical_estop": false,
+    "hardware_watchdog_mcu": false,
+    "sil_level": "none",
+    "human_proximity_sensors": "none"
+  &#125;,
+  "envelope": &#123;
+    "max_linear_speed_mps": 1.0,
+    "max_angular_speed_radps": 2.0,
+    "emergency_stop_distance": 0.3
+  &#125;
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>The 5 Safety Invariants (RCAN §6)</h2>
+      <p>All RCAN-compliant robots must implement these invariants. They are enforced at the runtime layer and cannot be overridden by any AI brain, remote command, or configuration update.</p>
+
+      <div class="invariants-list">
+        <div class="invariant">
+          <div class="invariant-header">
+            <code>local_safety_wins</code>
+            <span class="badge required">Required</span>
+          </div>
+          <p>Local sensor-based safety decisions always override any network command. If a proximity sensor detects an obstacle within the emergency stop distance, the robot stops — regardless of what the AI brain or a remote operator commanded.</p>
+        </div>
+
+        <div class="invariant">
+          <div class="invariant-header">
+            <code>safety_messages_bypass_queues</code>
+          </div>
+          <p>ESTOP and SAFETY_HALT messages skip the normal command queue and are processed immediately. A safety command can never be delayed by a backlogged navigation or action queue.</p>
+        </div>
+
+        <div class="invariant">
+          <div class="invariant-header">
+            <code>estop_requires_explicit_clear</code>
+          </div>
+          <p>Once an emergency stop is triggered, the robot remains stopped until an operator explicitly clears it via an authenticated <code>ESTOP_CLEAR</code> command. Automatic recovery is not permitted.</p>
+        </div>
+
+        <div class="invariant">
+          <div class="invariant-header">
+            <code>ai_cannot_override_safety</code>
+          </div>
+          <p>The AI brain operates within a sandboxed action space. It can never issue commands that modify safety envelope parameters, disable proximity monitoring, or alter ESTOP state. Safety constraints are enforced below the AI layer.</p>
+        </div>
+
+        <div class="invariant">
+          <div class="invariant-header">
+            <code>audit_trail_complete</code>
+          </div>
+          <p>Every safety event — ESTOP triggers, limit violations, watchdog resets, and ESTOP clears — is written to a tamper-evident audit log with a UTC timestamp and the initiating source (sensor, operator, AI, watchdog).</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Minimum Required Configuration</h2>
+      <p>Every RCAN config must include a <code>safety</code> block with at minimum <code>local_safety_wins: true</code>. The full recommended safety block is:</p>
+
+      <pre><code>safety:
+  local_safety_wins: true        # REQUIRED — RCAN §6 invariant
+  max_linear_speed_mps: 1.0      # m/s hard cap
+  max_angular_speed_radps: 2.0   # rad/s hard cap
+  emergency_stop_distance: 0.3   # metres — auto ESTOP trigger distance
+
+watchdog:
+  timeout_s: 10                  # Heartbeat timeout before safe stop
+
+brain:
+  confidence_gates:
+    - scope: control
+      min_confidence: 0.75
+      on_fail: block             # Block command if AI confidence < 0.75
+    - scope: config
+      min_confidence: 0.65
+      on_fail: block</code></pre>
+
+      <div class="callout">
+        <strong>Schema enforcement:</strong> As of RCAN schema v1.4+, <code>local_safety_wins</code> is a <strong>required</strong> field in the <code>safety</code> object. Configs without it will fail validation.
+      </div>
+
+      <h3>Field Reference</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>safety.local_safety_wins</code></td>
+            <td>✅ Yes</td>
+            <td>Enables RCAN §6 local safety invariant. Must be <code>true</code>.</td>
+          </tr>
+          <tr>
+            <td><code>safety.emergency_stop_distance</code></td>
+            <td>Recommended</td>
+            <td>Distance in metres triggering automatic ESTOP (e.g. 0.3)</td>
+          </tr>
+          <tr>
+            <td><code>watchdog.timeout_s</code></td>
+            <td>Recommended</td>
+            <td>Seconds without heartbeat before safe stop is triggered</td>
+          </tr>
+          <tr>
+            <td><code>brain.confidence_gates</code></td>
+            <td>Recommended</td>
+            <td>Per-scope AI confidence thresholds. Block or escalate low-confidence commands.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Hardware Safety Capabilities</h2>
+      <p>The <code>hardware_safety</code> block declares physical safety hardware present on the robot. This is reported via Protocol 66 and stored in the Robot Registry Foundation so operators know the actual hardware safety posture of each robot.</p>
+
+      <pre><code>hardware_safety:
+  physical_estop: false           # Physical e-stop button (cuts actuator power)
+  hardware_watchdog_mcu: false    # Dedicated watchdog MCU (e.g. STM32 safety core)
+  force_torque_sensors: false     # F/T sensors for contact force limiting (ISO/TS 15066)
+  human_proximity_sensors: none  # none | lidar | depth_camera | uwb | combined
+  sil_level: none                 # none | SIL1 | SIL2 | SIL3 | PLc | PLd | PLe
+  voltage_monitoring: false       # Hardware voltage monitoring with auto power cutoff</code></pre>
+
+      <h3>SIL / Performance Level Reference</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Standard</th>
+            <th>Typical Application</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>none</code></td>
+            <td>—</td>
+            <td>Dev/research robots with software-only safety (OpenCastor Bob, Alex)</td>
+          </tr>
+          <tr>
+            <td><code>PLc</code></td>
+            <td>ISO 13849</td>
+            <td>Consumer/research robots with basic hardware safety (Unitree Go2)</td>
+          </tr>
+          <tr>
+            <td><code>PLd</code></td>
+            <td>ISO 13849</td>
+            <td>Industrial collaborative robots (Boston Dynamics Spot)</td>
+          </tr>
+          <tr>
+            <td><code>PLe</code></td>
+            <td>ISO 13849</td>
+            <td>Safety-critical industrial machinery</td>
+          </tr>
+          <tr>
+            <td><code>SIL1–3</code></td>
+            <td>IEC 61508</td>
+            <td>Functional safety systems (medical, process industry)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Honesty matters:</strong> The <code>hardware_safety</code> block should accurately reflect the robot's <em>actual</em> hardware. A dev robot like OpenCastor Bob correctly reports <code>sil_level: none</code> — this helps operators make informed deployment decisions rather than creating false confidence.
+      </div>
+    </section>
+
+    <section>
+      <h2>Conformance Badges</h2>
+      <p>RCAN-compliant robots can display conformance badges to signal their safety posture. Badges are available for:</p>
+      <ul>
+        <li><strong>RCAN Compliant</strong> — passes schema validation and implements all 5 invariants</li>
+        <li><strong>Protocol 66</strong> — exposes <code>GET /api/safety/manifest</code></li>
+        <li><strong>Verified</strong> — independently verified by the Robot Registry Foundation</li>
+      </ul>
+      <p>See the <a href="/docs/badges">Conformance Badges</a> page for embed codes and SVG assets.</p>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .invariants-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .invariant {
+    padding: 1rem 1.25rem;
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .invariant-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .invariant-header code {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  .invariant p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge.required {
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+  }
+
+  .callout {
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  th {
+    background: var(--color-bg-alt);
+    font-weight: 600;
+  }
+</style>
