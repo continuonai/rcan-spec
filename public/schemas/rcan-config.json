@@ -304,6 +304,40 @@
       }
     },
 
+    "hardware_safety": {
+      "type": "object",
+      "description": "Declares physical safety hardware present on this robot. Used by the Protocol 66 manifest and Robot Registry Foundation to accurately report safety capabilities.",
+      "additionalProperties": false,
+      "properties": {
+        "physical_estop": {
+          "type": "boolean",
+          "description": "Physical emergency stop button that cuts actuator power independently of software."
+        },
+        "hardware_watchdog_mcu": {
+          "type": "boolean",
+          "description": "Dedicated hardware watchdog MCU (e.g. STM32 safety core) that resets actuators if main CPU hangs."
+        },
+        "force_torque_sensors": {
+          "type": "boolean",
+          "description": "Force/torque sensors enabling contact force limiting (ISO/TS 15066 PFL)."
+        },
+        "human_proximity_sensors": {
+          "type": "string",
+          "enum": ["none", "lidar", "depth_camera", "uwb", "combined"],
+          "description": "Human proximity sensing method for speed and separation monitoring (ISO 10218-1 SSM)."
+        },
+        "sil_level": {
+          "type": "string",
+          "enum": ["none", "SIL1", "SIL2", "SIL3", "PLc", "PLd", "PLe"],
+          "description": "Safety Integrity Level or Performance Level of the robot's safety system (IEC 61508 / ISO 13849)."
+        },
+        "voltage_monitoring": {
+          "type": "boolean",
+          "description": "Hardware voltage monitoring with automatic power cutoff."
+        }
+      }
+    },
+
     "messaging": {
       "type": "object",
       "description": "External messaging surface configuration for HiTL notifications.",
