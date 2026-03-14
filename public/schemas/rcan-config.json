@@ -127,7 +127,7 @@
     "safety": {
       "type": "object",
       "description": "Safety envelope parameters. These values are enforced by the RCAN runtime and cannot be overridden by AI-generated commands.",
-      "required": [],
+      "required": ["local_safety_wins"],
       "additionalProperties": true,
       "properties": {
         "max_linear_speed_mps": {
@@ -162,7 +162,8 @@
         },
         "local_safety_wins": {
           "type": "boolean",
-          "description": "If true, local sensor-based safety overrides any network command."
+          "description": "If true, local sensor-based safety overrides any network command.",
+          "default": true
         },
         "max_speed_override": {
           "type": "number",
