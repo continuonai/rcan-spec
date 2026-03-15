@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rcan.dev/schemas/messages/transparency.json",
+  "title": "TRANSPARENCY Message",
+  "description": "RCAN message type 18. EU AI Act Article 13 transparency disclosure. Sent by robots to disclose their AI nature, capabilities, operator identity, and contact information to humans they interact with. Must be sent on first human interaction, on request, or periodically in human-occupied spaces.",
+  "type": "object",
+  "required": [
+    "type",
+    "source",
+    "target",
+    "message_id",
+    "timestamp",
+    "payload"
+  ],
+  "properties": {
+    "type": {
+      "type": "integer",
+      "const": 18,
+      "description": "Identifies this as a TRANSPARENCY message (MessageType 18)."
+    },
+    "source": {
+      "type": "string",
+      "description": "RURI of the robot sending the disclosure."
+    },
+    "target": {
+      "type": "string",
+      "description": "RURI of the recipient (human display, broadcast address, or specific human interface)."
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4 uniquely identifying this message."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 UTC timestamp when the disclosure was issued."
+    },
+    "payload": {
+      "type": "object",
+      "required": ["ai_system", "operator", "capabilities"],
+      "additionalProperties": true,
+      "properties": {
+        "ai_system": {
+          "type": "boolean",
+          "const": true,
+          "description": "Always true — confirms this is an AI system per EU AI Act Art. 13."
+        },
+        "model_family": {
+          "type": "string",
+          "description": "AI model family in use (e.g. 'claude-sonnet'). Do not include version identifiers."
+        },
+        "operator": {
+          "type": "string",
+          "description": "Name of the deploying operator or organisation."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of robot capabilities (e.g. ['navigation', 'speech', 'manipulation'])."
+        },
+        "limitations": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Known limitations of the robot (e.g. ['cannot lift > 2kg'])."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact address for complaints or inquiries (email or URL)."
+        },
+        "rcan_version": {
+          "type": "string",
+          "description": "RCAN protocol version implemented by this robot."
+        },
+        "p66_conformance_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Protocol 66 conformance percentage (0–100)."
+        },
+        "audit_enabled": {
+          "type": "boolean",
+          "description": "Whether robot actions are recorded to a tamper-evident audit trail."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "type": 18,
+      "source": "rcan://rcan.dev/acme/arm/v1/unit-001",
+      "target": "rcan://local/human-display",
+      "message_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "timestamp": "2026-03-15T14:30:00Z",
+      "payload": {
+        "ai_system": true,
+        "model_family": "claude-sonnet",
+        "operator": "Acme Robotics",
+        "capabilities": ["navigation", "manipulation", "speech"],
+        "limitations": ["cannot lift > 5 kg", "outdoor use in dry conditions only"],
+        "contact": "safety@acme-robotics.example",
+        "rcan_version": "1.4",
+        "p66_conformance_pct": 87,
+        "audit_enabled": true
+      }
+    }
+  ]
+}

@@ -254,6 +254,61 @@ brain:
     </section>
 
     <section>
+      <h2>EU AI Act Compliance (Article 13)</h2>
+      <p>EU AI Act Article 13 requires AI systems to disclose their AI nature, capabilities, and operator identity to persons they interact with. Robots using RCAN that incorporate foundation models or LLM capabilities must implement <strong>MessageType 18 (TRANSPARENCY)</strong>.</p>
+
+      <p><strong>Deadline: August 2, 2026</strong> (General Purpose AI provisions in force).</p>
+
+      <h3>MessageType.TRANSPARENCY (type: 18)</h3>
+      <p><strong>Purpose:</strong> Robots disclose AI nature, capabilities, and operator to humans they interact with.</p>
+      <p><strong>Trigger:</strong> On first human interaction, on request, or periodically in human-occupied spaces.</p>
+
+      <h3>Payload Schema</h3>
+      <pre><code>&#123;
+  "ai_system": true,                         // Required — always true per Art. 13
+  "model_family": "claude-sonnet",           // AI model family (not version)
+  "operator": "example-company",             // Deploying operator name
+  "capabilities": ["navigation", "speech"],  // What the robot can do
+  "limitations": ["cannot lift &gt; 2kg"],      // Known limitations
+  "contact": "safety@example.com",           // Who to contact
+  "rcan_version": "1.4",
+  "p66_conformance_pct": 87,                 // Protocol 66 conformance level
+  "audit_enabled": true                      // Whether actions are audited
+&#125;</code></pre>
+
+      <h3>When to Send</h3>
+      <ul>
+        <li>A robot enters a human-occupied space</li>
+        <li>A human directly interacts with the robot</li>
+        <li>Requested via voice command or button</li>
+        <li>On startup in any public-facing deployment</li>
+      </ul>
+
+      <h3>Python Implementation</h3>
+      <pre><code>from rcan.safety import make_transparency_message
+
+msg = make_transparency_message(
+    source_ruri="rcan://rcan.dev/acme/arm/v1/unit-001",
+    target_ruri="rcan://local/human-display",
+    operator="Acme Robotics",
+    capabilities=["navigation", "speech"],
+    model_family="claude-sonnet",
+    limitations=["cannot lift &gt; 5 kg"],
+    contact="safety@acme.example",
+    p66_conformance_pct=87.0,
+    audit_enabled=True,
+)</code></pre>
+
+      <h3>Applicability</h3>
+      <p>Robots using RCAN that incorporate LLM/AI capabilities fall under EU AI Act as:</p>
+      <ul>
+        <li><strong>High-risk AI systems</strong> (Annex III, §3 — safety components of machinery)</li>
+        <li><strong>General Purpose AI</strong> (if using foundation models like Claude/GPT)</li>
+      </ul>
+      <p>See the <a href="/compliance/eu-ai-act">EU AI Act Compliance Guide</a> for full implementation details and the Article 9/17 requirements.</p>
+    </section>
+
+    <section>
       <h2>Conformance Badges</h2>
       <p>RCAN-compliant robots can display conformance badges to signal their safety posture. Badges are available for:</p>
       <ul>
