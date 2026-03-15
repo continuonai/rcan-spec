@@ -1,9 +1,11 @@
 # RCAN Federation Protocol
 
 **Status:** Draft  
-**Version:** 1.0  
+**Version:** 1.4  
 **Authors:** RCAN Working Group  
 **Related:** [Governance](/governance) · [RURI Specification](/spec) · [Conformance](/conformance)
+
+> **v1.4 update:** Added REGISTRY_REGISTER (MessageType 13), REGISTRY_RESOLVE (14), REGISTRY_REGISTER_RESULT (16), REGISTRY_RESOLVE_RESULT (17) wire types. Ed25519 ownership verification in registry. `hardware_safety` field in `rcan-config.json`. P66 conformance manifest as federated discovery data.
 
 ---
 
@@ -235,6 +237,44 @@ A federation proof is the signed, authoritative response from a registry confirm
 | `pending` | Registration submitted, awaiting verification |
 | `suspended` | Registration temporarily suspended (e.g., safety hold) |
 | `revoked` | Registration permanently revoked |
+
+### 6.3a v1.4 Federation Proof — Extended Fields
+
+In RCAN v1.4, the federation proof is extended to include P66 safety data and ownership verification:
+
+```json
+{
+  "registry_url": "https://rcan.dev",
+  "rrn": "RRN-000000000042",
+  "robot_name": "Spot Unit Alpha",
+  "registry_pubkey_hint": "sha256:abc123def456...",
+  "timestamp_iso": "2026-03-04T15:30:00Z",
+  "chain_hash": "sha256:fedcba987654...",
+  "attestation": "active",
+  "owner_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+  "owner_pubkey_verified": true,
+  "hardware_safety": {
+    "estop_response_ms": 50,
+    "sil_level": "SIL2",
+    "watchdog_enabled": true,
+    "iso_10218_compliant": true
+  },
+  "p66_manifest_url": "https://robot.local/api/p66/manifest.json",
+  "p66_conformant": true
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `owner_pubkey` | string | ✅ v1.4 | Ed25519 public key of the robot's registered owner |
+| `owner_pubkey_verified` | bool | ✅ v1.4 | Whether the registry has verified ownership via Ed25519 challenge |
+| `hardware_safety` | object | ✅ v1.4 (P66) | Hardware safety capabilities declared in `rcan-config.json` |
+| `hardware_safety.estop_response_ms` | integer | — | Maximum ESTOP response time in milliseconds |
+| `hardware_safety.sil_level` | string | — | IEC 61508 SIL level (`"SIL1"`, `"SIL2"`, `"SIL3"`) |
+| `hardware_safety.watchdog_enabled` | bool | — | Hardware watchdog MCU present and active |
+| `hardware_safety.iso_10218_compliant` | bool | — | Robot hardware meets ISO 10218-1/2 requirements |
+| `p66_manifest_url` | string (URL) | ✅ v1.4 (P66) | URL of the robot's P66 conformance manifest |
+| `p66_conformant` | bool | ✅ v1.4 (P66) | Whether this robot has passed P66 conformance testing |
 
 ### 6.4 Proof Verification
 
@@ -544,4 +584,255 @@ The following codes are specific to the Distributed Registry Node Protocol (§17
 
 ---
 
-*RCAN Federation Protocol · Draft v1.0 · © RCAN Working Group · Licensed CC-BY-4.0*
+---
+
+## 11. RCAN v1.4 Wire Types for Registry Operations
+
+RCAN v1.4 defines four new MessageTypes for registry operations over the RCAN wire protocol. These allow robots and clients to register and resolve RRNs directly via the RCAN message protocol (not just via REST API).
+
+### 11.1 MessageType Table (Registry)
+
+| MessageType | Value | Direction | Description |
+|---|---|---|---|
+| `REGISTRY_REGISTER` | 13 | Client → Registry | Request to register a new robot or update an existing registration |
+| `REGISTRY_RESOLVE` | 14 | Client → Registry | Request to resolve an RRN to a federation proof |
+| `REGISTRY_REGISTER_RESULT` | 16 | Registry → Client | Result of a REGISTRY_REGISTER operation |
+| `REGISTRY_RESOLVE_RESULT` | 17 | Registry → Client | Result of a REGISTRY_RESOLVE operation (federation proof payload) |
+
+### 11.2 REGISTRY_REGISTER (MessageType 13)
+
+```json
+{
+  "message_type": 13,
+  "ruri": "rcan://rcan.dev/acme/logistics-bot/lgb-abc123",
+  "robot_name": "Logistics Bot Alpha",
+  "owner_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+  "owner_signature": "ed25519:<signature-over-canonical-registration-payload>",
+  "hardware_safety": {
+    "estop_response_ms": 80,
+    "sil_level": "SIL1",
+    "watchdog_enabled": false,
+    "iso_10218_compliant": false
+  },
+  "p66_manifest_url": "https://lgb-abc123.robots.acme.com/api/p66/manifest.json",
+  "timestamp_iso": "2026-03-14T12:00:00Z"
+}
+```
+
+**Ownership verification:** The `owner_signature` field MUST be an Ed25519 signature of the canonical registration payload (JSON with all fields except `owner_signature`, sorted by key, serialised without whitespace), signed with the private key corresponding to `owner_pubkey`. The registry MUST verify this signature before assigning an RRN.
+
+### 11.3 REGISTRY_REGISTER_RESULT (MessageType 16)
+
+```json
+{
+  "message_type": 16,
+  "status": "registered",
+  "rrn": "RRN-000000000099",
+  "ruri": "rcan://rcan.dev/acme/logistics-bot/lgb-abc123",
+  "timestamp_iso": "2026-03-14T12:00:01Z",
+  "error": null
+}
+```
+
+| `status` | Meaning |
+|---|---|
+| `"registered"` | New registration created; RRN assigned |
+| `"updated"` | Existing registration updated |
+| `"pending"` | Registration queued for manual review |
+| `"rejected"` | Registration rejected; see `error` field |
+
+### 11.4 REGISTRY_RESOLVE (MessageType 14)
+
+```json
+{
+  "message_type": 14,
+  "rrn": "RRN-000000000042",
+  "requester_ruri": "rcan://local.rcan/opencastor/rover/abc12345",
+  "timestamp_iso": "2026-03-14T12:00:00Z"
+}
+```
+
+### 11.5 REGISTRY_RESOLVE_RESULT (MessageType 17)
+
+```json
+{
+  "message_type": 17,
+  "rrn": "RRN-000000000042",
+  "federation_proof": {
+    "registry_url": "https://rcan.dev",
+    "rrn": "RRN-000000000042",
+    "robot_name": "Spot Unit Alpha",
+    "registry_pubkey_hint": "sha256:abc123def456...",
+    "timestamp_iso": "2026-03-14T12:00:01Z",
+    "chain_hash": "sha256:fedcba987654...",
+    "attestation": "active",
+    "owner_pubkey": "ed25519:MCowBQYDK2VwAyEA...",
+    "owner_pubkey_verified": true,
+    "p66_manifest_url": "https://robot.local/api/p66/manifest.json",
+    "p66_conformant": true
+  },
+  "error": null
+}
+```
+
+---
+
+## 12. What a Federated Robot Ecosystem Looks Like
+
+This section provides a concrete walkthrough of how two robots on the same local network discover each other, verify identity, and communicate via RCAN — with the RRF providing the trust anchor.
+
+### Cast
+
+| Robot | RRN | Host | Registry |
+|---|---|---|---|
+| **Bob** | `RRN-000000000001` | `robot.local` | `rcan.dev` (root) |
+| **Alex** | `RRN-000000000005` | `alex.local` | `rcan.dev` (root) |
+
+Both robots are registered with the RRF root registry. Both are running the RCAN runtime and are online on the same LAN.
+
+---
+
+### Step 1 — Bob registers with RRF on first boot
+
+Bob's runtime sends a `REGISTRY_REGISTER` (MessageType 13) to `rcan.dev`:
+
+```json
+{
+  "message_type": 13,
+  "ruri": "rcan://rcan.dev/opencastor/rover/bob-001",
+  "robot_name": "Bob",
+  "owner_pubkey": "ed25519:MCowBQYDK2VwAyEA<BOB_PUBKEY>",
+  "owner_signature": "ed25519:<sig-over-payload>",
+  "hardware_safety": {
+    "estop_response_ms": 45,
+    "sil_level": "SIL1",
+    "watchdog_enabled": true,
+    "iso_10218_compliant": true
+  },
+  "p66_manifest_url": "http://robot.local/api/p66/manifest.json",
+  "timestamp_iso": "2026-03-14T08:00:00Z"
+}
+```
+
+RRF verifies the Ed25519 signature, assigns `RRN-000000000001`, and responds with `REGISTRY_REGISTER_RESULT` (MessageType 16):
+
+```json
+{
+  "message_type": 16,
+  "status": "registered",
+  "rrn": "RRN-000000000001",
+  "ruri": "rcan://rcan.dev/opencastor/rover/bob-001",
+  "timestamp_iso": "2026-03-14T08:00:01Z"
+}
+```
+
+---
+
+### Step 2 — Alex discovers Bob via RCAN DISCOVER
+
+Alex's runtime broadcasts a `DISCOVER` message (MessageType 6) on the local network via mDNS:
+
+```json
+{
+  "message_type": 6,
+  "ruri": "rcan://local/*",
+  "capabilities": ["status", "command"],
+  "timestamp_iso": "2026-03-14T09:00:00Z"
+}
+```
+
+Bob's runtime receives the DISCOVER and responds with its own RURI and basic identity:
+
+```json
+{
+  "message_type": 7,
+  "ruri": "rcan://rcan.dev/opencastor/rover/bob-001",
+  "rrn": "RRN-000000000001",
+  "robot_name": "Bob",
+  "capabilities": ["status", "command", "estop"],
+  "registry": "https://rcan.dev"
+}
+```
+
+---
+
+### Step 3 — Alex verifies Bob's identity via REGISTRY_RESOLVE
+
+Before trusting Bob, Alex resolves his RRN against the registry. Alex sends `REGISTRY_RESOLVE` (MessageType 14) to `rcan.dev`:
+
+```json
+{
+  "message_type": 14,
+  "rrn": "RRN-000000000001",
+  "requester_ruri": "rcan://rcan.dev/opencastor/rover/alex-005",
+  "timestamp_iso": "2026-03-14T09:00:05Z"
+}
+```
+
+RRF responds with `REGISTRY_RESOLVE_RESULT` (MessageType 17) containing the full federation proof including Bob's P66 manifest URL.
+
+Alex verifies the proof: Ed25519 signature valid, `owner_pubkey_verified: true`, `p66_conformant: true`. **Bob is trusted.**
+
+---
+
+### Step 4 — Alex sends a COMMAND to Bob
+
+With identity verified, Alex sends a direct RCAN COMMAND (MessageType 3) to Bob:
+
+```json
+{
+  "message_type": 3,
+  "ruri": "rcan://rcan.dev/opencastor/rover/bob-001",
+  "action": "status",
+  "sender_ruri": "rcan://rcan.dev/opencastor/rover/alex-005",
+  "timestamp_iso": "2026-03-14T09:00:10Z"
+}
+```
+
+---
+
+### Step 5 — Bob responds with STATUS including P66 manifest
+
+Bob's runtime handles the COMMAND and responds with a STATUS message (MessageType 2):
+
+```json
+{
+  "message_type": 2,
+  "ruri": "rcan://rcan.dev/opencastor/rover/bob-001",
+  "rrn": "RRN-000000000001",
+  "state": "idle",
+  "battery_pct": 87,
+  "uptime_s": 3600,
+  "p66_manifest_url": "http://robot.local/api/p66/manifest.json",
+  "hardware_safety": {
+    "estop_response_ms": 45,
+    "sil_level": "SIL1",
+    "watchdog_enabled": true
+  },
+  "timestamp_iso": "2026-03-14T09:00:11Z"
+}
+```
+
+Alex receives the status, inspects the P66 manifest URL, and optionally fetches Bob's full conformance manifest to verify safety posture before issuing any further commands.
+
+---
+
+### Summary: Trust Chain in a Federated Ecosystem
+
+```
+RRF root (rcan.dev)
+  ├── issues RRN-000000000001 to Bob  (Ed25519-verified at registration)
+  ├── issues RRN-000000000005 to Alex
+  └── provides REGISTRY_RESOLVE_RESULT with signed federation proof
+         ↓
+Alex resolves Bob's identity → verifies Ed25519 proof → trusts Bob
+         ↓
+Alex → COMMAND (MessageType 3) → Bob
+Bob → STATUS (MessageType 2) + P66 manifest URL → Alex
+```
+
+No central broker is required at runtime. The RRF provides identity anchoring; Alex and Bob communicate peer-to-peer once trust is established.
+
+---
+
+*RCAN Federation Protocol · v1.4 · © RCAN Working Group · Licensed CC-BY-4.0*

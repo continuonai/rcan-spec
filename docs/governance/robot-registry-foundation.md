@@ -129,6 +129,142 @@ The RRF's core operational guarantee is **continuity of the root registry**, ind
 
 ---
 
+## Scope
+
+The Robot Registry Foundation governs the following areas:
+
+### 1. RRN Assignment
+The RRF maintains the authoritative namespace of **Robot Registration Numbers (RRNs)**. It delegates namespace prefixes to Authoritative nodes (manufacturers, enterprises) and reserves the root namespace for robots without a dedicated organisational registry.
+
+### 2. RCAN Specification Stewardship
+The RRF stewards the RCAN protocol specification hosted at [github.com/continuonai/rcan-spec](https://github.com/continuonai/rcan-spec). This includes:
+- Accepting and reviewing proposed specification changes via GitHub issues and pull requests.
+- Maintaining the canonical spec version and changelog.
+- Publishing normative conformance requirements for each spec version.
+- Coordinating with external standards bodies (ISO/TC 299, IEC TC 62, NIST) to align RCAN with emerging international standards.
+
+### 3. SDK Conformance
+The RRF defines and maintains conformance criteria for RCAN SDKs. An SDK is **RCAN-conformant** if it:
+- Correctly implements all normative wire types for its declared spec version.
+- Passes the RCAN conformance test suite (Level 1 minimum).
+- Publishes a conformance manifest (`p66-manifest.json` or equivalent) for the target robot platform.
+
+### 4. Registry Governance
+The RRF sets policies for federation, delegation, revocation, and dispute resolution between RCAN registries worldwide (see §Dispute Resolution and §Registry of Last Resort).
+
+---
+
+## Current Chair
+
+During the bootstrapping phase (until formal incorporation and board election), **Craig Merry ([@craigm26](https://github.com/craigm26))** serves as founding chair. The chair has decision-making authority on:
+- Spec changes that do not receive consensus within 21 days of open review.
+- Namespace prefix assignments.
+- Registry suspension or revocation.
+- Emergency security patches to the spec.
+
+The chair role transitions to the elected board upon formal Foundation incorporation.
+
+---
+
+## Contribution Process
+
+RCAN is developed in the open. Anyone may propose changes to the specification, registry software, documentation, or tooling.
+
+### Proposing a Spec Change
+
+1. **Open a GitHub issue** at [continuonai/rcan-spec](https://github.com/continuonai/rcan-spec/issues) describing the problem or proposal. Use the `spec-change` label for normative changes, `discussion` for exploratory ideas.
+2. **Gather feedback** — a minimum 14-day open comment period applies to all normative changes. Breaking changes require 30 days.
+3. **Open a pull request** with the proposed change. PRs must include: updated spec text, rationale, backward-compatibility analysis, and (for new message types) a wire format definition.
+4. **Review** — the chair or a delegated reviewer approves or requests changes. Two approvals are required for normative changes.
+5. **Merge** — once approved, the PR is merged and the change is included in the next spec release.
+
+### Contribution Types
+
+| Type | Issue label | Review period | Approvals needed |
+|---|---|---|---|
+| Editorial (typo, clarity) | `editorial` | 3 days | 1 |
+| Non-normative (examples, notes) | `docs` | 7 days | 1 |
+| Normative (wire format, behaviour) | `spec-change` | 14 days | 2 |
+| Breaking change | `breaking` | 30 days | Chair + 1 |
+| New MessageType | `spec-change` + `wire-format` | 21 days | Chair + 1 |
+
+### Contributor Recognition
+All contributors are listed in the repository's `CONTRIBUTORS.md`. Organisations that ship RCAN-conformant implementations are listed in the conformance registry.
+
+---
+
+## Conformance
+
+### RCAN Conformance Levels
+
+| Level | Requirement |
+|---|---|
+| **L1 — Basic** | Implements RCAN wire framing, HELLO/STATUS/COMMAND/DISCOVER message types, RRN registration, and RURI parsing. |
+| **L2 — Auth** | Adds role-based access control, Ed25519 ownership keys, and authenticated registry operations. |
+| **L3 — Federation** | Adds REGISTRY_REGISTER, REGISTRY_RESOLVE, federation proof verification, and sync protocol. |
+| **L4 — Safety** | Adds ESTOP, hardware_safety field support, watchdog integration, and P66 conformance manifest. |
+
+An implementation **MUST** declare its conformance level in its `rcan-config.json` or `p66-manifest.json`.
+
+### P66 Conformance
+
+**P66** is the RCAN safety conformance profile, named for the IP66 ingress protection standard. A P66-conformant robot must:
+- Support ESTOP (MessageType 5) with ≤100ms guaranteed response time.
+- Publish a `p66-manifest.json` at a stable URL, included in registry federation proofs.
+- Declare `hardware_safety` capabilities in `rcan-config.json`.
+- Pass the P66 conformance test suite.
+
+P66 conformance is a prerequisite for robots deployed in environments with direct human interaction.
+
+---
+
+## Versioning Policy
+
+| Artifact | Scheme | Example | Notes |
+|---|---|---|---|
+| RCAN specification | Semver (`MAJOR.MINOR`) | `1.4`, `2.0` | MAJOR bump = breaking wire changes; MINOR = additive |
+| RCAN SDKs | Semver (`MAJOR.MINOR.PATCH`) | `1.4.2` | Tracks spec MAJOR.MINOR; PATCH for bug fixes |
+| RCAN runtimes (rcan-pi, rcan-ros2) | CalVer (`YYYY.MM.PATCH`) | `2026.03.1` | Decoupled from spec; release when ready |
+| rcan-spec repository | Git tags + GitHub releases | `v1.4.0` | Tag on merge of normative changes |
+
+**Deprecation policy:** A message type or field marked `deprecated` in spec version N is removed no earlier than version N+2. Implementations MUST support deprecated fields for at least one major version cycle.
+
+---
+
+## IP Policy
+
+| Asset | License |
+|---|---|
+| Specification text (`.md`, `.astro` spec pages) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Reference implementations, SDKs, tools | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
+| Conformance test suites | Apache 2.0 |
+| Registry software | Apache 2.0 |
+| Logos and visual identity | All rights reserved (contact maintainers for use) |
+
+Contributors agree that their contributions to the specification text are licensed under CC BY 4.0, and their code contributions are licensed under Apache 2.0, by the act of submitting a pull request to the rcan-spec repository.
+
+No contributor license agreement (CLA) is required beyond agreement to these license terms.
+
+---
+
+## External Standards Alignment
+
+The RCAN specification is designed to align with and complement existing international standards. The RRF actively monitors and incorporates requirements from:
+
+| Standard | Relevance to RCAN | Status |
+|---|---|---|
+| **ISO 10218-1/2** (Robot safety) | Physical safety requirements for industrial robots; informs P66 conformance and ESTOP timing requirements | Aligned in v1.4 |
+| **ISO/TS 15066** (Collaborative robots) | Power and force limiting, speed/separation monitoring; informs hardware_safety field schema | Aligned in v1.4 |
+| **EU AI Act (Regulation 2024/1689)** | Art. 13 transparency obligations; Art. 49 high-risk AI registration; informs transparency manifest spec | Tracked in #159; target v1.5 |
+| **IEC 62443** (Industrial cybersecurity) | Security levels for industrial control systems; informs RCAN auth and registry security requirements | Partially aligned; full alignment target v1.6 |
+| **NIST AI RMF** (AI Risk Management) | AI risk categorisation and documentation; informs P66 manifest and transparency disclosure fields | Tracked; target v1.5 |
+| **ISO/TC 299** (Robotics terminology) | Common vocabulary for robot types and capabilities; informs RCAN robot type taxonomy | Ongoing alignment |
+| **IEC 61508** (Functional safety) | SIL (Safety Integrity Level) classification; informs hardware_safety SIL attestation fields | Target v1.5 |
+
+The RRF seeks formal liaison status with ISO/TC 299 and will apply for W3C liaison once formally incorporated.
+
+---
+
 ## EU AI Act Relevance
 
 The EU AI Act (Regulation 2024/1689) creates a direct use case for the Robot Registry Foundation.
