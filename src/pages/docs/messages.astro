@@ -1,0 +1,293 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Message Types" description="Complete reference for RCAN protocol message types (1–19), including TRANSPARENCY (EU AI Act Art. 13) and HANDOFF.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>Message Type Reference</h1>
+    <p class="lead">RCAN defines 19 message types covering discovery, control, safety, invocation, registry operations, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour.</p>
+
+    <section>
+      <h2>Envelope</h2>
+      <p>Every RCAN message uses the same JSON envelope regardless of type:</p>
+      <pre><code>&#123;
+  "id":        "uuid-v4",          // Unique message ID
+  "type":      3,                  // MessageType integer
+  "priority":  1,                  // 0=LOW 1=NORMAL 2=HIGH 3=SAFETY
+  "source":    "rcan://...",       // Sender RURI
+  "target":    "rcan://...",       // Recipient RURI (wildcards allowed)
+  "payload":   &#123; ... &#125;,           // Type-specific data
+  "timestamp": 1741000000.0,       // Unix epoch (seconds)
+  "ttl":       0,                  // Seconds until expiry (0 = no expiry)
+  "reply_to":  null,               // ID of the message being replied to
+  "scope":     ["control"],        // Required RBAC scopes
+  "version":   "1.4"              // RCAN spec version
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>Type Reference</h2>
+      <p>Types 1–18 are defined in RCAN v1.4. Type 19 (HANDOFF) is reserved for the next spec revision.</p>
+
+      <table class="msg-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Priority</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>1</code></td>
+            <td><strong>DISCOVER</strong></td>
+            <td>mDNS / peer discovery — broadcast or unicast probe to locate RCAN nodes on the network. Responders reply with their RURI, capabilities, and registry status.</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>2</code></td>
+            <td><strong>STATUS</strong></td>
+            <td>Telemetry / state reporting — periodic or on-demand snapshot of robot state (position, battery, mode, health). Consumed by dashboards, fleets, and registries.</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>3</code></td>
+            <td><strong>COMMAND</strong></td>
+            <td>Motor, config, or action command — instructs the robot to perform a named action with optional parameters. Requires the <code>control</code> scope.</td>
+            <td>NORMAL / HIGH</td>
+          </tr>
+          <tr>
+            <td><code>4</code></td>
+            <td><strong>STREAM</strong></td>
+            <td>Continuous sensor data — high-frequency stream frames (camera, lidar, IMU, audio). Typically sent over a dedicated stream channel rather than the command bus.</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>5</code></td>
+            <td><strong>EVENT</strong></td>
+            <td>Asynchronous notifications — one-shot events emitted by the robot or runtime (obstacle detected, task completed, low battery, door opened).</td>
+            <td>NORMAL / HIGH</td>
+          </tr>
+          <tr class="safety-row">
+            <td><code>6</code></td>
+            <td><strong>SAFETY</strong></td>
+            <td>STOP / ESTOP / RESUME — safety-critical control messages. Per RCAN §6 Safety Invariant 2, these bypass all queues and are processed immediately. Cannot be overridden by AI.</td>
+            <td><strong>SAFETY</strong></td>
+          </tr>
+          <tr>
+            <td><code>7</code></td>
+            <td><strong>ACK</strong></td>
+            <td>Acknowledgement — confirms receipt and processing of a prior message. The <code>reply_to</code> field references the acknowledged message ID.</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>8</code></td>
+            <td><strong>ERROR</strong></td>
+            <td>Error response — signals that a prior command or request failed. Payload includes an error <code>code</code> (string) and human-readable <code>detail</code>.</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>9</code></td>
+            <td><strong>AUTHORIZE</strong></td>
+            <td>Out-of-band HiTL authorization — operator approves or denies a pending action. Sent in response to a PENDING_AUTH notification. Requires the <code>hitl</code> scope. (v1.2+)</td>
+            <td>HIGH</td>
+          </tr>
+          <tr>
+            <td><code>10</code></td>
+            <td><strong>PENDING_AUTH</strong></td>
+            <td>HiTL gate waiting — robot notifies subscribed operators that an action is blocked pending out-of-band authorization. Includes action type, description, and timeout. (v1.2+)</td>
+            <td>HIGH</td>
+          </tr>
+          <tr>
+            <td><code>11</code></td>
+            <td><strong>INVOKE</strong></td>
+            <td>Trigger a named skill or behavior on the robot runtime. Payload specifies the skill name and parameters. The runtime responds with an INVOKE_RESULT. (v1.3 §19)</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>12</code></td>
+            <td><strong>INVOKE_RESULT</strong></td>
+            <td>Result of an INVOKE invocation — carries success/failure status, return value, and timing metadata. The <code>reply_to</code> field links to the originating INVOKE. (v1.3 §19)</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>13</code></td>
+            <td><strong>REGISTRY_REGISTER</strong></td>
+            <td>Register robot with the Robot Registry Foundation (RRF) — submits RURI, capabilities, operator identity, and Protocol 66 manifest for assignment of a canonical RRN. (v1.3 §21)</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>14</code></td>
+            <td><strong>REGISTRY_RESOLVE</strong></td>
+            <td>Resolve an RRN to its RURI and metadata — query the registry to look up a robot's current address, capabilities, and operator from its Robot Registry Number. (v1.3 §21)</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>15</code></td>
+            <td><strong>INVOKE_CANCEL</strong></td>
+            <td>Cancel an in-flight INVOKE by its <code>invoke_id</code> — instructs the runtime to abort a skill execution that has not yet completed. (v1.3 §19)</td>
+            <td>HIGH</td>
+          </tr>
+          <tr>
+            <td><code>16</code></td>
+            <td><strong>REGISTRY_REGISTER_RESULT</strong></td>
+            <td>Result of a REGISTRY_REGISTER request — confirms success or failure and returns the assigned RRN if registration succeeded. (v1.3 §21)</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr>
+            <td><code>17</code></td>
+            <td><strong>REGISTRY_RESOLVE_RESULT</strong></td>
+            <td>Result of a REGISTRY_RESOLVE query — returns the robot's RURI, operator identity, capabilities, and Protocol 66 conformance data, or an error if the RRN is not found. (v1.3 §21)</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr class="transparency-row">
+            <td><code>18</code></td>
+            <td><strong>TRANSPARENCY</strong></td>
+            <td>EU AI Act Art. 13 disclosure — robot announces its AI nature, capabilities, operator identity, and limitations to humans it interacts with. Required for GPAI-powered robots operating in the EU from August 2026. See <a href="/docs/safety/#eu-ai-act-compliance">EU AI Act Compliance</a>.</td>
+            <td>NORMAL</td>
+          </tr>
+          <tr class="reserved-row">
+            <td><code>19</code></td>
+            <td><strong>HANDOFF</strong></td>
+            <td>Session handoff — transfers control of a robot or conversation session to another robot, operator, or principal. Reserved; full semantics defined in a future RCAN revision.</td>
+            <td>NORMAL</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Priority Levels</h2>
+      <table>
+        <thead>
+          <tr><th>Value</th><th>Name</th><th>Behaviour</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>LOW</td><td>Processed after NORMAL; used for background telemetry and bulk transfers.</td></tr>
+          <tr><td><code>1</code></td><td>NORMAL</td><td>Standard queue ordering. Default for most message types.</td></tr>
+          <tr><td><code>2</code></td><td>HIGH</td><td>Jumps ahead of NORMAL messages in the dispatch queue.</td></tr>
+          <tr><td><code>3</code></td><td>SAFETY</td><td>Bypasses all queues entirely (RCAN §6 Invariant 2). Used exclusively by type 6 (SAFETY) messages.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Python Usage</h2>
+      <pre><code>from rcan.message import MessageType, RCANMessage
+
+# Create a COMMAND message
+msg = RCANMessage.command(
+    source="rcan://rcan.dev/acme/arm/v1/unit-001",
+    target="rcan://rcan.dev/acme/arm/v1/unit-001",
+    payload=&#123;"cmd": "move_forward", "speed": 0.5&#125;,
+)
+
+# Create a TRANSPARENCY disclosure (EU AI Act Art. 13)
+from rcan.safety import make_transparency_message
+
+transparency = make_transparency_message(
+    source_ruri="rcan://rcan.dev/acme/arm/v1/unit-001",
+    target_ruri="rcan://local/human-display",
+    operator="Acme Robotics",
+    capabilities=["navigation", "speech"],
+    model_family="claude-sonnet",
+    contact="safety@acme.example",
+    p66_conformance_pct=87.0,
+)</code></pre>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/safety/">Safety Conformance</a> — ESTOP, Protocol 66, EU AI Act compliance</li>
+        <li><a href="/docs/schema/">Config Schema</a> — RCAN configuration validation</li>
+        <li><a href="/docs/error-codes/">Error Codes</a> — ERROR message payload codes</li>
+        <li><a href="/docs/registration/">Robot Registration</a> — REGISTRY_REGISTER workflow</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav {
+    margin-bottom: 2rem;
+  }
+
+  .doc-nav a {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .msg-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+  }
+
+  .msg-table th,
+  .msg-table td {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .msg-table th {
+    background: var(--color-bg-alt);
+    font-weight: 600;
+  }
+
+  .msg-table td:first-child {
+    white-space: nowrap;
+    font-family: monospace;
+  }
+
+  .safety-row td {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+
+  .transparency-row td {
+    background: rgba(34, 211, 238, 0.06);
+    border-color: rgba(34, 211, 238, 0.25);
+  }
+
+  .reserved-row td {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  th {
+    background: var(--color-bg-alt);
+    font-weight: 600;
+  }
+
+  section {
+    margin-bottom: 2.5rem;
+  }
+</style>
