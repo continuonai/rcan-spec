@@ -4,27 +4,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 const implementations = [
   {
     name: "OpenCastor",
-    lang: "Python",
-    description: "Reference RCAN runtime (v2026.3.13.11). Confidence gates, HiTL gates, thought logging, commitment chain audit, multi-provider AI brain, hardware auto-detection, and fleet telemetry. One implementation of RCAN — not required to use the protocol.",
+    lang: "Python 3.12+",
+    description: "Robot Runtime / AI Brain Harness (v2026.3.14.6). TieredBrain, HiTL gates, confidence gates, thought log, 18+ hardware drivers, SO-ARM101 arm support, Protocol 66 safety stack. RCAN 1.4 — P66 Conformance ≥ 80% (GET /api/safety/manifest). Docs: https://opencastor.com/docs",
     tier: "verified",
     github: "https://github.com/craigm26/OpenCastor",
-    tags: ["Python", "Raspberry Pi", "Safety Gates", "Commitment Chain", "Reference Implementation", "v2026.3.13.11"],
+    tags: ["Python", "Raspberry Pi", "Safety Gates", "P66", "TieredBrain", "HiTL", "SO-ARM101", "v2026.3.14.6", "RCAN 1.4"],
   },
   {
     name: "rcan-py",
     lang: "Python",
-    description: "Official Python SDK (v0.4.0). RURI parsing, message construction, Ed25519 signing, schema validation, RegistryClient for rcan.dev API, TypedDicts, exception hierarchy. SPEC_VERSION=1.4.",
+    description: "Official Python SDK (v0.4.1). RURI parsing, message construction, Ed25519 signing, schema validation, RegistryClient for rcan.dev API, TypedDicts, exception hierarchy, MessageType 6 safety helpers. SPEC_VERSION=1.4.",
     tier: "verified",
     github: "https://github.com/continuonai/rcan-py",
-    tags: ["Python", "SDK", "Registry", "TypedDicts", "v0.4.0"],
+    tags: ["Python", "SDK", "Registry", "TypedDicts", "Safety Helpers", "v0.4.1", "RCAN 1.4"],
   },
   {
     name: "rcan-ts",
     lang: "TypeScript",
-    description: "Official TypeScript / Node.js SDK (v0.3.0). RURI parsing, message construction, audit chain, Ed25519 signing. Works in Node, browser (ESM), and CDN (IIFE bundle via unpkg/jsDelivr).",
+    description: "Official TypeScript / Node.js SDK (v0.4.1). RURI parsing, message construction, audit chain, Ed25519 signing. Works in Node, browser (ESM), and CDN (IIFE bundle via unpkg/jsDelivr). SPEC_VERSION=1.4.",
     tier: "verified",
     github: "https://github.com/continuonai/rcan-ts",
-    tags: ["TypeScript", "Node.js", "SDK", "ESM", "CDN bundle", "v0.3.0"],
+    tags: ["TypeScript", "Node.js", "SDK", "ESM", "CDN bundle", "v0.4.1", "RCAN 1.4"],
   },
   {
     name: "Bob",
@@ -60,7 +60,7 @@ const tierMeta: Record<string, { label: string; color: string; icon: string }> =
     <div class="py-16 border-b border-white/5 mb-12">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-text-muted mb-6">
         <span class="w-2 h-2 rounded-full bg-accent"></span>
-        Protocol v1.3
+        Protocol v1.4
       </div>
       <h1 class="text-4xl md:text-5xl font-bold text-text mb-4 leading-tight">
         Implementations
