@@ -1,12 +1,12 @@
 {
-  "updated": "2026-03-13",
+  "updated": "2026-03-14",
   "spec_versions": [
     {
       "version": "1.4",
       "status": "current",
-      "rcan_py": ">=0.4.0",
-      "rcan_ts": ">=0.4.0",
-      "opencastor": ">=2026.3.13.12",
+      "rcan_py": ">=0.4.1",
+      "rcan_ts": ">=0.4.1",
+      "opencastor": ">=2026.3.14.6",
       "notes": "57-page spec; \u00a71\u2013\u00a716 fully expanded; REGISTRY_REGISTER_RESULT (\u00a721.6) MessageType=16; REGISTRY_RESOLVE_RESULT (\u00a721.7) MessageType=17; structured RRN URI rrn://[org]/[category]/[model]/[id]; Appendix F"
     },
     {
