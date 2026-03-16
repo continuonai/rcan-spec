@@ -1,0 +1,170 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Robot Identity Revocation" description="RCAN §13 — ROBOT_REVOCATION message type, revocation status API, TTL cache, and offline quarantine behavior.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§13 — Robot Identity Revocation <span class="badge-new">v1.5</span></h1>
+    <p class="lead">RRNs are permanent and never reused — but a robot can be stolen, hacked, or decommissioned. v1.5 adds a revocation mechanism so the fleet can invalidate trust in a compromised robot without disrupting other operations.</p>
+
+    <div class="callout callout-critical">
+      <strong>Security blocker:</strong> Without revocation, a stolen robot retains full cryptographic identity indefinitely. In a factory with 50 robots, a single compromised unit can command its peers forever.
+    </div>
+
+    <section>
+      <h2>Revocation Status</h2>
+
+      <h3>Registry API Endpoint</h3>
+      <pre><code>GET /api/v1/robots/&#123;rrn&#125;/revocation-status
+
+// Response
+&#123;
+  "rrn":         "RRN-000000000042",
+  "status":      "active",         // "active" | "revoked" | "suspended"
+  "revoked_at":  null,             // Unix timestamp if revoked
+  "reason":      null,             // Human-readable reason
+  "authority":   null              // Who issued the revocation (owner RURI)
+&#125;</code></pre>
+
+      <h3>Revocation Request</h3>
+      <pre><code>POST /api/v1/robots/&#123;rrn&#125;/revoke
+Authorization: Bearer &lt;creator-jwt&gt;
+
+&#123;
+  "reason": "Device stolen — reported 2026-03-15",
+  "status": "revoked"    // or "suspended" for temporary hold
+&#125;</code></pre>
+      <p>Requires <code>creator</code> role JWT. Revocation is irreversible for <code>status: "revoked"</code>; <code>status: "suspended"</code> can be lifted.</p>
+    </section>
+
+    <section>
+      <h2>ROBOT_REVOCATION Broadcast (MessageType 19)</h2>
+      <p>When the registry marks a robot as revoked, it MUST broadcast a <code>ROBOT_REVOCATION</code> message (type 19) to all reachable peers:</p>
+      <pre><code>&#123;
+  "id":           "uuid-v4",
+  "type":         19,
+  "source":       "rcan://registry.rcan.dev",
+  "target":       "rcan://*/*",          // All peers
+  "rcan_version": "1.5",
+  "priority":     2,
+  "qos":          1,
+  "payload": &#123;
+    "revoked_rrn": "RRN-000000000042",
+    "status":      "revoked",
+    "revoked_at":  1741000000,
+    "authority":   "rcan://rcan.dev/org/owner/v1/craig"
+  &#125;
+&#125;</code></pre>
+
+      <h3>Peer Behavior on Receipt</h3>
+      <p>Any peer receiving <code>ROBOT_REVOCATION</code> MUST immediately:</p>
+      <ol>
+        <li>Invalidate all cached public key material for the revoked RRN</li>
+        <li>Invalidate all cached consent records granted by or to the revoked RRN</li>
+        <li>Reject all future messages from <code>source == revoked_rrn</code> (except ESTOP — see below)</li>
+        <li>Write an audit event recording the revocation broadcast receipt</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>ESTOP Exception</h2>
+      <div class="callout callout-safety">
+        <strong>Protocol 66 Invariant:</strong> ESTOP messages from a revoked robot MUST still be accepted. A revoked robot may have legitimate safety concerns (e.g., its operator revoked it after detecting a security breach, but it is still physically operational). RESUME from a revoked robot MUST be rejected.
+      </div>
+      <table>
+        <thead><tr><th>Message from Revoked Robot</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>SAFETY ESTOP (type 6, cmd=ESTOP)</td><td>✅ Accept — P66 invariant</td></tr>
+          <tr><td>SAFETY RESUME (type 6, cmd=RESUME)</td><td>❌ Reject — revoked robots cannot clear ESTOP</td></tr>
+          <tr><td>Any other message type</td><td>❌ Reject with <code>ROBOT_REVOKED</code> error</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Revocation Cache</h2>
+      <p>Robots MUST check revocation status on startup and cache results:</p>
+      <ul>
+        <li><strong>TTL:</strong> 1 hour (3600s)</li>
+        <li>On cache miss or TTL expiry: fetch fresh status from registry</li>
+        <li>If registry unreachable: continue with cached status for up to <code>max_revocation_staleness_s</code> (default: 3600s)</li>
+        <li>After staleness limit exceeded: enter <strong>quarantine mode</strong></li>
+      </ul>
+
+      <h3>Quarantine Mode</h3>
+      <p>In quarantine mode (offline + stale revocation data):</p>
+      <ul>
+        <li>Only accept commands from same-network, same-owner sources</li>
+        <li>Reject all cross-owner commands</li>
+        <li>Log <code>WARNING</code> audit events every 60s</li>
+        <li>ESTOP always accepted (P66 invariant)</li>
+        <li>Exit quarantine when registry connectivity is restored</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Configuration</h2>
+      <pre><code>security:
+  revocation:
+    check_on_startup: true
+    cache_ttl_s: 3600           # 1 hour TTL for revocation status cache
+    max_staleness_s: 3600       # Max time to operate with stale cache before quarantine
+    quarantine_on_staleness: true</code></pre>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/key-rotation/">Key Rotation</a> — key revocation is a separate mechanism from robot identity revocation</li>
+        <li><a href="/docs/offline/">Offline Operation</a> — quarantine mode interaction with offline mode</li>
+        <li><a href="/docs/consent/">Consent Wire Protocol</a> — consent invalidation on revocation</li>
+        <li><a href="/docs/messages/#type-reference">ROBOT_REVOCATION (type 19)</a></li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-critical {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+  .callout-safety {
+    background: rgba(239, 68, 68, 0.06);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

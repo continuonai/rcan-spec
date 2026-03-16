@@ -1,0 +1,175 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Replay Attack Prevention" description="RCAN §8.3 — sliding-window msg_id seen-set, replay window, and anti-DoS ordering for replay checks.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§8.3 — Replay Attack Prevention <span class="badge-new">v1.5</span></h1>
+    <p class="lead">Without replay prevention, a captured signed command is valid forever. v1.5 adds a mandatory timestamp freshness bound and a sliding-window msg_id seen-set to block replayed messages.</p>
+
+    <div class="callout callout-critical">
+      <strong>Deployment blocker:</strong> Any RCAN robot accessible over a network is vulnerable to replay attacks without this protection. All v1.5-compliant implementations MUST enforce replay checking.
+    </div>
+
+    <section>
+      <h2>Threat Model</h2>
+      <p>An attacker with passive network access captures a valid signed <code>COMMAND</code> message (e.g., <code>move_forward</code> signed by the robot's owner). Because RCAN messages carry Ed25519 signatures, the attacker cannot forge a new command — but they can replay the captured one unchanged, indefinitely. The robot has no way to distinguish a fresh command from a replayed one without timestamp freshness enforcement and a msg_id deduplication cache.</p>
+    </section>
+
+    <section>
+      <h2>Replay Check Rules</h2>
+
+      <h3>1. Timestamp Freshness</h3>
+      <p>Robots MUST reject any message where:</p>
+      <pre><code>now() - message.timestamp > replay_window_s</code></pre>
+      <ul>
+        <li>Default <code>replay_window_s</code>: <strong>30 seconds</strong></li>
+        <li>Configurable range: 5–300 seconds (via <code>security.replay_window_s</code>)</li>
+        <li>For <strong>SAFETY messages (type 6)</strong>: window MUST NOT exceed <strong>10 seconds</strong></li>
+        <li>Clock drift tolerance: ±5s (enforced by §8.4 time sync requirement)</li>
+      </ul>
+
+      <h3>2. msg_id Seen-Set (Sliding Window)</h3>
+      <p>Robots MUST maintain a sliding-window cache of recently seen <code>msg_id</code> values:</p>
+      <ul>
+        <li>Cache covers the same duration as <code>replay_window_s</code></li>
+        <li>Any message with a <code>msg_id</code> already in the cache MUST be rejected with <code>REPLAY_DETECTED</code></li>
+        <li>Cache entries are evicted when they age out of the window</li>
+        <li>Max cache size: configurable via <code>security.msg_id_cache_size</code> (default: 10,000 entries)</li>
+      </ul>
+
+      <h3>3. Check Ordering — Anti-DoS</h3>
+      <div class="callout callout-warn">
+        <strong>Critical:</strong> Replay checks MUST be applied BEFORE signature verification. Signature verification is expensive (Ed25519). An attacker flooding replayed messages would force expensive crypto operations on every packet without this ordering.
+      </div>
+      <p>Correct message processing order:</p>
+      <ol>
+        <li>Parse envelope (cheap)</li>
+        <li>Check <code>rcan_version</code> (cheap)</li>
+        <li><strong>Replay check: timestamp freshness + msg_id seen-set</strong> (cheap)</li>
+        <li>JWT authentication (moderate)</li>
+        <li>Signature verification (expensive)</li>
+        <li>Authorization / scope check</li>
+        <li>Process payload</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>ESTOP Safety Invariant</h2>
+      <div class="callout callout-safety">
+        <strong>Protocol 66 Invariant:</strong> ESTOP is never blocked by replay checking when the timestamp is fresh. A fresh ESTOP (within 10s) from any identified source MUST always be processed, even if a duplicate msg_id is seen. The replay cache is checked, but ESTOP receipt is not gated on it — ESTOP is processed immediately, and the duplicate is logged.
+      </div>
+      <p>Specifically:</p>
+      <ul>
+        <li>SAFETY messages (type 6) use a 10s replay window (not 30s)</li>
+        <li>A fresh ESTOP with a duplicate msg_id: process ESTOP, log <code>REPLAY_DETECTED</code> warning, do not reject</li>
+        <li>A stale ESTOP (> 10s old): reject — this prevents confusion from severely delayed network delivery</li>
+        <li>RESUME requires fresh timestamp AND unique msg_id (not exempt from replay check)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Configuration</h2>
+      <pre><code>security:
+  replay_window_s: 30        # Default: 30; range 5–300
+  msg_id_cache_size: 10000   # Max entries in seen-set; evicted by age
+  # Note: SAFETY messages always use min(replay_window_s, 10) internally</code></pre>
+    </section>
+
+    <section>
+      <h2>Error Responses</h2>
+      <table>
+        <thead><tr><th>Error Code</th><th>Cause</th><th>HTTP / Response</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>REPLAY_DETECTED</code></td>
+            <td>msg_id already seen within replay window</td>
+            <td>HTTP 409 / COMMAND_NACK (type 31)</td>
+          </tr>
+          <tr>
+            <td><code>MESSAGE_STALE</code></td>
+            <td>timestamp older than replay_window_s</td>
+            <td>HTTP 408 / COMMAND_NACK (type 31)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Both errors MUST be written to the audit trail. Do NOT include the attacker's payload in the audit record (prevents audit log injection).</p>
+    </section>
+
+    <section>
+      <h2>rcan-py Implementation</h2>
+      <pre><code>from rcan.validate import ReplayCache, ReplayAttackError
+
+# Initialize at robot startup
+replay_cache = ReplayCache(
+    window_s=config.security.replay_window_s,   # default 30
+    max_size=config.security.msg_id_cache_size,  # default 10000
+)
+
+# In message receive path (before signature verification)
+try:
+    replay_cache.check(msg.msg_id, msg.timestamp, msg_type=msg.type)
+except ReplayAttackError as e:
+    return error_response("REPLAY_DETECTED", str(e))</code></pre>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/safety/#time-sync">§8.4 Time Synchronization</a> — required for accurate timestamp comparison</li>
+        <li><a href="/docs/qos/">QoS &amp; Delivery Guarantees</a> — interaction between replay prevention and QoS retry</li>
+        <li><a href="/docs/messages/#version-compatibility">§3.5 Version Compatibility</a> — replay check precedes version check? No: version check is first, replay check is third</li>
+        <li><a href="/docs/error-codes/">Error Codes</a> — REPLAY_DETECTED, MESSAGE_STALE</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-critical {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+  .callout-safety {
+    background: rgba(239, 68, 68, 0.06);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>
