@@ -56,8 +56,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </li>
         <li>
           <a href="/docs/messages/" class="doc-link">
-            <span class="doc-title">Message Types</span>
-            <span class="doc-desc">All 19 RCAN message types — COMMAND, INVOKE, TRANSPARENCY, HANDOFF and more</span>
+            <span class="doc-title">Message Types <span class="badge-v15">v1.5</span></span>
+            <span class="doc-desc">All 31 RCAN v1.5 message types — canonical integer table, version compat, CONFIG_UPDATE, fleet ops</span>
           </a>
         </li>
       </ul>
@@ -93,7 +93,73 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <li>
           <a href="/docs/safety/" class="doc-link">
             <span class="doc-title">Safety &amp; P66 Conformance</span>
-            <span class="doc-desc">ESTOP, hardware safety fields, and P66 conformance profile</span>
+            <span class="doc-desc">ESTOP, hardware safety, clock sync, and audit export</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/replay-prevention/" class="doc-link">
+            <span class="doc-title">Replay Attack Prevention <span class="badge-v15">v1.5</span></span>
+            <span class="doc-desc">§8.3 — msg_id seen-set and timestamp freshness window</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/qos/" class="doc-link">
+            <span class="doc-title">QoS &amp; Delivery Guarantees <span class="badge-v15">v1.5</span></span>
+            <span class="doc-desc">§5.3 — fire-and-forget, at-least-once, ESTOP exactly-once</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/training-consent/" class="doc-link">
+            <span class="doc-title">Training Data Consent <span class="badge-v15">v1.5</span></span>
+            <span class="doc-desc">§17 — EU AI Act Article 10, biometric data, right-to-erasure</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="doc-section">
+      <h2>Security <span class="badge-v15-section">v1.5</span></h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/revocation/" class="doc-link">
+            <span class="doc-title">Robot Identity Revocation</span>
+            <span class="doc-desc">§13 — ROBOT_REVOCATION, TTL cache, offline quarantine</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/key-rotation/" class="doc-link">
+            <span class="doc-title">Key Rotation</span>
+            <span class="doc-desc">§8.6 — JWKS, key_id, grace period, KEY_ROTATION message</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/cloud-relay/" class="doc-link">
+            <span class="doc-title">Cloud Relay Identity</span>
+            <span class="doc-desc">§8.5 — sender_type, cloud_function identity, audit trail</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/delegation/" class="doc-link">
+            <span class="doc-title">Command Delegation Chain</span>
+            <span class="doc-desc">§12 — R2R delegation, max 4 hops, physical presence</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="doc-section">
+      <h2>Consent &amp; Access <span class="badge-v15-section">v1.5</span></h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/consent/" class="doc-link">
+            <span class="doc-title">Consent Wire Protocol</span>
+            <span class="doc-desc">§11.2 — CONSENT_REQUEST/GRANT/DENY, third-party control flow</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/offline/" class="doc-link">
+            <span class="doc-title">Offline Operation</span>
+            <span class="doc-desc">§14 — cached key auth, restricted mode, reconnection</span>
           </a>
         </li>
       </ul>
@@ -199,6 +265,30 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     display: block;
     font-size: 0.875rem;
     color: var(--color-text-muted);
+  }
+
+  .badge-v15 {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.12);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
+  }
+
+  .badge-v15-section {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.12);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
   }
 
   @media (max-width: 768px) {

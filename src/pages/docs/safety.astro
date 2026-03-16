@@ -308,6 +308,79 @@ msg = make_transparency_message(
       <p>See the <a href="/compliance/eu-ai-act">EU AI Act Compliance Guide</a> for full implementation details and the Article 9/17 requirements.</p>
     </section>
 
+    <section id="time-sync">
+      <h2>§8.4 — Clock Synchronization Requirements <span class="badge new-v15">v1.5</span></h2>
+      <p><strong>Gap:</strong> GAP-04 — Replay attack prevention (§8.3) depends on timestamp comparison. Unsynced clocks cause valid commands to be rejected or create replay windows.</p>
+
+      <h3>Requirements</h3>
+      <ul>
+        <li>All RCAN-compliant robots MUST synchronize their system clocks using <strong>NTP</strong> or <strong>Network Time Security (NTS, RFC 8915)</strong> before entering operational mode.</li>
+        <li>Recommended time source: <code>pool.ntp.org</code></li>
+        <li>Maximum drift tolerance: <strong>±5 seconds</strong></li>
+        <li>Embedded hardware without RTC SHOULD use NTP at boot and maintain drift within tolerance.</li>
+      </ul>
+
+      <h3>Protocol 66 Manifest — New Fields</h3>
+      <p>Robots MUST expose the following new fields in <code>GET /api/safety/manifest</code>:</p>
+      <pre><code>&#123;
+  "protocol": 66,
+  "rcan_version": "1.5",
+  ...
+  "clock_synchronized":  true,         // false if NTP not confirmed
+  "clock_source":        "ntp",        // "ntp" | "nts" | "gps" | "manual" | "none"
+  "clock_drift_ms":      12.4,         // Last known drift in milliseconds
+  "offline_mode":        false,        // true when registry unreachable
+  "offline_since_s":     0            // Seconds since entering offline mode
+&#125;</code></pre>
+
+      <h3>Restricted Mode</h3>
+      <p>When <code>clock_synchronized: false</code>, the robot MUST enter restricted mode:</p>
+      <ul>
+        <li>Only accept commands from <strong>same-network, same-owner</strong> sources</li>
+        <li>Log a <strong>WARNING-level</strong> audit event every 60 seconds</li>
+        <li>Cross-owner consent requests are blocked until sync is restored</li>
+        <li>ESTOP is always accepted regardless of clock sync state (P66 invariant)</li>
+      </ul>
+    </section>
+
+    <section id="audit-export">
+      <h2>§20 — Audit Trail Export Protocol <span class="badge new-v15">v1.5 SHOULD</span></h2>
+      <p><strong>Gap:</strong> GAP-21 — HMAC-chained audit exists locally; no standard export API for compliance audits. EU AI Act Article 17 requires accessible audit records.</p>
+
+      <h3>Export Endpoint</h3>
+      <pre><code>GET /api/v1/audit?from=&lt;unix_ts&gt;&amp;to=&lt;unix_ts&gt;&amp;format=jsonl|csv
+
+// Response headers
+Content-Type: application/x-ndjson   (format=jsonl)
+Content-Type: text/csv               (format=csv)
+X-Audit-Chain-Root: sha256:abc123    // Root hash of the exported chain
+X-Audit-Issuer-Sig: ed25519:...      // Ed25519 signature over root hash</code></pre>
+
+      <h3>JSONL Export Format</h3>
+      <p>The first line is a signed header; subsequent lines are NDJSON commitment records:</p>
+      <pre><code>// Line 1: header
+&#123;"type":"audit_export","from":1741000000,"to":1741086400,"count":142,"chain_root":"sha256:abc...","issuer_sig":"ed25519:xyz...","rcan_version":"1.5"&#125;
+// Lines 2-N: commitment records
+&#123;"id":"...","timestamp":1741000001,"cmd":"move_forward","operator":"...","commitment_hash":"..."&#125;
+...</code></pre>
+
+      <h3>Verification</h3>
+      <p>Recipients can verify the export by:</p>
+      <ol>
+        <li>Computing the chain root hash over all commitment records in order</li>
+        <li>Verifying the <code>issuer_sig</code> against the robot's public key (from JWKS or registry)</li>
+        <li>Comparing computed root to <code>chain_root</code> in the header</li>
+      </ol>
+
+      <h3>Protocol 66 Manifest — Audit Fields</h3>
+      <pre><code>&#123;
+  "audit_enabled":         true,
+  "audit_retention_days":  90,
+  "audit_count":           1423,
+  "audit_last_event":      1741000001.0
+&#125;</code></pre>
+    </section>
+
     <section>
       <h2>Conformance Badges</h2>
       <p>RCAN-compliant robots can display conformance badges to signal their safety posture. Badges are available for:</p>
@@ -385,6 +458,13 @@ msg = make_transparency_message(
     background: rgba(34, 211, 238, 0.15);
     color: var(--color-accent);
     border: 1px solid var(--color-accent);
+  }
+
+  .badge.new-v15 {
+    background: rgba(34, 211, 238, 0.1);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    text-transform: none;
   }
 
   .callout {

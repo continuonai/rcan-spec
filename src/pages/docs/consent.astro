@@ -1,0 +1,231 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Consent Wire Protocol" description="RCAN §11.2 — CONSENT_REQUEST, CONSENT_GRANT, CONSENT_DENY on-wire format, sequence diagrams, and third-party control flow.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§11.2 — Consent Wire Protocol <span class="badge-new">v1.5</span></h1>
+    <p class="lead">RCAN v1.4 implemented consent via Firestore only — non-interoperable across runtimes. v1.5 defines a complete on-wire RCAN message format for consent so any RCAN-compliant runtime can participate in the consent ecosystem.</p>
+
+    <section>
+      <h2>Message Types</h2>
+      <table>
+        <thead><tr><th>Type</th><th>Integer</th><th>Direction</th><th>Signer</th></tr></thead>
+        <tbody>
+          <tr><td>CONSENT_REQUEST</td><td>20</td><td>Requester → Target Robot</td><td>Requester JWT</td></tr>
+          <tr><td>CONSENT_GRANT</td><td>21</td><td>Target Robot → Requester</td><td>Target Robot's Owner JWT</td></tr>
+          <tr><td>CONSENT_DENY</td><td>22</td><td>Target Robot → Requester</td><td>Target Robot's Owner JWT</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>CONSENT_REQUEST Payload</h2>
+      <pre><code>&#123;
+  "request_id":        "uuid-v4",               // Unique consent request ID
+  "requester_ruri":    "rcan://rcan.dev/org/arm/v1/unit-001",
+  "requester_owner":   "craig@example.com",      // Human identity of requester's owner
+  "target_ruri":       "rcan://rcan.dev/org/delivery/v1/unit-002",
+  "requested_scopes":  ["control", "status"],   // R2RAM scopes requested
+  "duration_hours":    24,                       // Consent validity period
+  "justification":     "Arm needs to hand package to delivery robot",
+  "consent_type":      "cross_robot",            // "cross_robot" | "training_data" | "observer"
+  "data_categories":   [],                       // ["video","audio","location","biometric"] if training
+  "expires_at":        1741086400                // Request expires at (not grant expiry)
+&#125;</code></pre>
+
+      <h3>JSON Schema</h3>
+      <pre><code>&#123;
+  "$schema": "https://rcan.dev/schemas/consent-request-v1.5.json",
+  "required": ["request_id","requester_ruri","requester_owner","target_ruri",
+               "requested_scopes","duration_hours","justification"],
+  "properties": &#123;
+    "request_id":       &#123;"type":"string","format":"uuid"&#125;,
+    "requested_scopes": &#123;"type":"array","items":&#123;"type":"string"&#125;,"minItems":1&#125;,
+    "duration_hours":   &#123;"type":"number","minimum":0.016,"maximum":8760&#125;,
+    "consent_type":     &#123;"enum":["cross_robot","training_data","observer"]&#125;
+  &#125;
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>CONSENT_GRANT Payload</h2>
+      <pre><code>&#123;
+  "request_id":     "uuid-v4",                 // Echo of CONSENT_REQUEST.request_id
+  "granted_scopes": ["control", "status"],     // May be subset of requested_scopes
+  "expires_at":     1741086400,                // Unix timestamp of grant expiry
+  "reason":         "Approved for package handoff",
+  "grant_token":    "eyJ..."                  // JWT minted by registry for requester
+&#125;</code></pre>
+      <p>CONSENT_GRANT MUST be signed by the target robot's owner JWT. Receiving a CONSENT_GRANT without a valid owner-level JWT signature MUST be rejected.</p>
+
+      <h3>CONSENT_DENY Payload</h3>
+      <pre><code>&#123;
+  "request_id": "uuid-v4",
+  "reason":     "Access denied — unknown requester"
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>Cross-Robot Consent Flow (Sequence)</h2>
+      <pre class="sequence">
+Robot A (requester)          Robot B (target)         Human B (owner of B)
+       |                           |                           |
+       |-- CONSENT_REQUEST (20) -->|                           |
+       |   (request_id: X,         |                           |
+       |    scopes: [control])     |                           |
+       |                           |-- push notification ----->|
+       |                           |   "Robot A requests       |
+       |                           |    control access"        |
+       |                           |                           |
+       |                           |<-- approve (RCAN app) ----|
+       |                           |                           |
+       |<-- CONSENT_GRANT (21) ----|                           |
+       |    (signed by Human B JWT)|                           |
+       |    (grant_token: JWT)     |                           |
+       |                           |                           |
+       |-- COMMAND (1) ----------->|                           |
+       |   (Authorization: grant_token)                        |
+       |                           |                           |
+       |<-- RESPONSE (2) ----------|                           |
+       |                           |                           |
+</pre>
+    </section>
+
+    <section>
+      <h2>§11.3 — Third-Party Human Control Flow <span class="badge-should">v1.5 SHOULD</span></h2>
+      <p><strong>Gap:</strong> GAP-22 — The complete 7-step flow was not spec'd as a normative sequence.</p>
+
+      <pre class="sequence">
+Human A                  Registry             Robot B          Human B (owner of B)
+   |                        |                    |                    |
+1. |-- GET /api/v1/robots -->|                    |                    |
+   |   (discover Robot B)   |                    |                    |
+   |                        |                    |                    |
+2. |-- CONSENT_REQUEST(20) ----------------->|                    |
+   |   (to Robot B RURI)                        |                    |
+   |                                            |                    |
+3.                                              |-- notification ---->|
+   |                                            |   "Human A requests |
+   |                                            |    control access"  |
+   |                                            |                    |
+4.                                              |<-- CONSENT_GRANT(21)|
+   |                                            |   (signed by HumanB)|
+   |                                            |                    |
+5. |<-- grant_token (JWT) ---------------------|                    |
+   |   (minted by Robot B's registry, scoped)   |                    |
+   |                                            |                    |
+6. |-- COMMAND(1) ---------------------------->|                    |
+   |   Authorization: grant_token              |                    |
+   |                                            |                    |
+7. |<-- RESPONSE(2) ---------------------------|                    |
+   |                                            |                    |
+
+Audit trail: Human A → (consent grant from Human B) → Robot B
+</pre>
+
+      <h3>Scoped JWT Minting (Step 5)</h3>
+      <p>The registry mints a scoped JWT for Human A → Robot B on receipt of the consent grant:</p>
+      <pre><code>POST /api/v1/consent/&#123;request_id&#125;/mint-token
+Authorization: Bearer &lt;human-b-owner-jwt&gt;
+
+// Response
+&#123;
+  "grant_token": "eyJ...",   // JWT valid for granted_scopes only
+  "expires_at":  1741086400,
+  "aud":         "rcan://rcan.dev/org/delivery/v1/unit-002",
+  "scopes":      ["control", "status"]
+&#125;</code></pre>
+      <p>The <code>grant_token</code> cannot exceed the granted scopes. The registry enforces this at mint time.</p>
+    </section>
+
+    <section>
+      <h2>Offline Consent Fallback</h2>
+      <p>When the registry is unreachable, consent records MUST be exportable as signed JSON blobs for local operation:</p>
+      <pre><code>// Offline consent blob format
+&#123;
+  "format":    "rcan-consent-blob-v1",
+  "grant":     &#123; ...CONSENT_GRANT payload... &#125;,
+  "signature": "ed25519:...",           // Signed by Human B's key
+  "issued_at": 1741000000,
+  "offline_usable_until": 1741086400   // Max offline usage window
+&#125;</code></pre>
+      <p>Robots MUST validate the blob signature before accepting offline consent. Offline blobs are single-use per session (cannot be replayed after registry reconnection).</p>
+    </section>
+
+    <section>
+      <h2>Audit Requirements</h2>
+      <p>All consent events MUST be written to the audit trail:</p>
+      <ul>
+        <li>CONSENT_REQUEST sent/received (with <code>request_id</code>, scopes, expiry)</li>
+        <li>CONSENT_GRANT or CONSENT_DENY (with <code>request_id</code>, granting owner, granted scopes)</li>
+        <li>Command execution under consent (linking <code>grant_token</code> to <code>request_id</code>)</li>
+        <li>Consent expiry (automatic audit event when grant expires)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/training-consent/">Training Data Consent</a> — consent_type="training_data" flows</li>
+        <li><a href="/docs/cloud-relay/">Cloud Relay Identity</a> — consent requests from cloud functions</li>
+        <li><a href="/docs/delegation/">Command Delegation Chain</a> — robot-to-robot delegation after consent</li>
+        <li><a href="/docs/offline/">Offline Operation</a> — offline consent blob usage</li>
+        <li><a href="/docs/messages/#type-reference">MessageType 20/21/22</a></li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-should {
+    display: inline-block;
+    background: rgba(250, 204, 21, 0.12);
+    color: #ca8a04;
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .sequence {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+</style>

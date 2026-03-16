@@ -1,0 +1,197 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Training Data Consent" description="RCAN §17 — biometric and training data consent, EU AI Act Article 10, data categories, and right-to-erasure.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§17 — Biometric and Training Data Consent <span class="badge-new">v1.5</span></h1>
+    <p class="lead">RCAN v1.4 defined a TRAINING_DATA message type with a confidence gate of 0.60 but no consent mechanism for biometric or personal data collection. v1.5 adds a mandatory consent gate aligned with GDPR Article 9 and EU AI Act Article 10.</p>
+
+    <div class="callout callout-deadline">
+      <strong>⚠️ EU AI Act Deadline: August 2, 2026</strong> — Training data governance requirements (Article 10) and audit trail (Article 17) are legally mandated. RCAN v1.5 implements the technical controls required for compliance.
+    </div>
+
+    <section>
+      <h2>When Training Consent Is Required</h2>
+      <p>A training consent token MUST be obtained before collecting TRAINING_DATA (type 10) that involves:</p>
+      <ul>
+        <li><strong>Biometric data</strong> — facial recognition, fingerprints, gait analysis</li>
+        <li><strong>Audio data</strong> — voice recordings with identifiable individuals</li>
+        <li><strong>Video data</strong> — recordings that can identify individuals</li>
+        <li><strong>Location data</strong> — precise location history linked to an individual</li>
+      </ul>
+      <p>Environmental sensor data without identifiable individuals (e.g., lidar point clouds in empty corridors) does NOT require training consent.</p>
+    </section>
+
+    <section>
+      <h2>Message Types</h2>
+      <table>
+        <thead><tr><th>Type</th><th>Integer</th><th>Direction</th></tr></thead>
+        <tbody>
+          <tr><td>TRAINING_CONSENT_REQUEST</td><td>28</td><td>Robot → Subject (via owner notification)</td></tr>
+          <tr><td>TRAINING_CONSENT_GRANT</td><td>29</td><td>Subject → Robot</td></tr>
+          <tr><td>TRAINING_CONSENT_DENY</td><td>30</td><td>Subject → Robot</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>TRAINING_CONSENT_REQUEST Payload</h2>
+      <pre><code>&#123;
+  "request_id":      "uuid-v4",
+  "robot_ruri":      "rcan://rcan.dev/hospital/robot/v1/unit-003",
+  "subject_id":      "patient-uuid-or-anonymous",   // Who is being recorded
+  "data_categories": ["video", "audio"],             // What data will be collected
+  "purpose":         "Improve robot navigation in healthcare settings",
+  "duration_hours":  1,
+  "consent_type":    "training_data",
+  "eu_ai_act_basis": "Article 10 — training data governance",
+  "data_controller": "Hospital Robotics Team",
+  "dpo_contact":     "dpo@hospital.example"
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>TRAINING_CONSENT_GRANT Payload</h2>
+      <pre><code>&#123;
+  "request_id":      "uuid-v4",
+  "subject_id":      "patient-uuid-or-anonymous",
+  "data_categories": ["video"],        // Subject may grant subset of requested categories
+  "expires_at":      1741003600,       // Consent expiry (Unix timestamp)
+  "consent_token":   "eyJ...",         // JWT token to attach to TRAINING_DATA messages
+  "revocable":       true,             // Subject can revoke at any time
+  "eu_ai_act_disclosure": true        // Subject received EU AI Act disclosure
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>TRAINING_DATA Message — Consent Token</h2>
+      <p>Every TRAINING_DATA message (type 10) involving personal data MUST carry a <code>consent_token</code>:</p>
+      <pre><code>&#123;
+  "id":            "uuid-v4",
+  "type":          10,
+  "rcan_version":  "1.5",
+  "payload": &#123;
+    "data_type":      "video",
+    "data_hash":      "sha256:abc123",
+    "consent_token":  "eyJ...",         // REQUIRED for personal data
+    "data_categories": ["video"]
+  &#125;
+&#125;</code></pre>
+      <p>Receivers MUST reject TRAINING_DATA messages that:</p>
+      <ul>
+        <li>Are missing <code>consent_token</code> when <code>data_categories</code> contains personal data</li>
+        <li>Carry an expired consent token</li>
+        <li>Carry a consent token issued for a different subject or data category</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>R2RAM Scope: "training"</h2>
+      <p>The <code>training</code> scope is added to the R2RAM hierarchy between <code>status</code> and <code>chat</code>:</p>
+      <pre><code>// R2RAM scope hierarchy (v1.5)
+discover &lt; status &lt; training &lt; chat &lt; control &lt; safety &lt; creator</code></pre>
+      <p>A principal with <code>training</code> scope can request training consent and collect training data. <code>chat</code> and higher scopes automatically include <code>training</code>.</p>
+    </section>
+
+    <section>
+      <h2>Right to Erasure</h2>
+      <p>Subjects MUST be able to query and delete their training data consent records:</p>
+      <pre><code>// Query consent records for a subject
+GET /api/training-data/consent/&#123;subject_id&#125;
+
+// Response
+&#123;
+  "subject_id": "patient-uuid",
+  "consents": [
+    &#123;
+      "request_id":      "...",
+      "data_categories": ["video"],
+      "granted_at":      1741000000,
+      "expires_at":      1741003600,
+      "active":          true
+    &#125;
+  ]
+&#125;
+
+// Revoke consent and request erasure
+DELETE /api/training-data/consent/&#123;subject_id&#125;
+// Cascades to all robot training data records for this subject</code></pre>
+    </section>
+
+    <section>
+      <h2>Data Category Definitions</h2>
+      <table>
+        <thead><tr><th>Category</th><th>Examples</th><th>GDPR Classification</th></tr></thead>
+        <tbody>
+          <tr><td><code>biometric</code></td><td>Face recognition, gait, fingerprint</td><td>Special category (Art. 9)</td></tr>
+          <tr><td><code>audio</code></td><td>Voice recordings, identified speech</td><td>Personal data (Art. 4)</td></tr>
+          <tr><td><code>video</code></td><td>Camera footage with identifiable persons</td><td>Personal data (Art. 4)</td></tr>
+          <tr><td><code>location</code></td><td>GPS tracks, indoor positioning linked to person</td><td>Personal data (Art. 4)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Audit Trail Requirements</h2>
+      <p>All training data collections MUST be logged with:</p>
+      <ul>
+        <li>Subject identity (or anonymous ID if truly anonymized)</li>
+        <li>Data categories collected</li>
+        <li>Consent token ID (links to the grant record)</li>
+        <li>Collection timestamp and duration</li>
+        <li>Robot RURI that performed the collection</li>
+      </ul>
+      <p>This audit trail enables EU AI Act Article 17 compliance reporting.</p>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/consent/">Consent Wire Protocol</a> — base consent message format</li>
+        <li><a href="/docs/safety/#eu-ai-act-compliance">EU AI Act Compliance</a> — TRANSPARENCY requirement</li>
+        <li><a href="/docs/messages/#type-reference">MessageType 28/29/30</a> — training consent message types</li>
+        <li><a href="/docs/safety/#audit-export">§20 Audit Export</a> — compliance reporting</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-deadline {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+</style>

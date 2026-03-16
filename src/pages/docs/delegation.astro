@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Command Delegation Chain" description="RCAN §12 — delegation_chain field, DelegationHop structure, max depth 4, signature verification, and physical presence.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§12 — Command Delegation and Chain of Custody <span class="badge-new">v1.5</span></h1>
+    <p class="lead">When Robot A commands Robot B on behalf of Human A, Robot B must be able to prove that Human A authorized it. Without a delegation chain, a compromised robot can issue arbitrary commands to peers with no human provenance.</p>
+
+    <div class="callout callout-critical">
+      <strong>Deployment blocker:</strong> In hospital or factory environments, a rogue robot could command medication-delivery or welding robots without any human ever being in the chain. Delegation chains make this auditable and preventable.
+    </div>
+
+    <section>
+      <h2>delegation_chain Field</h2>
+      <p>Commands sent by a robot acting on behalf of a human MUST carry a <code>delegation_chain</code> array in the message envelope:</p>
+      <pre><code>&#123;
+  "id":               "uuid-v4",
+  "type":             1,
+  "rcan_version":     "1.5",
+  "source":           "rcan://rcan.dev/org/arm/v1/unit-001",
+  "target":           "rcan://rcan.dev/org/delivery/v1/unit-002",
+  "delegation_chain": [
+    &#123;
+      "issuer_ruri":    "rcan://rcan.dev/human/craig",  // Who issues this hop
+      "human_subject":  "craig@example.com",            // Human authorizing the chain
+      "timestamp":      1741000000,
+      "scope":          ["control"],
+      "signature":      "ed25519:..."                  // Signed by issuer's private key
+    &#125;,
+    &#123;
+      "issuer_ruri":    "rcan://rcan.dev/org/arm/v1/unit-001",  // Robot A delegates to Robot B
+      "human_subject":  "craig@example.com",
+      "timestamp":      1741000001,
+      "scope":          ["control"],
+      "signature":      "ed25519:..."
+    &#125;
+  ],
+  "payload": &#123; "cmd": "receive_package" &#125;
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>DelegationHop Structure</h2>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>issuer_ruri</code></td><td>string (RURI)</td><td>The principal issuing this hop in the chain</td></tr>
+          <tr><td><code>human_subject</code></td><td>string</td><td>The human on whose behalf the chain operates</td></tr>
+          <tr><td><code>timestamp</code></td><td>float</td><td>Unix timestamp when this hop was created</td></tr>
+          <tr><td><code>scope</code></td><td>string[]</td><td>Scopes being delegated at this hop</td></tr>
+          <tr><td><code>signature</code></td><td>string</td><td>Ed25519 signature by <code>issuer_ruri</code>'s private key over the hop data</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Receiver Verification Rules</h2>
+      <ol>
+        <li><strong>Chain length:</strong> Reject if <code>delegation_chain.length > 4</code> with <code>DELEGATION_CHAIN_EXCEEDED</code></li>
+        <li><strong>Each hop signature:</strong> Verify against the issuer's public key (from registry or JWKS)</li>
+        <li><strong>Human subject scope:</strong> Verify that <code>human_subject</code> holds the requested scope on the target robot per R2RAM §11</li>
+        <li><strong>Scope chain:</strong> Each hop's scope must be ≤ the previous hop's scope (cannot escalate privileges)</li>
+        <li><strong>Timestamp freshness:</strong> Each hop's timestamp must be within <code>delegation_ttl_s</code> (default: 3600s)</li>
+        <li><strong>Audit:</strong> CommitmentRecord MUST serialize the full delegation chain</li>
+      </ol>
+
+      <div class="callout callout-warn">
+        If <code>delegation_chain</code> is absent and the sender is a robot (not a human), receivers MUST reject the command with <code>MISSING_DELEGATION_CHAIN</code>. A robot cannot command another robot without proving human authorization.
+      </div>
+    </section>
+
+    <section>
+      <h2>Maximum Chain Depth</h2>
+      <p>Delegation chains are limited to <strong>4 hops</strong>:</p>
+      <pre><code>Human A → Robot A → Robot B → Robot C → Robot D   ✅ (4 hops, allowed)
+Human A → Robot A → Robot B → Robot C → Robot D → Robot E   ❌ (5 hops, DELEGATION_CHAIN_EXCEEDED)</code></pre>
+      <p>This limit prevents unbounded trust chains and simplifies verification. Commands reaching max depth are rejected with error code <code>DELEGATION_CHAIN_EXCEEDED</code>.</p>
+    </section>
+
+    <section>
+      <h2>Flat Commands (No Delegation)</h2>
+      <p>When a human directly commands a robot, <code>delegation_chain</code> may be omitted or empty. The JWT <code>sub</code> claim is the implicit single-hop authorization:</p>
+      <pre><code>// Human directly commanding robot — no delegation_chain needed
+&#123;
+  "type": 1,
+  "source": "rcan://human/craig",
+  "target": "rcan://rcan.dev/org/arm/v1/unit-001",
+  "delegation_chain": []   // or omit entirely
+&#125;</code></pre>
+    </section>
+
+    <section id="physical-presence">
+      <h2>§8.9 — Physical Presence Verification <span class="badge-should">v1.5 SHOULD</span></h2>
+      <p><strong>Gap:</strong> GAP-19 — High-risk operations (ESTOP_CLEAR, maintenance mode) should require the operator to be physically present.</p>
+
+      <h3>presence_verified Field</h3>
+      <p>High-risk SAFETY commands SHOULD include presence evidence:</p>
+      <pre><code>&#123;
+  "type": 6,
+  "payload": &#123;
+    "cmd":              "ESTOP_CLEAR",
+    "presence_verified": true,
+    "proximity_m":       2.1,         // Estimated distance from robot (meters)
+    "presence_token":    "eyJ..."     // Signed presence token (valid for 300s)
+  &#125;
+&#125;</code></pre>
+
+      <h3>Presence Token</h3>
+      <p>A presence token is issued by the robot when a human proves physical proximity:</p>
+      <ul>
+        <li><strong>QR code scan:</strong> Robot displays OTP QR code; human scans it with RCAN app</li>
+        <li><strong>BLE proximity:</strong> RSSI threshold check (typically &lt;5m)</li>
+        <li><strong>UWB challenge-response:</strong> Ultra-wideband ranging (±30cm accuracy)</li>
+      </ul>
+      <p>Presence tokens are valid for <strong>300 seconds</strong> and are single-use per ESTOP_CLEAR command.</p>
+
+      <h3>physical_presence_required Flag</h3>
+      <p>Operators can mark specific scope definitions as requiring physical presence:</p>
+      <pre><code>safety:
+  estop_clear_requires_presence: true   # ESTOP_CLEAR blocked without presence token</code></pre>
+      <p>When <code>physical_presence_required: true</code>, ESTOP_CLEAR commands missing a valid <code>presence_token</code> MUST be rejected. ESTOP itself is never blocked.</p>
+    </section>
+
+    <section>
+      <h2>Audit Trail</h2>
+      <p>CommitmentRecords for delegated commands MUST include the full <code>delegation_chain</code>. This enables audit queries like:</p>
+      <ul>
+        <li>"Show all commands issued by Robot A on behalf of Craig"</li>
+        <li>"Show all R2R commands in the last 24 hours with their human subjects"</li>
+        <li>"Which robots did Robot A command, and who authorized it?"</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Error Codes</h2>
+      <table>
+        <thead><tr><th>Code</th><th>Cause</th></tr></thead>
+        <tbody>
+          <tr><td><code>DELEGATION_CHAIN_EXCEEDED</code></td><td>Chain depth > 4</td></tr>
+          <tr><td><code>DELEGATION_VERIFICATION_FAILED</code></td><td>Hop signature invalid</td></tr>
+          <tr><td><code>MISSING_DELEGATION_CHAIN</code></td><td>Robot sender missing chain</td></tr>
+          <tr><td><code>INSUFFICIENT_SCOPE_IN_CHAIN</code></td><td>Human subject lacks requested scope on target</td></tr>
+          <tr><td><code>SCOPE_ESCALATION_IN_CHAIN</code></td><td>Hop grants wider scope than previous hop</td></tr>
+          <tr><td><code>PRESENCE_TOKEN_REQUIRED</code></td><td>physical_presence_required but no token</td></tr>
+          <tr><td><code>PRESENCE_TOKEN_EXPIRED</code></td><td>Presence token > 300s old</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/consent/">Consent Wire Protocol</a> — consent is a prerequisite for cross-robot delegation</li>
+        <li><a href="/docs/revocation/">Robot Identity Revocation</a> — revoked robots cannot issue delegation chains</li>
+        <li><a href="/docs/key-rotation/">Key Rotation</a> — key_id links delegation hop signatures to specific keys</li>
+        <li><a href="/docs/auth/">Authentication</a> — R2RAM scope hierarchy</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-should {
+    display: inline-block;
+    background: rgba(250, 204, 21, 0.12);
+    color: #ca8a04;
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-critical {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

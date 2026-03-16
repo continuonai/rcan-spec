@@ -1,0 +1,195 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Key Rotation" description="RCAN §8.6 — JWKS key lifecycle, KEY_ROTATION message type, grace period overlap, and key_id on signed messages.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§8.6 — Key Lifecycle and Rotation <span class="badge-new">v1.5</span></h1>
+    <p class="lead">RCAN v1.4 used a single, non-expiring signing key per operator. v1.5 adds JWKS-based key management with expiry, rotation, and a grace period so production fleets can rotate keys without dropping active sessions.</p>
+
+    <section>
+      <h2>JWKS Endpoint</h2>
+      <p>Robots and operators SHOULD maintain a JSON Web Key Set (JWKS) at:</p>
+      <pre><code>/.well-known/rcan-keys.json</code></pre>
+      <p>The registry proxies each robot's JWKS at:</p>
+      <pre><code>GET /api/v1/robots/&#123;rrn&#125;/.well-known/rcan-keys.json</code></pre>
+
+      <h3>JWKS Format</h3>
+      <pre><code>&#123;
+  "keys": [
+    &#123;
+      "kty":        "OKP",
+      "crv":        "Ed25519",
+      "kid":        "rcan-key-2026-03",
+      "use":        "sig",
+      "key_ops":    ["verify"],
+      "x":          "base64url-encoded-public-key",
+      "exp":        1782000000,       // REQUIRED: max 365 days from creation
+      "iat":        1750000000,       // Key creation time
+      "revoked_at": null              // Set when key is compromised
+    &#125;,
+    &#123;
+      "kty":        "OKP",
+      "crv":        "Ed25519",
+      "kid":        "rcan-key-2025-03",
+      "use":        "sig",
+      "key_ops":    ["verify"],
+      "x":          "base64url-encoded-old-public-key",
+      "exp":        1750000000,       // Past expiry
+      "iat":        1718000000,
+      "revoked_at": null
+    &#125;
+  ]
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>key_id on Signed Messages</h2>
+      <p>All signed RCAN messages MUST include a <code>key_id</code> field in the envelope identifying which key was used to sign:</p>
+      <pre><code>&#123;
+  "id":        "uuid-v4",
+  "type":      1,
+  "key_id":    "rcan-key-2026-03",  // kid of the signing key
+  "signature": "ed25519:...",
+  ...
+&#125;</code></pre>
+      <p>Receivers MUST look up the signing key by <code>key_id</code> in the sender's JWKS before verifying the signature. If the <code>key_id</code> is not found in the JWKS, reject with <code>KEY_NOT_FOUND</code>.</p>
+    </section>
+
+    <section>
+      <h2>Key Rotation Procedure</h2>
+      <ol>
+        <li><strong>Generate</strong> a new Ed25519 key pair</li>
+        <li><strong>Add</strong> the new public key to JWKS with a new <code>kid</code></li>
+        <li><strong>Start signing</strong> new messages with the new key (update <code>key_id</code>)</li>
+        <li><strong>Wait</strong> for the grace period (<code>overlap_s</code>, default 3600s = 1 hour)</li>
+        <li><strong>Set <code>exp</code></strong> on the old key to <code>now()</code> (not a future time)</li>
+        <li><strong>Broadcast</strong> KEY_ROTATION message (type 27) to peers</li>
+        <li><strong>Retain</strong> old key in JWKS for at least <code>replay_window_s * 2</code> after expiry for in-flight validation</li>
+      </ol>
+
+      <div class="callout callout-warn">
+        <strong>Grace period is mandatory:</strong> During the overlap window, both the old and new keys are valid. This prevents disruption to active sessions that have cached the old key. Do not expire the old key before <code>overlap_s</code> has elapsed.
+      </div>
+    </section>
+
+    <section>
+      <h2>KEY_ROTATION Message (Type 27)</h2>
+      <pre><code>&#123;
+  "id":           "uuid-v4",
+  "type":         27,
+  "source":       "rcan://rcan.dev/org/robot/v1/unit-001",
+  "rcan_version": "1.5",
+  "qos":          1,
+  "payload": &#123;
+    "new_kid":    "rcan-key-2026-03",
+    "old_kid":    "rcan-key-2025-03",
+    "overlap_s":  3600,              // Grace period in seconds
+    "jwks_url":   "/.well-known/rcan-keys.json"
+  &#125;
+&#125;</code></pre>
+      <p>Peers receiving KEY_ROTATION MUST refresh their cached JWKS for the sender within 60 seconds.</p>
+    </section>
+
+    <section>
+      <h2>Key Validity Rules</h2>
+      <table>
+        <thead><tr><th>Key State</th><th>Verification</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Active: <code>iat ≤ now &lt; exp</code>, <code>revoked_at: null</code></td>
+            <td>✅ Accept</td>
+          </tr>
+          <tr>
+            <td>Grace period: <code>now ≤ exp + (replay_window_s * 2)</code>, <code>revoked_at: null</code></td>
+            <td>✅ Accept for in-flight messages only</td>
+          </tr>
+          <tr>
+            <td>Expired: <code>now > exp + (replay_window_s * 2)</code></td>
+            <td>❌ Reject with <code>KEY_EXPIRED</code></td>
+          </tr>
+          <tr>
+            <td>Revoked: <code>revoked_at != null</code></td>
+            <td>❌ Reject immediately with <code>KEY_REVOKED</code></td>
+          </tr>
+          <tr>
+            <td>Not in JWKS</td>
+            <td>❌ Reject with <code>KEY_NOT_FOUND</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Max key validity:</strong> 365 days. Compliance frameworks (SOC 2, ISO 27001) typically require ≤90-day rotation; set <code>exp</code> accordingly.</p>
+    </section>
+
+    <section>
+      <h2>Registry Key History</h2>
+      <p>The registry MUST store key history (not just the current key) for each registered robot. This enables:</p>
+      <ul>
+        <li>Validation of messages signed with recently-rotated keys</li>
+        <li>Audit trail verification against historical signatures</li>
+        <li>Key compromise investigation</li>
+      </ul>
+      <p>Registry endpoint: <code>GET /api/v1/robots/&#123;rrn&#125;/public-key</code> returns the current active key. The JWKS endpoint returns the full history.</p>
+    </section>
+
+    <section>
+      <h2>Configuration</h2>
+      <pre><code>security:
+  key_rotation:
+    overlap_s: 3600           # Grace period: both keys valid (default 1h)
+    max_validity_days: 365    # Hard maximum key lifetime
+    auto_rotate: false        # Enable automatic rotation (requires key management setup)</code></pre>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/revocation/">Robot Identity Revocation</a> — key revocation vs. robot identity revocation</li>
+        <li><a href="/docs/replay-prevention/">Replay Attack Prevention</a> — replay_window_s used in key expiry calculation</li>
+        <li><a href="/docs/offline/">Offline Operation</a> — key cache for offline authentication</li>
+        <li><a href="/docs/messages/#type-reference">KEY_ROTATION (type 27)</a></li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

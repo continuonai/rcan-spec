@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Offline Operation" description="RCAN §14 — offline mode triggers, cached key authentication, restricted operations, and reconnection behavior.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§14 — Offline Operation Mode <span class="badge-new">v1.5</span></h1>
+    <p class="lead">A robot in a factory basement that loses WiFi for 30 minutes should not become uncontrollable. v1.5 specifies how robots authenticate locally without registry connectivity while maintaining security boundaries.</p>
+
+    <div class="callout callout-safety">
+      <strong>Protocol 66 Invariant:</strong> Offline ESTOP from same-network owner is ALWAYS accepted, provided the cached key matches. Registry connectivity is never required to halt a robot.
+    </div>
+
+    <section>
+      <h2>Offline Mode Triggers</h2>
+      <p>A robot enters offline mode when:</p>
+      <ul>
+        <li>Registry is unreachable for more than <code>offline_grace_s</code> (default: 300 seconds)</li>
+        <li>DNS resolution for registry hostname fails</li>
+        <li>All retry attempts to registry API timeout</li>
+      </ul>
+      <p>The robot transitions back to online mode when the registry responds to a health check.</p>
+
+      <h3>Protocol 66 Manifest — Offline Fields</h3>
+      <pre><code>GET /api/safety/manifest
+
+&#123;
+  "protocol":          66,
+  "rcan_version":      "1.5",
+  "offline_mode":      true,
+  "offline_since_s":   1842,         // Seconds since entering offline mode
+  "clock_synchronized": true,
+  ...
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>What Is Allowed Offline</h2>
+      <table>
+        <thead><tr><th>Operation</th><th>Offline Allowed?</th><th>Condition</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>ESTOP from any source</td>
+            <td>✅ Always</td>
+            <td>P66 invariant — no registry needed</td>
+          </tr>
+          <tr>
+            <td>Commands from same-network, same-owner</td>
+            <td>✅ Yes</td>
+            <td>Owner JWT within <code>exp</code> window AND cached key matches</td>
+          </tr>
+          <tr>
+            <td>Commands using cached consent records</td>
+            <td>✅ Yes</td>
+            <td>Consent not expired; local SQLite consent store</td>
+          </tr>
+          <tr>
+            <td>Cross-owner commands</td>
+            <td>⚠️ Limited</td>
+            <td>Allowed up to <code>offline_cross_owner_grace_s</code> (default 3600s)</td>
+          </tr>
+          <tr>
+            <td>New principal authentication</td>
+            <td>❌ Blocked</td>
+            <td>Cannot verify new JWTs without registry</td>
+          </tr>
+          <tr>
+            <td>Cross-registry consent requests</td>
+            <td>❌ Blocked</td>
+            <td>Requires federation connectivity</td>
+          </tr>
+          <tr>
+            <td>Robot registration / RRN lookup</td>
+            <td>❌ Blocked</td>
+            <td>Requires registry API</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Local Key Cache</h2>
+      <p>Robots MUST cache the registry's public key(s) locally for offline JWT validation:</p>
+      <ul>
+        <li>Cache stored as JSON file: <code>~/.rcan/key_cache.json</code></li>
+        <li>Refreshed on every successful registry connection</li>
+        <li>Maximum TTL: 24 hours (86400s)</li>
+        <li>Cache includes the full JWKS from the registry</li>
+      </ul>
+
+      <pre><code>// key_cache.json format
+&#123;
+  "cached_at":   1741000000,
+  "ttl_s":       86400,
+  "registry_url": "https://rcan.dev",
+  "keys":        [ ...JWKS keys... ]
+&#125;</code></pre>
+
+      <h3>Offline JWT Validation</h3>
+      <p>When registry is unreachable, validate JWTs against the local key cache:</p>
+      <ol>
+        <li>Extract <code>kid</code> from JWT header</li>
+        <li>Look up key in local cache by <code>kid</code></li>
+        <li>Verify JWT signature against cached public key</li>
+        <li>Verify JWT <code>exp</code> has not passed</li>
+        <li>Verify JWT <code>aud</code> matches this robot's RURI</li>
+        <li>If cache is expired (> 24h): reject with <code>OFFLINE_KEY_CACHE_STALE</code></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Local Consent Store</h2>
+      <p>Consent records MUST be persisted locally (SQLite) for offline operation:</p>
+      <ul>
+        <li>Store path: <code>~/.rcan/consent.db</code></li>
+        <li>Populated from Firestore/registry on each successful sync</li>
+        <li>Used for offline consent validation when registry is unreachable</li>
+        <li>Records are read-only offline (no new consent grants without registry)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Cross-Owner Grace Period</h2>
+      <p>Cross-owner commands (commands from operators who own a different robot) are allowed for <code>offline_cross_owner_grace_s</code> after entering offline mode:</p>
+      <pre><code>offline:
+  grace_period_s: 86400           # Cache valid for 24h offline (key cache TTL)
+  cross_owner_grace_s: 3600       # Cross-owner commands allowed for 1h offline
+  max_key_ttl_s: 86400</code></pre>
+      <p>After <code>cross_owner_grace_s</code>: cross-owner commands are blocked. Same-owner commands continue as long as the key cache is valid.</p>
+    </section>
+
+    <section>
+      <h2>Reconnection Behavior</h2>
+      <p>When the registry becomes reachable again:</p>
+      <ol>
+        <li>Refresh key cache from registry</li>
+        <li>Sync consent records from Firestore</li>
+        <li>Re-authenticate all currently-active sessions (re-validate cached tokens against fresh keys)</li>
+        <li>Transmit any audit events buffered during offline period</li>
+        <li>Set <code>offline_mode: false</code> in Protocol 66 manifest</li>
+        <li>Log a reconnection audit event with <code>offline_since_s</code> duration</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/key-rotation/">Key Rotation</a> — JWKS format used in key cache</li>
+        <li><a href="/docs/revocation/">Robot Identity Revocation</a> — revocation cache staleness and quarantine mode</li>
+        <li><a href="/docs/safety/#time-sync">§8.4 Time Synchronization</a> — restricted mode when clock unsynchronized</li>
+        <li><a href="/docs/consent/">Consent Wire Protocol</a> — offline consent blob format</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-safety {
+    background: rgba(239, 68, 68, 0.06);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

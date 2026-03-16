@@ -2,292 +2,569 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Message Types" description="Complete reference for RCAN protocol message types (1–19), including TRANSPARENCY (EU AI Act Art. 13) and HANDOFF.">
+<BaseLayout title="Message Types" description="Complete reference for RCAN v1.5 protocol message types, version compatibility rules, QoS, CONFIG_UPDATE, and fleet operations.">
   <nav class="doc-nav">
     <a href="/docs/">← Documentation</a>
   </nav>
 
   <article class="doc-article">
     <h1>Message Type Reference</h1>
-    <p class="lead">RCAN defines 19 message types covering discovery, control, safety, invocation, registry operations, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour.</p>
+    <p class="lead">RCAN v1.5 defines 31 message types covering discovery, control, safety, invocation, registry operations, consent, fleet, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour.</p>
 
-    <section>
-      <h2>Envelope</h2>
+    <section id="v15-changes">
+      <div class="callout callout-info">
+        <strong>v1.5 MessageType Canonicalization</strong> — RCAN v1.4 had a mismatch between the spec's integer table and the rcan-py SDK. v1.5 establishes a single canonical table. The previous "spec" numbering (DISCOVER=1, STATUS=2…) is retired; implementations that hardcoded integers must migrate to named enum constants. See the <a href="#migration">migration note</a> below.
+      </div>
+    </section>
+
+    <section id="envelope">
+      <h2>§3 — Envelope</h2>
       <p>Every RCAN message uses the same JSON envelope regardless of type:</p>
       <pre><code>&#123;
-  "id":        "uuid-v4",          // Unique message ID
-  "type":      3,                  // MessageType integer
-  "priority":  1,                  // 0=LOW 1=NORMAL 2=HIGH 3=SAFETY
-  "source":    "rcan://...",       // Sender RURI
-  "target":    "rcan://...",       // Recipient RURI (wildcards allowed)
-  "payload":   &#123; ... &#125;,           // Type-specific data
-  "timestamp": 1741000000.0,       // Unix epoch (seconds)
-  "ttl":       0,                  // Seconds until expiry (0 = no expiry)
-  "reply_to":  null,               // ID of the message being replied to
-  "scope":     ["control"],        // Required RBAC scopes
-  "version":   "1.4"              // RCAN spec version
+  "id":              "uuid-v4",          // msg_id — unique per message
+  "type":            3,                  // MessageType integer (canonical v1.5)
+  "priority":        1,                  // 0=LOW 1=NORMAL 2=HIGH 3=SAFETY
+  "source":          "rcan://...",       // Sender RURI
+  "target":          "rcan://...",       // Recipient RURI (wildcards allowed)
+  "payload":         &#123; ... &#125;,           // Type-specific data
+  "timestamp":       1741000000.0,       // Unix epoch (seconds, required)
+  "ttl":             0,                  // Seconds until expiry (0 = no expiry)
+  "reply_to":        null,               // ID of message being replied to
+  "scope":           ["control"],        // Required RBAC scopes
+  "rcan_version":    "1.5",             // MUST be present; validated first
+  "qos":             1,                  // 0=fire-and-forget 1=at-least-once 2=exactly-once
+  "sender_type":     "human",           // "human"|"robot"|"cloud_function"|"system"
+  "key_id":          "kid-abc123"       // Optional: signing key identifier (GAP-09)
 &#125;</code></pre>
     </section>
 
-    <section>
-      <h2>Type Reference</h2>
-      <p>Types 1–18 are defined in RCAN v1.4. Type 19 (HANDOFF) is reserved for the next spec revision.</p>
+    <section id="version-compat">
+      <h2 id="version-compatibility">§3.5 — Protocol Version Compatibility <span class="badge-new">v1.5</span></h2>
+      <p>RCAN version strings follow semantic versioning (<code>MAJOR.MINOR</code>). The <code>rcan_version</code> field MUST be the first field validated on any incoming message, before any other processing.</p>
+
+      <h3>Compatibility Rules</h3>
+      <table>
+        <thead><tr><th>Situation</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Receiver MAJOR == Sender MAJOR, Receiver MINOR ≥ Sender MINOR</td><td>✅ Accept — standard case</td></tr>
+          <tr><td>Receiver MAJOR == Sender MAJOR, Receiver MINOR &lt; Sender MINOR</td><td>✅ Accept — ignore unknown fields; apply defaults for missing required fields</td></tr>
+          <tr><td>Receiver MAJOR ≠ Sender MAJOR</td><td>❌ Reject with <code>VERSION_INCOMPATIBLE</code> error</td></tr>
+          <tr><td><code>rcan_version</code> field missing</td><td>⚠️ Accept with default <code>"1.0"</code>; log warning at NOTICE level</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Field Defaults for Missing v1.5 Fields</h3>
+      <p>When a v1.5 receiver processes a v1.4 message missing new fields:</p>
+      <ul>
+        <li><code>delegation_chain</code> missing → treat as no delegation (flat command)</li>
+        <li><code>qos</code> missing → default to <code>0</code> (fire-and-forget)</li>
+        <li><code>sender_type</code> missing → default to <code>"human"</code></li>
+        <li><code>key_id</code> missing → validate against current (only) key in trust set</li>
+      </ul>
+
+      <h3>Version Negotiation (DISCOVER / STATUS)</h3>
+      <p>DISCOVER and STATUS messages MUST include <code>rcan_version</code> in their payload. Peers record each other's protocol version on first contact and apply the lower version's rules for the session.</p>
+
+      <pre><code>// DISCOVER payload (v1.5)
+&#123;
+  "rcan_version": "1.5",
+  "capabilities": ["control", "safety", "training"],
+  "p66_conformance_pct": 87.0
+&#125;</code></pre>
+    </section>
+
+    <section id="type-reference">
+      <h2>§4 — Canonical MessageType Table (v1.5)</h2>
+      <p>This table is authoritative for v1.5. All SDKs MUST use these integer values. Integer values are listed for interop reference only — implementations MUST use named enum constants in code.</p>
 
       <table class="msg-table">
         <thead>
-          <tr>
-            <th>Type</th>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Priority</th>
-          </tr>
+          <tr><th>Type</th><th>Name</th><th>Description</th><th>Priority</th><th>Min QoS</th></tr>
         </thead>
         <tbody>
           <tr>
             <td><code>1</code></td>
-            <td><strong>DISCOVER</strong></td>
-            <td>mDNS / peer discovery — broadcast or unicast probe to locate RCAN nodes on the network. Responders reply with their RURI, capabilities, and registry status.</td>
-            <td>NORMAL</td>
+            <td><strong>COMMAND</strong></td>
+            <td>Motor, action, or behavior command. Requires <code>control</code> scope.</td>
+            <td>NORMAL/HIGH</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>2</code></td>
-            <td><strong>STATUS</strong></td>
-            <td>Telemetry / state reporting — periodic or on-demand snapshot of robot state (position, battery, mode, health). Consumed by dashboards, fleets, and registries.</td>
+            <td><strong>RESPONSE</strong></td>
+            <td>Generic response to a prior message. <code>reply_to</code> links to original.</td>
             <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>3</code></td>
-            <td><strong>COMMAND</strong></td>
-            <td>Motor, config, or action command — instructs the robot to perform a named action with optional parameters. Requires the <code>control</code> scope.</td>
-            <td>NORMAL / HIGH</td>
+            <td><strong>STATUS</strong></td>
+            <td>Telemetry / state snapshot — position, battery, mode, health.</td>
+            <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>4</code></td>
-            <td><strong>STREAM</strong></td>
-            <td>Continuous sensor data — high-frequency stream frames (camera, lidar, IMU, audio). Typically sent over a dedicated stream channel rather than the command bus.</td>
-            <td>NORMAL</td>
+            <td><strong>HEARTBEAT</strong></td>
+            <td>Periodic liveness ping. No payload required.</td>
+            <td>LOW</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>5</code></td>
-            <td><strong>EVENT</strong></td>
-            <td>Asynchronous notifications — one-shot events emitted by the robot or runtime (obstacle detected, task completed, low battery, door opened).</td>
-            <td>NORMAL / HIGH</td>
+            <td><strong>CONFIG</strong></td>
+            <td>Configuration update. See <a href="#config-update">§9.2 CONFIG_UPDATE</a> for required payload schema and authorization rules.</td>
+            <td>NORMAL</td>
+            <td>1</td>
           </tr>
           <tr class="safety-row">
             <td><code>6</code></td>
             <td><strong>SAFETY</strong></td>
-            <td>STOP / ESTOP / RESUME — safety-critical control messages. Per RCAN §6 Safety Invariant 2, these bypass all queues and are processed immediately. Cannot be overridden by AI.</td>
+            <td>STOP / ESTOP / RESUME — safety-critical. Bypasses all queues. Cannot be overridden by AI. ESTOP MUST use QoS 2.</td>
             <td><strong>SAFETY</strong></td>
+            <td>1 (ESTOP=2)</td>
           </tr>
           <tr>
             <td><code>7</code></td>
-            <td><strong>ACK</strong></td>
-            <td>Acknowledgement — confirms receipt and processing of a prior message. The <code>reply_to</code> field references the acknowledged message ID.</td>
+            <td><strong>SENSOR_DATA</strong></td>
+            <td>Sensor readings (proximity, IMU, temperature, etc.).</td>
             <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>8</code></td>
-            <td><strong>ERROR</strong></td>
-            <td>Error response — signals that a prior command or request failed. Payload includes an error <code>code</code> (string) and human-readable <code>detail</code>.</td>
+            <td><strong>AUDIT</strong></td>
+            <td>Audit trail event — commitment record, chain hash, tamper evidence.</td>
             <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>9</code></td>
-            <td><strong>AUTHORIZE</strong></td>
-            <td>Out-of-band HiTL authorization — operator approves or denies a pending action. Sent in response to a PENDING_AUTH notification. Requires the <code>hitl</code> scope. (v1.2+)</td>
-            <td>HIGH</td>
+            <td><strong>DISCOVER</strong></td>
+            <td>mDNS / peer discovery probe. Responders reply with RURI, capabilities, and <code>rcan_version</code>.</td>
+            <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>10</code></td>
-            <td><strong>PENDING_AUTH</strong></td>
-            <td>HiTL gate waiting — robot notifies subscribed operators that an action is blocked pending out-of-band authorization. Includes action type, description, and timeout. (v1.2+)</td>
-            <td>HIGH</td>
-          </tr>
-          <tr>
-            <td><code>11</code></td>
-            <td><strong>INVOKE</strong></td>
-            <td>Trigger a named skill or behavior on the robot runtime. Payload specifies the skill name and parameters. The runtime responds with an INVOKE_RESULT. (v1.3 §19)</td>
+            <td><strong>TRAINING_DATA</strong></td>
+            <td>Training data submission. MUST carry <code>consent_token</code> for biometric/audio/visual data. See <a href="/docs/training-consent/">Training Consent</a>.</td>
             <td>NORMAL</td>
+            <td>0</td>
+          </tr>
+          <tr class="transparency-row">
+            <td><code>11</code></td>
+            <td><strong>TRANSPARENCY</strong></td>
+            <td>EU AI Act Art. 13 disclosure — robot announces AI nature, capabilities, operator identity to humans. Required for EU deployment from August 2026.</td>
+            <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>12</code></td>
-            <td><strong>INVOKE_RESULT</strong></td>
-            <td>Result of an INVOKE invocation — carries success/failure status, return value, and timing metadata. The <code>reply_to</code> field links to the originating INVOKE. (v1.3 §19)</td>
+            <td><strong>FEDERATION_SYNC</strong></td>
+            <td>Cross-registry federation synchronization. Full protocol deferred to v1.6.</td>
             <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>13</code></td>
-            <td><strong>REGISTRY_REGISTER</strong></td>
-            <td>Register robot with the Robot Registry Foundation (RRF) — submits RURI, capabilities, operator identity, and Protocol 66 manifest for assignment of a canonical RRN. (v1.3 §21)</td>
-            <td>NORMAL</td>
+            <td><strong>ALERT</strong></td>
+            <td>Asynchronous alert to operator — battery critical, geofence breach, etc.</td>
+            <td>HIGH</td>
+            <td>1</td>
           </tr>
           <tr>
             <td><code>14</code></td>
-            <td><strong>REGISTRY_RESOLVE</strong></td>
-            <td>Resolve an RRN to its RURI and metadata — query the registry to look up a robot's current address, capabilities, and operator from its Robot Registry Number. (v1.3 §21)</td>
+            <td><strong>TELEOP</strong></td>
+            <td>Real-time teleoperation stream frames. MUST use QoS 0 (fire-and-forget); stale frames are discarded.</td>
             <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>15</code></td>
-            <td><strong>INVOKE_CANCEL</strong></td>
-            <td>Cancel an in-flight INVOKE by its <code>invoke_id</code> — instructs the runtime to abort a skill execution that has not yet completed. (v1.3 §19)</td>
-            <td>HIGH</td>
+            <td><strong>CHAT</strong></td>
+            <td>Natural language conversation turn. Requires <code>chat</code> scope.</td>
+            <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>16</code></td>
-            <td><strong>REGISTRY_REGISTER_RESULT</strong></td>
-            <td>Result of a REGISTRY_REGISTER request — confirms success or failure and returns the assigned RRN if registration succeeded. (v1.3 §21)</td>
+            <td><strong>ERROR</strong></td>
+            <td>Error response. Payload: <code>&#123;"code": "...", "detail": "..."&#125;</code>. See <a href="/docs/error-codes/">Error Codes</a>.</td>
             <td>NORMAL</td>
+            <td>0</td>
           </tr>
           <tr>
             <td><code>17</code></td>
-            <td><strong>REGISTRY_RESOLVE_RESULT</strong></td>
-            <td>Result of a REGISTRY_RESOLVE query — returns the robot's RURI, operator identity, capabilities, and Protocol 66 conformance data, or an error if the RRN is not found. (v1.3 §21)</td>
-            <td>NORMAL</td>
+            <td><strong>COMMAND_ACK</strong></td>
+            <td>Acknowledgement for QoS ≥ 1. Must be sent within 500ms. Links via <code>reply_to</code>.</td>
+            <td>HIGH</td>
+            <td>0</td>
           </tr>
-          <tr class="transparency-row">
+          <tr>
             <td><code>18</code></td>
-            <td><strong>TRANSPARENCY</strong></td>
-            <td>EU AI Act Art. 13 disclosure — robot announces its AI nature, capabilities, operator identity, and limitations to humans it interacts with. Required for GPAI-powered robots operating in the EU from August 2026. See <a href="/docs/safety/#eu-ai-act-compliance">EU AI Act Compliance</a>.</td>
-            <td>NORMAL</td>
+            <td><strong>COMMAND_COMMIT</strong></td>
+            <td>Second phase of QoS 2 exactly-once delivery. Receiver sends after processing. See <a href="/docs/qos/">QoS</a>.</td>
+            <td>HIGH</td>
+            <td>0</td>
           </tr>
-          <tr class="reserved-row">
+          <tr class="security-row">
             <td><code>19</code></td>
-            <td><strong>HANDOFF</strong></td>
-            <td>Session handoff — transfers control of a robot or conversation session to another robot, operator, or principal. Reserved; full semantics defined in a future RCAN revision.</td>
+            <td><strong>ROBOT_REVOCATION</strong></td>
+            <td>Registry broadcast: robot identity revoked. Peers MUST invalidate cached keys and consent. See <a href="/docs/revocation/">Revocation</a>.</td>
+            <td>HIGH</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>20</code></td>
+            <td><strong>CONSENT_REQUEST</strong></td>
+            <td>Request cross-robot access from target robot's owner. See <a href="/docs/consent/">Consent</a>.</td>
             <td>NORMAL</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>21</code></td>
+            <td><strong>CONSENT_GRANT</strong></td>
+            <td>Owner grants requested cross-robot access. Signed by owner JWT.</td>
+            <td>NORMAL</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>22</code></td>
+            <td><strong>CONSENT_DENY</strong></td>
+            <td>Owner denies access request. Signed by owner JWT.</td>
+            <td>NORMAL</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>23</code></td>
+            <td><strong>FLEET_COMMAND</strong></td>
+            <td>Broadcast command to a robot group. See <a href="#fleet-broadcast">§15</a>. Fleet ESTOP MUST reach ≤100 robots in 500ms.</td>
+            <td>HIGH</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>24</code></td>
+            <td><strong>SUBSCRIBE</strong></td>
+            <td>Subscribe to a telemetry stream (observer scope). See <a href="#observer-mode">§8.8</a>.</td>
+            <td>NORMAL</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>25</code></td>
+            <td><strong>UNSUBSCRIBE</strong></td>
+            <td>Cancel an active telemetry subscription.</td>
+            <td>NORMAL</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>26</code></td>
+            <td><strong>FAULT_REPORT</strong></td>
+            <td>Structured robot fault report. Safety-affecting faults update Protocol 66 manifest. See <a href="#fault-report">§16</a>.</td>
+            <td>HIGH</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>27</code></td>
+            <td><strong>KEY_ROTATION</strong></td>
+            <td>Announce new signing key and JWKS update. See <a href="/docs/key-rotation/">Key Rotation</a>.</td>
+            <td>NORMAL</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>28</code></td>
+            <td><strong>TRAINING_CONSENT_REQUEST</strong></td>
+            <td>Request consent for training data collection from a subject. See <a href="/docs/training-consent/">Training Consent</a>.</td>
+            <td>NORMAL</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>29</code></td>
+            <td><strong>TRAINING_CONSENT_GRANT</strong></td>
+            <td>Subject grants training data consent. Signed by subject JWT.</td>
+            <td>NORMAL</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td><code>30</code></td>
+            <td><strong>TRAINING_CONSENT_DENY</strong></td>
+            <td>Subject denies training data consent.</td>
+            <td>NORMAL</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>31</code></td>
+            <td><strong>COMMAND_NACK</strong></td>
+            <td>Negative acknowledgement — command received but rejected (reason in payload). See <a href="/docs/qos/">QoS</a>.</td>
+            <td>HIGH</td>
+            <td>0</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <section>
+    <section id="priority">
       <h2>Priority Levels</h2>
       <table>
         <thead>
           <tr><th>Value</th><th>Name</th><th>Behaviour</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>0</code></td><td>LOW</td><td>Processed after NORMAL; used for background telemetry and bulk transfers.</td></tr>
-          <tr><td><code>1</code></td><td>NORMAL</td><td>Standard queue ordering. Default for most message types.</td></tr>
-          <tr><td><code>2</code></td><td>HIGH</td><td>Jumps ahead of NORMAL messages in the dispatch queue.</td></tr>
-          <tr><td><code>3</code></td><td>SAFETY</td><td>Bypasses all queues entirely (RCAN §6 Invariant 2). Used exclusively by type 6 (SAFETY) messages.</td></tr>
+          <tr><td><code>0</code></td><td>LOW</td><td>Processed after NORMAL; background telemetry.</td></tr>
+          <tr><td><code>1</code></td><td>NORMAL</td><td>Standard queue ordering. Default.</td></tr>
+          <tr><td><code>2</code></td><td>HIGH</td><td>Jumps ahead of NORMAL in dispatch queue.</td></tr>
+          <tr><td><code>3</code></td><td>SAFETY</td><td>Bypasses all queues (§6 Invariant 2). Exclusively for SAFETY (type 6) messages.</td></tr>
         </tbody>
       </table>
     </section>
 
+    <section id="config-update">
+      <h2 id="config_update">§9.2 — CONFIG_UPDATE Wire Protocol <span class="badge-new">v1.5</span></h2>
+      <p><strong>Gap:</strong> GAP-07 — MessageType CONFIG (5) existed with no payload schema. Any token holder could send arbitrary config payloads.</p>
+
+      <h3>Required Payload Schema</h3>
+      <p>All CONFIG (type 5) messages MUST include these fields:</p>
+      <pre><code>&#123;
+  "config_hash":       "sha256:abc123...",  // SHA-256 of payload_b64 decoded
+  "config_version":    "1.2.0",             // Semver of config being applied
+  "diff_only":         false,               // true = payload is a diff patch only
+  "payload_b64":       "eyJ...",            // Base64-encoded config JSON
+  "requires_restart":  false,               // Robot must restart to apply
+  "safety_overrides":  false               // true = modifies safety envelope params
+&#125;</code></pre>
+
+      <h3>Authorization Rules</h3>
+      <table>
+        <thead><tr><th>Change Type</th><th>Minimum JWT Role</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Standard config fields</td><td><code>control</code></td><td>Normal update flow</td></tr>
+          <tr><td><code>safety_overrides: false</code></td><td><code>owner</code></td><td>Owner-only config changes</td></tr>
+          <tr><td><code>safety_overrides: true</code></td><td><code>creator</code></td><td>Modifies safety envelope; creator role required</td></tr>
+          <tr><td>Fields: <code>brain.provider</code>, <code>safety.*</code></td><td><code>creator</code></td><td>Always require creator; <code>safety_overrides</code> ignored</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-warn">
+        <strong>Protocol 66 Invariant:</strong> Confidence gate thresholds (<code>confidence_gate.*</code>) are compile-time constants in the robot runtime. They CANNOT be modified via CONFIG_UPDATE regardless of JWT role. Any CONFIG payload containing these fields MUST be rejected.
+      </div>
+
+      <h3>Validation Sequence</h3>
+      <ol>
+        <li>Validate <code>rcan_version</code> (before any other field)</li>
+        <li>Verify JWT role meets minimum for the config change type</li>
+        <li>Decode <code>payload_b64</code></li>
+        <li>Compute SHA-256 of decoded bytes; compare to <code>config_hash</code></li>
+        <li>If hash mismatch → reject with <code>CONFIG_HASH_MISMATCH</code> error; write audit event</li>
+        <li>Check for forbidden fields (confidence gates); reject if found</li>
+        <li>Store current config as rollback snapshot (retain for <code>rollback_grace_s</code>, default 300s)</li>
+        <li>Apply config; write audit event with <code>config_hash</code> and <code>config_version</code></li>
+      </ol>
+
+      <h3>CONFIG_ROLLBACK</h3>
+      <p>Send a CONFIG message with <code>payload_b64: "ROLLBACK"</code> and no <code>config_hash</code> to restore the previous snapshot. Requires same JWT role as the update being rolled back. Rollback is unavailable after <code>rollback_grace_s</code> has elapsed.</p>
+    </section>
+
+    <section id="fleet-broadcast">
+      <h2 id="fleet">§15 — Fleet Broadcast / Group Commands <span class="badge-should">v1.5 SHOULD</span></h2>
+      <p><strong>Gap:</strong> GAP-13 — No RCAN message type for fleet broadcast; sequential HTTP calls take O(n) time for fleet ESTOP.</p>
+
+      <h3>FLEET_COMMAND Payload</h3>
+      <pre><code>&#123;
+  "group_id":       "floor-3-bots",          // Fleet group identifier
+  "rrn_list":       ["RRN-001", "RRN-002"],  // Explicit member list (optional override)
+  "command":        "ESTOP",                  // Command name
+  "params":         &#123;&#125;,                       // Command parameters
+  "require_ack_all": true,                    // Wait for ACK from all members
+  "fleet_token":    "eyJ..."                  // JWT with fleet claim listing target RRNs
+&#125;</code></pre>
+
+      <h3>Addressing</h3>
+      <ul>
+        <li><strong>Local network:</strong> UDP multicast on <code>239.255.66.0/24</code> port <code>6600</code></li>
+        <li><strong>Fallback:</strong> TCP unicast to each robot in <code>rrn_list</code></li>
+        <li><strong>Cloud:</strong> POST to <code>/api/v1/fleets/&#123;fleet_id&#125;/command</code> which fans out</li>
+      </ul>
+
+      <h3>Fleet ESTOP SLA</h3>
+      <p>Fleet ESTOP MUST reach all members of a ≤100 robot fleet within <strong>500ms</strong> on a local network. Implementations that cannot meet this SLA MUST fall back to individual unicast ESTOP messages in parallel.</p>
+
+      <h3>Fleet JWT Claims</h3>
+      <pre><code>&#123;
+  "sub": "human-uuid",
+  "aud": "rcan://fleet/floor-3-bots",
+  "fleet": ["RRN-000001", "RRN-000002"],  // Robots this JWT authorizes
+  "scope": ["control"],
+  "exp": 1741003600
+&#125;</code></pre>
+    </section>
+
+    <section id="observer-mode">
+      <h2 id="observer">§8.8 — Observer Mode <span class="badge-should">v1.5 SHOULD</span></h2>
+      <p><strong>Gap:</strong> GAP-15 — No read-only streaming; observers had to poll individual status endpoints.</p>
+
+      <h3>Observer JWT Scope</h3>
+      <p>The <code>observer</code> scope is read-only and MUST NOT be combined with any control scope (<code>control</code>, <code>safety</code>, <code>training</code>) in the same JWT. Servers MUST reject any write operation from an observer-scoped token, regardless of payload.</p>
+
+      <h3>SUBSCRIBE / UNSUBSCRIBE</h3>
+      <pre><code>// SUBSCRIBE payload
+&#123;
+  "stream": "status",          // "status" | "telemetry" | "audit"
+  "filter": &#123;"rrn": "RRN-001"&#125; // Optional filter
+&#125;
+
+// Server responds with COMMAND_ACK containing subscription ID
+// Then delivers matching events as server-sent events or WebSocket frames</code></pre>
+
+      <h3>Streaming Endpoints</h3>
+      <ul>
+        <li><code>GET /api/stream/status</code> — robot status updates (SSE)</li>
+        <li><code>GET /api/stream/telemetry</code> — sensor data stream (SSE / WebSocket)</li>
+        <li><code>GET /api/stream/audit</code> — audit events (SSE, requires audit scope)</li>
+      </ul>
+      <p>Observer connections are terminated when the JWT expires. The server MUST close the SSE connection and return HTTP 401.</p>
+    </section>
+
+    <section id="fault-report">
+      <h2 id="faults">§16 — Structured Fault Reporting <span class="badge-should">v1.5 SHOULD</span></h2>
+      <p><strong>Gap:</strong> GAP-20 — Only a generic ERROR type existed; no fault taxonomy or safety manifest integration.</p>
+
+      <h3>FAULT_REPORT Payload</h3>
+      <pre><code>&#123;
+  "fault_code":      "SENSOR_PROXIMITY_FAILURE",  // See taxonomy below
+  "severity":        "critical",                   // "info"|"warning"|"error"|"critical"
+  "subsystem":       "sensor",                     // subsystem prefix
+  "description":     "Left IR sensor not responding",
+  "affects_safety":  true,                         // Degrades P66 invariant?
+  "safe_to_continue": false                        // Robot should halt?
+&#125;</code></pre>
+
+      <h3>Standard Fault Code Taxonomy</h3>
+      <table>
+        <thead><tr><th>Prefix</th><th>Example Codes</th></tr></thead>
+        <tbody>
+          <tr><td><code>SENSOR_</code></td><td><code>SENSOR_PROXIMITY_FAILURE</code>, <code>SENSOR_IMU_DRIFT</code>, <code>SENSOR_CAMERA_OFFLINE</code></td></tr>
+          <tr><td><code>MOTOR_</code></td><td><code>MOTOR_OVERCURRENT</code>, <code>MOTOR_ENCODER_FAULT</code>, <code>MOTOR_THERMAL</code></td></tr>
+          <tr><td><code>BATTERY_</code></td><td><code>BATTERY_CRITICAL</code>, <code>BATTERY_CELL_FAULT</code>, <code>BATTERY_CHARGING_FAULT</code></td></tr>
+          <tr><td><code>NETWORK_</code></td><td><code>NETWORK_REGISTRY_UNREACHABLE</code>, <code>NETWORK_PEER_TIMEOUT</code></td></tr>
+          <tr><td><code>SAFETY_</code></td><td><code>SAFETY_WATCHDOG_EXPIRED</code>, <code>SAFETY_ESTOP_STUCK</code></td></tr>
+          <tr><td><code>AUTH_</code></td><td><code>AUTH_KEY_EXPIRED</code>, <code>AUTH_TOKEN_REVOKED</code></td></tr>
+          <tr><td><code>CONFIG_</code></td><td><code>CONFIG_HASH_MISMATCH</code>, <code>CONFIG_VERSION_DOWNGRADE</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Safety Manifest Integration</h3>
+      <p>Faults with <code>affects_safety: true</code> MUST update the Protocol 66 manifest with an <code>active_faults</code> list. The manifest's <code>safe_to_continue</code> aggregate is <code>false</code> if any active fault has <code>safe_to_continue: false</code>. Operators receive a push notification for <code>severity: "critical"</code> faults.</p>
+    </section>
+
+    <section id="migration">
+      <h2>Migration from v1.4</h2>
+      <div class="callout callout-warn">
+        <strong>Breaking change:</strong> The MessageType integer table changed between v1.4 spec and v1.5. Any code comparing <code>msg.type == 1</code> (DISCOVER in old spec) must be updated. Always use named enum constants — <code>MessageType.DISCOVER</code> — never hardcoded integers.
+      </div>
+      <p>Old spec integers that changed:</p>
+      <ul>
+        <li>DISCOVER: was <code>1</code> → now <code>9</code></li>
+        <li>STATUS: was <code>2</code> → now <code>3</code></li>
+        <li>COMMAND: was <code>3</code> → now <code>1</code></li>
+        <li>TRANSPARENCY: was <code>18</code> → now <code>11</code></li>
+        <li>HANDOFF: was <code>19</code> (reserved) → removed (deferred to v1.6)</li>
+      </ul>
+      <p>rcan-py's internal enum (COMMAND=1, STATUS=3) was already closer to the v1.5 canonical table; only minor renaming is needed there (AUTH→SENSOR_DATA, AUTHORIZE→AUDIT). See <code>docs/v1.5-tracking.md</code> for SDK migration checklist.</p>
+    </section>
+
     <section>
       <h2>Python Usage</h2>
-      <pre><code>from rcan.message import MessageType, RCANMessage
+      <pre><code>from rcan.message import MessageType, RCANMessage, SPEC_VERSION
 
-# Create a COMMAND message
+# Create a COMMAND message (type 1)
 msg = RCANMessage.command(
     source="rcan://rcan.dev/acme/arm/v1/unit-001",
     target="rcan://rcan.dev/acme/arm/v1/unit-001",
     payload=&#123;"cmd": "move_forward", "speed": 0.5&#125;,
 )
 
-# Create a TRANSPARENCY disclosure (EU AI Act Art. 13)
-from rcan.safety import make_transparency_message
-
-transparency = make_transparency_message(
-    source_ruri="rcan://rcan.dev/acme/arm/v1/unit-001",
-    target_ruri="rcan://local/human-display",
-    operator="Acme Robotics",
-    capabilities=["navigation", "speech"],
-    model_family="claude-sonnet",
-    contact="safety@acme.example",
-    p66_conformance_pct=87.0,
-)</code></pre>
+# SPEC_VERSION is the single source of truth — do not hardcode version strings
+print(SPEC_VERSION)  # "1.5"</code></pre>
     </section>
 
     <section>
       <h2>See Also</h2>
       <ul>
-        <li><a href="/docs/safety/">Safety Conformance</a> — ESTOP, Protocol 66, EU AI Act compliance</li>
-        <li><a href="/docs/schema/">Config Schema</a> — RCAN configuration validation</li>
-        <li><a href="/docs/error-codes/">Error Codes</a> — ERROR message payload codes</li>
-        <li><a href="/docs/registration/">Robot Registration</a> — REGISTRY_REGISTER workflow</li>
+        <li><a href="/docs/safety/">Safety Conformance</a> — ESTOP, Protocol 66, time sync, audit export</li>
+        <li><a href="/docs/qos/">QoS &amp; Delivery Guarantees</a> — retry semantics, ESTOP exactly-once</li>
+        <li><a href="/docs/consent/">Consent Wire Protocol</a> — CONSENT_REQUEST / GRANT / DENY flows</li>
+        <li><a href="/docs/replay-prevention/">Replay Attack Prevention</a> — msg_id seen-set, replay window</li>
+        <li><a href="/docs/revocation/">Robot Identity Revocation</a> — ROBOT_REVOCATION broadcast</li>
+        <li><a href="/docs/delegation/">Command Delegation Chain</a> — R2R command provenance</li>
+        <li><a href="/docs/key-rotation/">Key Rotation</a> — JWKS, key_id, grace period</li>
+        <li><a href="/docs/offline/">Offline Operation</a> — cached keys, restricted mode</li>
+        <li><a href="/docs/cloud-relay/">Cloud Relay Identity</a> — sender_type, cloud_provider</li>
+        <li><a href="/docs/training-consent/">Training Data Consent</a> — EU AI Act Article 10</li>
+        <li><a href="/docs/error-codes/">Error Codes</a> — full error code reference</li>
       </ul>
     </section>
   </article>
 </BaseLayout>
 
 <style>
-  .doc-nav {
-    margin-bottom: 2rem;
-  }
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
 
-  .doc-nav a {
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-  }
-
-  .lead {
-    font-size: 1.25rem;
-    color: var(--color-text-muted);
-    margin-bottom: 2rem;
-  }
-
-  .msg-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    font-size: 0.875rem;
-  }
-
-  .msg-table th,
-  .msg-table td {
-    padding: 0.65rem 0.85rem;
-    border: 1px solid var(--color-border);
-    text-align: left;
-    vertical-align: top;
-  }
-
-  .msg-table th {
-    background: var(--color-bg-alt);
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
     font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
   }
 
-  .msg-table td:first-child {
-    white-space: nowrap;
-    font-family: monospace;
+  .badge-should {
+    display: inline-block;
+    background: rgba(250, 204, 21, 0.12);
+    color: #ca8a04;
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
   }
 
-  .safety-row td {
-    background: rgba(239, 68, 68, 0.06);
-    border-color: rgba(239, 68, 68, 0.25);
-  }
-
-  .transparency-row td {
-    background: rgba(34, 211, 238, 0.06);
-    border-color: rgba(34, 211, 238, 0.25);
-  }
-
-  .reserved-row td {
-    color: var(--color-text-muted);
-    font-style: italic;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
     margin: 1rem 0;
     font-size: 0.9rem;
   }
-
-  th, td {
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--color-border);
-    text-align: left;
+  .callout-info {
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
   }
 
-  th {
-    background: var(--color-bg-alt);
-    font-weight: 600;
-  }
+  .msg-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.875rem; }
+  .msg-table th, .msg-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; vertical-align: top; }
+  .msg-table th { background: var(--color-bg-alt); font-weight: 600; }
+  .msg-table td:first-child { white-space: nowrap; font-family: monospace; }
 
-  section {
-    margin-bottom: 2.5rem;
-  }
+  .safety-row td { background: rgba(239, 68, 68, 0.06); border-color: rgba(239, 68, 68, 0.25); }
+  .transparency-row td { background: rgba(34, 211, 238, 0.06); border-color: rgba(34, 211, 238, 0.25); }
+  .security-row td { background: rgba(168, 85, 247, 0.06); border-color: rgba(168, 85, 247, 0.25); }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
 </style>

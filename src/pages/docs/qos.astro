@@ -1,0 +1,215 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="QoS & Delivery Guarantees" description="RCAN §5.3 — fire-and-forget, at-least-once, exactly-once delivery, ESTOP QoS 2 requirement, ACK timeout, and retry semantics.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§5.3 — Quality of Service <span class="badge-new">v1.5</span></h1>
+    <p class="lead">RCAN v1.4 had no delivery guarantee semantics. A SAFETY_ESTOP sent over congested WiFi could be silently dropped. v1.5 adds three QoS levels with mandatory ESTOP delivery confirmation.</p>
+
+    <div class="callout callout-safety">
+      <strong>Protocol 66 Invariant:</strong> ESTOP MUST use QoS 2 (exactly-once). ESTOP is processed immediately on receipt — QoS 2 provides delivery confirmation, not a prerequisite for ESTOP execution.
+    </div>
+
+    <section>
+      <h2>QoS Levels</h2>
+      <table>
+        <thead><tr><th>Level</th><th>Name</th><th>Semantics</th><th>Use For</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>0</code></td>
+            <td>fire-and-forget</td>
+            <td>No ack required. Message may be dropped without notification.</td>
+            <td>TELEOP streams, STATUS telemetry, HEARTBEAT</td>
+          </tr>
+          <tr>
+            <td><code>1</code></td>
+            <td>at-least-once</td>
+            <td>Sender retries until COMMAND_ACK received. May deliver duplicates.</td>
+            <td>COMMAND, CONFIG, ALERT, most control messages</td>
+          </tr>
+          <tr>
+            <td><code>2</code></td>
+            <td>exactly-once</td>
+            <td>Two-phase commit: COMMAND_ACK then COMMAND_COMMIT. No duplicates.</td>
+            <td><strong>ESTOP</strong> (mandatory), CONSENT messages</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Required QoS by Message Type</h3>
+      <table>
+        <thead><tr><th>Message Type</th><th>Min QoS</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>SAFETY (type 6) — ESTOP</td><td><strong>2</strong></td><td>Mandatory; P66 invariant</td></tr>
+          <tr><td>SAFETY (type 6) — RESUME</td><td><strong>1</strong></td><td>At-least-once</td></tr>
+          <tr><td>ALERT (type 13)</td><td>1</td><td>Owner must receive alerts</td></tr>
+          <tr><td>CONFIG (type 5)</td><td>1</td><td>Config must be acknowledged</td></tr>
+          <tr><td>ROBOT_REVOCATION (type 19)</td><td>1</td><td>Broadcast with retry</td></tr>
+          <tr><td>TELEOP (type 14)</td><td><strong>0</strong></td><td>Must be fire-and-forget; stale frames are useless</td></tr>
+          <tr><td>HEARTBEAT (type 4)</td><td>0</td><td>Fire-and-forget</td></tr>
+          <tr><td>STATUS (type 3)</td><td>0</td><td>Best-effort telemetry</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>QoS 1: At-Least-Once</h2>
+
+      <h3>Sender Behavior</h3>
+      <ol>
+        <li>Send message with <code>qos: 1</code></li>
+        <li>Start ACK timer: <code>ack_timeout_ms</code> (default 500ms)</li>
+        <li>If COMMAND_ACK not received within timeout: retry</li>
+        <li>Retry with exponential backoff: 100ms → 200ms → 400ms</li>
+        <li>Max retries: <code>max_retries</code> (default 3)</li>
+        <li>After max retries: declare delivery failure</li>
+      </ol>
+
+      <h3>Receiver Behavior</h3>
+      <ul>
+        <li>Process the message</li>
+        <li>Send COMMAND_ACK (type 17) within <code>ack_timeout_ms</code> (500ms)</li>
+        <li>Use replay cache to deduplicate retries (same msg_id)</li>
+      </ul>
+
+      <h3>Safety Failure Mode</h3>
+      <div class="callout callout-warn">
+        Failure to receive ACK for a SAFETY message (type 6) after max retries MUST trigger a <strong>local safety halt</strong>. The robot cannot confirm ESTOP delivery, so it halts itself as a conservative safety measure.
+      </div>
+    </section>
+
+    <section>
+      <h2>QoS 2: Exactly-Once (Two-Phase Commit)</h2>
+      <p>Used for ESTOP and other messages where duplicate processing must be prevented.</p>
+
+      <pre class="sequence">
+Sender                              Receiver
+  |                                    |
+  |-- COMMAND (qos:2, msg_id:X) ------>|
+  |                                    |-- Process message immediately
+  |                                    |   (ESTOP: halt now, don't wait for COMMIT)
+  |<-- COMMAND_ACK (reply_to:X) -------|
+  |                                    |
+  |-- COMMAND_COMMIT (reply_to:X) ---->|
+  |                                    |-- Commit; remove from exactly-once cache
+  |<-- RESPONSE (reply_to:commit_id) --|
+  |                                    |
+</pre>
+
+      <h3>ESTOP-Specific Behavior</h3>
+      <div class="callout callout-safety">
+        ESTOP is <strong>processed immediately on receipt</strong> — before COMMAND_ACK is sent, before COMMAND_COMMIT is received. QoS 2 provides delivery confirmation to the sender, not a condition for ESTOP execution. This is a Protocol 66 invariant.
+      </div>
+      <ol>
+        <li>ESTOP message received with <code>qos: 2</code></li>
+        <li>Robot halts <strong>immediately</strong></li>
+        <li>Robot sends COMMAND_ACK within 500ms</li>
+        <li>Sender receives COMMAND_ACK — ESTOP confirmed delivered</li>
+        <li>Sender sends COMMAND_COMMIT</li>
+        <li>Robot removes ESTOP from exactly-once cache</li>
+      </ol>
+      <p>If the sender does not receive COMMAND_ACK: retry ESTOP. The robot's replay-prevention and exactly-once cache ensures the second ESTOP is a no-op (already halted) but the sender gets its ACK confirmation.</p>
+    </section>
+
+    <section>
+      <h2>COMMAND_NACK (Type 31)</h2>
+      <p>When a receiver cannot process a message and must inform the sender, it sends COMMAND_NACK:</p>
+      <pre><code>&#123;
+  "id":       "uuid-v4",
+  "type":     31,
+  "reply_to": "original-msg-id",
+  "payload": &#123;
+    "reason":  "REPLAY_DETECTED",
+    "detail":  "msg_id abc123 was already processed"
+  &#125;
+&#125;</code></pre>
+      <p>COMMAND_NACK is fire-and-forget (<code>qos: 0</code>). Senders receiving NACK MUST NOT retry the original message.</p>
+    </section>
+
+    <section>
+      <h2>Sequence Numbers for Exactly-Once</h2>
+      <p>For exactly-once delivery, receivers maintain an exactly-once cache keyed on <code>msg_id</code>. The cache entry has three states:</p>
+      <ul>
+        <li><code>PENDING</code> — ACK sent, waiting for COMMIT</li>
+        <li><code>COMMITTED</code> — COMMIT received; entry retained for <code>replay_window_s</code></li>
+        <li>Evicted after <code>replay_window_s</code> elapses</li>
+      </ul>
+      <p>If a message arrives with a <code>msg_id</code> in state PENDING or COMMITTED, resend the ACK and return without reprocessing.</p>
+    </section>
+
+    <section>
+      <h2>Configuration</h2>
+      <pre><code>qos:
+  ack_timeout_ms: 500    # Time to wait for COMMAND_ACK before retry
+  max_retries: 3         # Max retry attempts (QoS 1 and 2)
+  backoff_base_ms: 100   # Initial backoff; doubles each retry</code></pre>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/replay-prevention/">Replay Attack Prevention</a> — msg_id cache interaction with QoS dedup</li>
+        <li><a href="/docs/safety/">Safety Conformance</a> — ESTOP invariants</li>
+        <li><a href="/docs/messages/#type-reference">COMMAND_ACK (17), COMMAND_COMMIT (18), COMMAND_NACK (31)</a></li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+  .callout-safety {
+    background: rgba(239, 68, 68, 0.06);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+  }
+
+  .sequence {
+    background: var(--color-bg-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>
