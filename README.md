@@ -36,7 +36,7 @@ await client.release()
 
 ## Documentation
 
-- [Full Specification v1.4](https://rcan.dev/spec/)
+- [Full Specification v1.6](https://rcan.dev/spec/)
 - [Conformance Tests](https://rcan.dev/conformance/)
 - [Reference Implementations](https://rcan.dev/implementations/)
 - [Safety (Protocol 66)](https://rcan.dev/docs/safety/)
@@ -46,9 +46,9 @@ await client.release()
 
 | Project | Language | Status | Link |
 |---|---|---|---|
-| **rcan-py** | Python 3.10+ | v0.4.2 ✅ | [PyPI](https://pypi.org/project/rcan/) · [github](https://github.com/continuonai/rcan-py) |
-| **rcan-ts** | TypeScript / Node | v0.4.1 ✅ | [npm](https://www.npmjs.com/package/@continuonai/rcan) · [github](https://github.com/continuonai/rcan-ts) |
-| **OpenCastor** | Python robot runtime | v2026.3.16.1 ✅ | [github](https://github.com/craigm26/OpenCastor) · [opencastor.com](https://opencastor.com) |
+| **rcan-py** | Python 3.10+ | v0.6.0 ✅ | [PyPI](https://pypi.org/project/rcan/) · [github](https://github.com/continuonai/rcan-py) |
+| **rcan-ts** | TypeScript / Node | v0.6.0 ✅ | [npm](https://www.npmjs.com/package/@continuonai/rcan) · [github](https://github.com/continuonai/rcan-ts) |
+| **OpenCastor** | Python robot runtime | v2026.4.1.0 ✅ | [github](https://github.com/craigm26/OpenCastor) · [opencastor.com](https://opencastor.com) |
 | **OpenCastor Fleet UI** | Flutter / Firebase | live ✅ | [app.opencastor.com](https://app.opencastor.com) |
 | **Robot Registry Foundation** | Registry operator | active ✅ | [robotregistryfoundation.org](https://robotregistryfoundation.org) |
 
