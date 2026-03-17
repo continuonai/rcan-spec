@@ -105,7 +105,7 @@ assert computed == chunk["hash_sha256"], "Media chunk hash mismatch — reject"<
 GET /api/v1/media/&#123;chunk_id&#125;?expires=&#123;unix_ts&#125;&sig=&#123;hmac_hex&#125;
 
 // HMAC key: derived from robot's Ed25519 private key (first 32 bytes)
-// HMAC message: "GET:/api/v1/media/{chunk_id}:{expires}"
+// HMAC message: "GET:/api/v1/media/&#123;chunk_id&#125;:&#123;expires&#125;"
 // Default TTL: 300 seconds (5 minutes)
 
 // Example ref_url:
