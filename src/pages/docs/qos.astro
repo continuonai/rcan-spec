@@ -93,11 +93,11 @@ Sender                              Receiver
   |-- COMMAND (qos:2, msg_id:X) ------>|
   |                                    |-- Process message immediately
   |                                    |   (ESTOP: halt now, don't wait for COMMIT)
-  |<-- COMMAND_ACK (reply_to:X) -------|
+  |&lt;-- COMMAND_ACK (reply_to:X) -------|
   |                                    |
   |-- COMMAND_COMMIT (reply_to:X) ---->|
   |                                    |-- Commit; remove from exactly-once cache
-  |<-- RESPONSE (reply_to:commit_id) --|
+  |&lt;-- RESPONSE (reply_to:commit_id) --|
   |                                    |
 </pre>
 

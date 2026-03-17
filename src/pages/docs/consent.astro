@@ -82,16 +82,16 @@ Robot A (requester)          Robot B (target)         Human B (owner of B)
        |                           |   "Robot A requests       |
        |                           |    control access"        |
        |                           |                           |
-       |                           |<-- approve (RCAN app) ----|
+       |                           |&lt;-- approve (RCAN app) ----|
        |                           |                           |
-       |<-- CONSENT_GRANT (21) ----|                           |
+       |&lt;-- CONSENT_GRANT (21) ----|                           |
        |    (signed by Human B JWT)|                           |
        |    (grant_token: JWT)     |                           |
        |                           |                           |
        |-- COMMAND (1) ----------->|                           |
        |   (Authorization: grant_token)                        |
        |                           |                           |
-       |<-- RESPONSE (2) ----------|                           |
+       |&lt;-- RESPONSE (2) ----------|                           |
        |                           |                           |
 </pre>
     </section>
@@ -113,16 +113,16 @@ Human A                  Registry             Robot B          Human B (owner of
    |                                            |   "Human A requests |
    |                                            |    control access"  |
    |                                            |                    |
-4.                                              |<-- CONSENT_GRANT(21)|
+4.                                              |&lt;-- CONSENT_GRANT(21)|
    |                                            |   (signed by HumanB)|
    |                                            |                    |
-5. |<-- grant_token (JWT) ---------------------|                    |
+5. |&lt;-- grant_token (JWT) ---------------------|                    |
    |   (minted by Robot B's registry, scoped)   |                    |
    |                                            |                    |
 6. |-- COMMAND(1) ---------------------------->|                    |
    |   Authorization: grant_token              |                    |
    |                                            |                    |
-7. |<-- RESPONSE(2) ---------------------------|                    |
+7. |&lt;-- RESPONSE(2) ---------------------------|                    |
    |                                            |                    |
 
 Audit trail: Human A → (consent grant from Human B) → Robot B
