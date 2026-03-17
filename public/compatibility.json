@@ -6,7 +6,7 @@
       "status": "current",
       "rcan_py": ">=0.6.0",
       "rcan_ts": ">=0.6.0",
-      "opencastor": ">=2026.4.1.0",
+      "opencastor": ">=2026.3.17.1",
       "notes": "4 gaps addressed from v1.6 backlog: §5.4 Multi-Modal Payloads (GAP-18) — media_chunks[], inline/ref modes, streaming, TRAINING_DATA migration; §8.7 Identity Verification (GAP-14) — LoA 1/2/3, registry tiers, FIDO2/WebAuthn, P66 min_loa_for_control; §18 Registry Federation Protocol (GAP-16) — FEDERATION_SYNC full payload, cross-registry JWT trust chains, DNSSEC trust anchor discovery, federated consent portability; §19 Constrained Transport Encoding (GAP-17) — RCAN-Compact (CBOR), RCAN-Minimal (32-byte LoRa/BLE ESTOP), BLE L2CAP framing, transport negotiation."
     },
     {

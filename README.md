@@ -57,7 +57,7 @@ Robots today are islands. A Boston Dynamics Spot and a Raspberry Pi rover can't 
 |---|---|---|---|
 | [rcan-py](https://github.com/continuonai/rcan-py) | Python 3.10+ | `pip install rcan==0.6.0` | 587 |
 | [rcan-ts](https://github.com/continuonai/rcan-ts) | TypeScript / Node 18+ | `npm install @continuonai/rcan-ts@0.6.0` | 405 |
-| [OpenCastor](https://github.com/craigm26/OpenCastor) | Python (robot runtime) | `pip install opencastor==2026.4.1.0` | 6,459 |
+| [OpenCastor](https://github.com/craigm26/OpenCastor) | Python (robot runtime) | `pip install opencastor==2026.3.17.1` | 6,459 |
 
 ## Conformance Badges
 
@@ -105,7 +105,7 @@ Open issues and proposals at [github.com/continuonai/rcan-spec/issues](https://g
 | **rcan-spec** (this) | v1.6.0 | Protocol specification |
 | [rcan-py](https://github.com/continuonai/rcan-py) | v0.6.0 | Python SDK |
 | [rcan-ts](https://github.com/continuonai/rcan-ts) | v0.6.0 | TypeScript SDK |
-| [OpenCastor](https://github.com/craigm26/OpenCastor) | v2026.4.1.0 | Robot runtime (reference impl) |
+| [OpenCastor](https://github.com/craigm26/OpenCastor) | v2026.3.17.1 | Robot runtime (reference impl) |
 | [RRF](https://robotregistryfoundation.org) | v1.6.0 | Robot identity registry |
 | [Fleet UI](https://app.opencastor.com) | live | Web fleet dashboard |
 
