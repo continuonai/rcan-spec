@@ -1,0 +1,423 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Registry Federation Protocol" description="RCAN §18 — cross-registry JWT trust chains, federated consent record portability, FEDERATION_SYNC payload, and trust anchor discovery.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§18 — Registry Federation Protocol <span class="badge-new">v1.6</span></h1>
+    <p class="lead">RCAN registries federate like email — a robot on <code>registry-1.example</code> can consent-grant access to a robot on <code>registry-2.hospital</code> without either registry having full control over the other's records. v1.6 defines the complete cross-registry trust, consent propagation, and ESTOP propagation protocol.</p>
+
+    <div class="callout callout-safety">
+      <strong>Protocol 66 Invariant — Federation Safety:</strong> Local safety ALWAYS wins regardless of federation status. Cross-registry commands require local consent verification on the receiving robot. An ESTOP from a federated robot is accepted; a RESUME from a federated robot requires local consent verification AND active local owner acknowledgement.
+    </div>
+
+    <section>
+      <h2>Registry Tiers</h2>
+      <p>RCAN v1.6 introduces a three-tier registry hierarchy that controls what trust assertions each registry may make:</p>
+
+      <table>
+        <thead>
+          <tr><th>Tier</th><th>Value</th><th>Trust Level</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Root</strong></td>
+            <td><code>"root"</code></td>
+            <td>Signs authoritative registry keys; manages global trust anchors</td>
+            <td>RRF (rcan.dev)</td>
+          </tr>
+          <tr>
+            <td><strong>Authoritative</strong></td>
+            <td><code>"authoritative"</code></td>
+            <td>Verified by root; can issue LoA 2/3 JWTs; must pass annual audit</td>
+            <td>hospital-registry.nhs.uk, acme-robots.com</td>
+          </tr>
+          <tr>
+            <td><strong>Community</strong></td>
+            <td><code>"community"</code></td>
+            <td>Self-signed; can only issue LoA 1 JWTs; robots MAY reject for control commands</td>
+            <td>homelab-registry.local, maker-registry.io</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The <code>registry_tier</code> field appears on registry records and in JWT claims issued by that registry:</p>
+      <pre><code>// Registry record (in Robot Registry Foundation)
+&#123;
+  "registry_id":    "hospital-registry.nhs.uk",
+  "registry_tier":  "authoritative",
+  "public_key_fp":  "sha256:4a3f...",
+  "signed_by":      "root.rcan.dev",
+  "audit_expiry":   "2027-01-15",
+  "dnssec_txt":     "_rcan.hospital-registry.nhs.uk"
+&#125;
+
+// JWT claim from authoritative registry
+&#123;
+  "iss": "hospital-registry.nhs.uk",
+  "sub": "user-uuid-alice",
+  "registry_tier": "authoritative",
+  "loa": 2,
+  "aud": "rcan://hospital-registry.nhs.uk/med/delivery/v2/unit-04",
+  "scope": ["control"],
+  "exp": 1741003600
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>FEDERATION_SYNC Message (Type 12) — Full Payload Spec</h2>
+      <p>The <code>FEDERATION_SYNC</code> message (type 12) is the wire format for cross-registry data synchronization. It was reserved in v1.5; v1.6 defines the complete payload.</p>
+
+      <pre><code>// FEDERATION_SYNC (type 12) payload
+&#123;
+  "source_registry":  "registry-1.acme.com",
+  "target_registry":  "hospital-registry.nhs.uk",
+  "sync_type":        "consent",     // "consent" | "revocation" | "key"
+  "federation_id":    "uuid-v4",     // Unique ID for this sync event
+  "payload":          &#123; ... &#125;,       // Type-specific payload (see below)
+  "signature":        "ed25519:...", // Source registry signs the full payload
+  "timestamp":        1741000000,
+  "expires_at":       1741003600     // Sync event expiry (1h typical)
+&#125;</code></pre>
+
+      <h3>sync_type: "consent"</h3>
+      <pre><code>// payload for sync_type: "consent"
+&#123;
+  "consent_record": &#123;
+    "request_id":      "uuid-v4",
+    "requester_ruri":  "rcan://registry-1.acme.com/org/model/v1/robot-A",
+    "target_ruri":     "rcan://hospital.nhs.uk/med/delivery/v2/unit-04",
+    "granted_scopes":  ["status", "control"],
+    "granted_by":      "user-uuid-owner-B",
+    "granted_at":      1741000000,
+    "expires_at":      1741086400,
+    "source_registry": "registry-1.acme.com",
+    "target_registry": "hospital-registry.nhs.uk",
+    "owner_signature": "ed25519:...",  // Owner of target robot signs the grant
+    "chain_hash":      "sha256:..."    // HMAC chain continuity
+  &#125;
+&#125;</code></pre>
+
+      <h3>sync_type: "revocation"</h3>
+      <pre><code>// payload for sync_type: "revocation"
+&#123;
+  "revocation_record": &#123;
+    "rrn":          "rcan://registry-1.acme.com/org/model/v1/robot-A",
+    "revoked_at":   1741000000,
+    "reason":       "key_compromise",
+    "authority":    "registry-1.acme.com",
+    "propagate_to": ["hospital-registry.nhs.uk"]  // Explicit propagation list
+  &#125;
+&#125;</code></pre>
+
+      <h3>sync_type: "key"</h3>
+      <pre><code>// payload for sync_type: "key"
+&#123;
+  "key_record": &#123;
+    "registry_id": "registry-1.acme.com",
+    "kid":         "kid-abc123",
+    "public_key":  "ed25519:...",
+    "algorithm":   "Ed25519",
+    "use":         "sig",
+    "exp":         1772536000,
+    "issued_at":   1741000000
+  &#125;
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>Cross-Registry JWT Trust Chains</h2>
+      <p>When Robot A (on registry-1) needs to command Robot B (on registry-2), registry-2 must be able to verify that the JWT was issued by a trusted source — without registry-2 having direct knowledge of registry-1's users.</p>
+
+      <h3>Trust Chain Construction</h3>
+      <ol>
+        <li><strong>Root signs authoritative registry keys.</strong> The root registry (rcan.dev) signs the public key of registry-1 and stores the signed record.</li>
+        <li><strong>JWT carries the issuing registry tier.</strong> JWTs from registry-1 carry <code>"registry_tier": "authoritative"</code> and the issuer's <code>kid</code>.</li>
+        <li><strong>Registry-2 verifies via trust chain.</strong> Robot B fetches registry-1's public key from its DNSSEC TXT record, verifies the root signature on that key, then verifies the JWT signature.</li>
+      </ol>
+
+      <pre><code>// Cross-registry JWT (issued by registry-1, trusted by registry-2)
+&#123;
+  "iss":            "registry-1.acme.com",
+  "sub":            "user-uuid-alice",
+  "registry_tier":  "authoritative",
+  "kid":            "reg1-key-2026a",
+  "loa":            2,
+  "aud":            "rcan://hospital.nhs.uk/med/delivery/v2/unit-04",
+  "scope":          ["status"],
+  "cross_registry": true,
+  "consent_id":     "uuid-of-federated-consent-record",
+  "exp":            1741003600
+&#125;</code></pre>
+
+      <h3>Verification Steps (Robot B's perspective)</h3>
+      <pre><code>1. Parse JWT header → extract kid, iss
+2. Lookup iss in local federation cache
+   → if miss: fetch _rcan.registry-1.acme.com TXT (DNSSEC)
+   → extract public key fingerprint
+   → fetch JWKS from registry-1.acme.com/.well-known/rcan-keys.json
+   → verify JWKS signature against root public key (rcan.dev)
+3. Verify JWT signature against registry-1's public key
+4. Validate cross_registry: true + consent_id present
+5. Lookup consent_id in local federated consent store
+   → verify consent covers requested scope
+   → verify consent not expired
+6. Check loa >= min_loa_for_control (P66 manifest field)
+7. Apply local_safety_wins (Protocol 66 invariant — local always wins)</code></pre>
+    </section>
+
+    <section>
+      <h2>Trust Anchor Discovery (DNSSEC)</h2>
+      <p>RCAN v1.6 uses DNSSEC TXT records for trust anchor discovery, eliminating the need for a centralised PKI while leveraging the existing DNS trust hierarchy.</p>
+
+      <h3>DNS Record Format</h3>
+      <pre><code>// TXT record at: _rcan.&lt;registry-domain&gt;
+// Example: _rcan.registry-1.acme.com
+
+_rcan.registry-1.acme.com. 3600 IN TXT "v=rcan1; tier=authoritative; kfp=sha256:4a3f8c...; sig=ed25519:signed-by-root"
+
+// Fields:
+// v=rcan1       — record version (required)
+// tier=         — "root" | "authoritative" | "community"
+// kfp=          — SHA-256 fingerprint of registry's current Ed25519 public key
+// sig=          — Root registry's Ed25519 signature over "v=rcan1;tier=...;kfp=..." string</code></pre>
+
+      <h3>Discovery Flow</h3>
+      <pre><code>ROBOT B verifying ROBOT A (from registry-1.acme.com):
+
+1. DNS query: _rcan.registry-1.acme.com TXT  (DNSSEC validated)
+2. Parse TXT: tier=authoritative, kfp=sha256:4a3f...
+3. Verify sig field using root registry public key (pre-loaded / cached)
+4. Fetch JWKS: https://registry-1.acme.com/.well-known/rcan-keys.json
+5. Match key fingerprint against kfp in TXT record
+6. Use matched public key to verify incoming JWT</code></pre>
+
+      <div class="callout callout-warn">
+        <strong>DNSSEC required:</strong> Robots MUST NOT accept TXT record results from DNS resolvers that cannot confirm DNSSEC validation. Community registries (tier=community) that lack DNSSEC MUST be treated as untrusted and their JWTs rejected for control-scope commands.
+      </div>
+    </section>
+
+    <section>
+      <h2>Federated Consent Record Portability</h2>
+      <p>A <code>ConsentRecord</code> issued by registry-1 and sync'd to registry-2 via <code>FEDERATION_SYNC</code> must be accepted by robots on both registries. The format is designed to be self-verifying:</p>
+
+      <pre><code>// Portable ConsentRecord (accepted by both registries)
+&#123;
+  "schema_version":    "1.6",
+  "request_id":        "uuid-v4",
+  "requester_ruri":    "rcan://registry-1.acme.com/org/model/v1/robot-A",
+  "requester_owner":   "user-uuid-alice@registry-1.acme.com",
+  "target_ruri":       "rcan://hospital.nhs.uk/med/delivery/v2/unit-04",
+  "target_owner":      "user-uuid-bob@hospital.nhs.uk",
+  "granted_scopes":    ["status"],
+  "consent_type":      "cross_registry",
+  "granted_at":        1741000000,
+  "expires_at":        1741086400,
+  "source_registry":   "registry-1.acme.com",
+  "target_registry":   "hospital-registry.nhs.uk",
+  "owner_jwt_sub":     "user-uuid-bob@hospital.nhs.uk",
+  "owner_signature":   "ed25519:...",  // Target robot owner signs this record
+  "sync_id":           "uuid-of-FEDERATION_SYNC-event",
+  "chain_hash":        "sha256:..."    // HMAC continuity for audit
+&#125;</code></pre>
+
+      <h3>Portability Rules</h3>
+      <ul>
+        <li>The <code>owner_signature</code> is over the entire record (excluding <code>chain_hash</code>). Both registries can verify it using the owner's public key.</li>
+        <li>Records are stored in both registries' local consent stores after sync.</li>
+        <li>Expiry is enforced locally — the record is deleted from both stores at <code>expires_at</code>.</li>
+        <li>Revocation is propagated via <code>FEDERATION_SYNC</code> with <code>sync_type: "revocation"</code>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Cross-Registry ESTOP Propagation</h2>
+      <p>When Robot A (on registry-1) issues an ESTOP targeting Robot B (on registry-2), the ESTOP bypasses the normal consent-gate and federation trust chain — consistent with the Protocol 66 invariant that ESTOP is always accepted from any identified source.</p>
+
+      <h3>Propagation Rules</h3>
+      <ul>
+        <li>ESTOP (type 6, SAFETY) from a cross-registry robot is accepted immediately, before trust chain verification.</li>
+        <li>The receiving robot MUST log the cross-registry ESTOP with the source RURI and <code>source_registry</code>.</li>
+        <li>RESUME after a cross-registry ESTOP requires: (a) verified consent record, (b) trust chain verification, AND (c) local owner acknowledgement.</li>
+        <li>An ESTOP from a registry-1 robot does NOT authorize that robot to issue RESUME — RESUME requires consent.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>12-Step Federation Flow: Alice → Robot B</h2>
+      <p>Alice is a user on registry-1. Robot B is registered on registry-2. Alice wants to read Robot B's status.</p>
+
+      <pre><code>Alice                 Registry-1            Registry-2            Robot B
+  │                      │                      │                     │
+  │ 1. Request federation │                      │                     │
+  │   consent for Robot B │                      │                     │
+  │──────────────────────▶│                      │                     │
+  │                       │ 2. Lookup Robot B     │                     │
+  │                       │   registry (DNS/RRF)  │                     │
+  │                       │──────────────────────▶│                     │
+  │                       │ 3. Registry-2 info    │                     │
+  │                       │◀──────────────────────│                     │
+  │                       │                       │ 4. Forward consent  │
+  │                       │   CONSENT_REQUEST      │   request to        │
+  │                       │   (FEDERATION_SYNC)   │◀───────────────────▶│
+  │                       │                       │                     │
+  │                       │                       │ 5. Robot B notifies │
+  │                       │                       │   owner (Bob)       │
+  │                       │                       │────────────────────▶│ Bob
+  │                       │                       │                     │──▶ notify
+  │                       │                       │                     │
+  │                       │                       │ 6. Bob approves     │
+  │                       │                       │   CONSENT_GRANT     │
+  │                       │                       │◀────────────────────│
+  │                       │                       │                     │
+  │                       │ 7. FEDERATION_SYNC    │                     │
+  │                       │   sync_type=consent   │                     │
+  │                       │◀──────────────────────│                     │
+  │                       │                       │                     │
+  │                       │ 8. Mint cross-registry│                     │
+  │                       │   JWT for Alice       │                     │
+  │                       │ (scope=status,        │                     │
+  │                       │  cross_registry=true) │                     │
+  │ 9. Receive scoped JWT │                       │                     │
+  │◀──────────────────────│                       │                     │
+  │                       │                       │                     │
+  │ 10. Send STATUS request to Robot B (with JWT) │                     │
+  │───────────────────────────────────────────────────────────────────▶│
+  │                       │                       │                     │
+  │                       │                       │ 11. Robot B verifies│
+  │                       │                       │   trust chain:      │
+  │                       │                       │   DNSSEC → JWKS →   │
+  │                       │                       │   JWT → consent     │
+  │                       │                       │                     │
+  │ 12. STATUS response   │                       │                     │
+  │◀───────────────────────────────────────────────────────────────────│</code></pre>
+    </section>
+
+    <section>
+      <h2>Protocol 66 and Federation</h2>
+      <div class="callout callout-safety">
+        <strong>Invariant §18.1:</strong> Federation status never weakens local safety. A robot with <code>federation_enabled: false</code> in its Protocol 66 manifest MUST reject all cross-registry commands, including STATUS requests, regardless of JWT validity.
+      </div>
+
+      <p>The Protocol 66 manifest gains a new <code>federation_enabled</code> field in v1.6:</p>
+
+      <pre><code>GET /api/safety/manifest
+
+&#123;
+  "protocol":             66,
+  "rcan_version":         "1.6",
+  ...
+  "federation_enabled":   true,          // false = reject all cross-registry commands
+  "trusted_registries":   [              // Explicit allowlist (optional; [] = trust all authoritative)
+    "hospital-registry.nhs.uk",
+    "acme-robots.com"
+  ],
+  "min_loa_for_control":  2              // Minimum LoA required for cross-registry control scope
+&#125;</code></pre>
+
+      <h3>Implementation Notes</h3>
+      <ul>
+        <li>Robots with <code>federation_enabled: false</code> ignore all <code>FEDERATION_SYNC</code> messages.</li>
+        <li>Community registry JWTs (tier=community) MUST NOT be accepted for cross-registry <code>control</code> scope, even when <code>federation_enabled: true</code>.</li>
+        <li>The <code>trusted_registries</code> allowlist, when non-empty, acts as an explicit federation allowlist — cross-registry commands from unlisted registries are rejected regardless of tier.</li>
+        <li>Cross-registry consent records have a maximum expiry of 7 days; long-term access requires periodic re-consent.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>rcan-py Federation API</h2>
+      <pre><code>from rcan.federation import FederationSync, FederatedConsentStore, TrustChainVerifier
+
+# Build and send a FEDERATION_SYNC (consent)
+sync = FederationSync.build_consent_sync(
+    source_registry="registry-1.acme.com",
+    target_registry="hospital-registry.nhs.uk",
+    consent_record=consent_record,
+    signing_key=registry_signing_key,
+)
+await node.send(sync)
+
+# Verify a cross-registry JWT on receipt
+verifier = TrustChainVerifier(
+    root_public_key=RRF_ROOT_PUBLIC_KEY,
+    dns_resolver=dnssec_resolver,
+)
+claims = await verifier.verify(jwt_token)
+# claims.registry_tier == "authoritative"
+# claims.loa == 2
+# claims.cross_registry == True
+
+# Store a federated consent record
+store = FederatedConsentStore(db_path="~/.rcan/fed-consent.db")
+store.put(consent_record)
+valid = store.check(requester_ruri, target_ruri, scope="status")</code></pre>
+    </section>
+
+    <section>
+      <h2>Implementation Notes</h2>
+      <ul>
+        <li><strong>DNSSEC dependency:</strong> Robots in environments without DNSSEC-capable DNS resolvers MUST fall back to root-signed JWKS fetched over HTTPS (not DNS) and MUST log a WARNING when using the HTTPS fallback.</li>
+        <li><strong>Federation cache TTL:</strong> Federated registry public keys SHOULD be cached for 1 hour; cross-registry consent records MUST be refreshed at most every 24 hours.</li>
+        <li><strong>Circular federation:</strong> Registry A trusting Registry B trusting Registry A (circular) is explicitly prohibited. Implementations MUST detect cycles in the trust chain and reject with <code>FEDERATION_TRUST_CYCLE</code>.</li>
+        <li><strong>Offline federation:</strong> When registry-2 is unreachable, Robot B continues to honour cached cross-registry consent records for up to 1 hour (consistent with §14 offline operation mode).</li>
+        <li><strong>ESTOP does not require federation:</strong> Cross-registry ESTOP is always accepted. Do not gate ESTOP on federation configuration or DNSSEC lookup availability.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/identity/">§8.7 Identity Verification &amp; LoA</a> — Level of Assurance enforcement for federated JWTs</li>
+        <li><a href="/docs/consent/">§11.2 Consent Wire Protocol</a> — base consent protocol federated consent builds on</li>
+        <li><a href="/docs/safety/">Safety &amp; P66 Conformance</a> — <code>federation_enabled</code> manifest field</li>
+        <li><a href="/docs/messages/#type-reference">§12 FEDERATION_SYNC</a> — message type reference</li>
+        <li><a href="/docs/key-rotation/">§8.6 Key Rotation</a> — JWKS format used for cross-registry key exchange</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-safety {
+    background: rgba(239, 68, 68, 0.06);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

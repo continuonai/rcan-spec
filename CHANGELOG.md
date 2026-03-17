@@ -1,5 +1,76 @@
 # RCAN Spec Changelog
 
+## v1.6.0 — 2026-03-16
+
+### Summary
+4 gaps addressed from the v1.6 backlog (all deferred from v1.5 due to complexity). No breaking changes to existing v1.5 features. No new MessageType integers (types remain 1–31). Three existing message types gain extended payload schemas.
+
+### New Spec Pages
+
+#### §5.4 — Multi-Modal Payloads (GAP-18) `multimodal.astro`
+- `media_chunks[]` array field on `RCANMessage` envelope: `{chunk_id, mime_type, encoding, hash_sha256, size_bytes, data_b64?, ref_url?, ref_expires?}`
+- **Inline mode** (base64): for payloads < 64 KB; data embedded in message JSON
+- **Reference mode** (ref_url): for large payloads; robot hosts at `GET /api/v1/media/{chunk_id}`; URL is HMAC-signed, 5-minute TTL
+- **CommitmentRecord extension**: `media_hashes: {chunk_id: sha256}` included in HMAC chain — audit trail proves exactly what binary data was sent
+- **Streaming mode**: `SENSOR_DATA` gains `stream_id`, `chunk_index`, `is_final` fields for continuous video streams
+- **TRAINING_DATA deprecation**: JSON-only binary in `payload` deprecated in v1.6; triggers WARNING audit event. All image/video/audio training data MUST use `media_chunks[]`. JSON-only rejection planned for v1.7.
+- **Size limits by transport**: HTTP=64MB, Compact=512KB (ref only), Minimal=not supported
+
+#### §8.7 — Registry Trust Anchors and Identity Verification (GAP-14) `identity.astro`
+- **Level of Assurance (LoA)**: 1 (anonymous/pseudonymous), 2 (email verified), 3 (government ID / hardware token)
+- `loa: 1|2|3` required field in all JWT claims from v1.6; backward compat defaults: authoritative→2, community→1
+- `registry_tier: "root"|"authoritative"|"community"` on registry identity records
+- Root registry: manages trust anchors; signs authoritative registry keys; example: RRF (rcan.dev)
+- Authoritative registry: verified by root; can issue LoA 2/3 JWTs; must pass annual audit
+- Community registry: self-signed; can only issue LoA 1 JWTs; robots MAY reject LoA 1 for control commands
+- **Trust anchor discovery**: `_rcan-registry.<domain>` DNSSEC TXT → `v=rcan1; tier=...; kfp=sha256:...`
+- **Recommended enforcement**: require LoA ≥ 2 for `control` scope, LoA ≥ 3 for `safety` scope
+- **Hardware token support**: FIDO2/WebAuthn binding to JWT; `fido2_credential_id` field on identity records
+- **Protocol 66 integration**: `min_loa_for_control: int` field in P66 manifest; default 1 (backward compat)
+
+#### §18 — Registry Federation Protocol (GAP-16) `federation.astro`
+- **FEDERATION_SYNC (type 12) full payload spec**: `{source_registry, target_registry, sync_type: "consent"|"revocation"|"key", payload, signature, federation_id, timestamp, expires_at}`
+- `sync_type: "consent"`: portable ConsentRecord format accepted by both registries; `owner_signature` self-verifying
+- `sync_type: "revocation"`: cross-registry ROBOT_REVOCATION propagation
+- `sync_type: "key"`: JWKS key sync for cross-registry JWT verification
+- **Cross-registry JWT trust chains**: DNSSEC → JWKS → root signature → JWT verification (7-step flow documented)
+- **Trust anchor discovery**: `_rcan.<registry-domain>` DNSSEC TXT → registry public key fingerprint + root signature
+- **Registry tiers** on registry records: `"root" | "authoritative" | "community"`
+- **Cross-registry ESTOP propagation**: ESTOP always accepted; RESUME requires verified consent + local owner ack
+- **12-step federation flow**: Alice (reg-1) → consent request → Robot B (reg-2) → complete sequence diagram
+- **Protocol 66 integration**: `federation_enabled: bool`, `trusted_registries: []`, `min_loa_for_control: int` in manifest
+
+#### §19 — Constrained Transport Encoding (GAP-17) `constrained-transport.astro`
+- **Three transport tiers**: RCAN-HTTP (full JSON, 64KB), RCAN-Compact (CBOR, 512B), RCAN-Minimal (32-byte binary)
+- **RCAN-Compact**: CBOR encoding, mandatory field abbreviations (`t`=type, `i`=msg_id, `ts`=timestamp, `f`=from, `to`=to, `s`=scope bitmask, `p`=payload, `sig`=signature, `q`=qos, `pr`=priority); scope as bitmask; Content-Type: `application/rcan+cbor`
+- **Byte budgets**: ESTOP < 200 bytes, STATUS < 512 bytes
+- **RCAN-Minimal**: Fixed 32-byte binary frame — `[2B type][8B RRN-from compressed][8B RRN-to compressed][4B timestamp-unix32][8B sig-truncated][2B CRC-16]`
+- Only ESTOP (type 6) and ACK (type 17) supported in RCAN-Minimal
+- **LoRa SF12**: ~250 bps → 32 bytes = ~1s transmit time; fits in single LoRa frame at all standard SF settings
+- **BLE L2CAP framing**: MTU 251 bytes; 4-byte fragment header `[flags][frag_index][total_length_uint16]`; RCAN service UUID defined
+- **Transport negotiation**: DISCOVER response gains `supported_transports: ["http", "compact", "minimal", "ble"]`
+- **Security note**: RCAN-Minimal truncated 8-byte signature is NOT for high-value commands; ESTOP only
+- **Protocol 66 integration**: `supported_transports: string[]` in P66 manifest
+
+### Updates to Existing Pages
+- **`messages.astro`**: FEDERATION_SYNC (type 12) updated with full protocol reference and corrected QoS=1; TRAINING_DATA (type 10) notes v1.6 deprecation of JSON-only binary; DISCOVER (type 9) notes `supported_transports` field; v1.6 changes callout added
+- **`index.astro`**: New "v1.6 Features" navigation section with links to all 4 new pages + v1.6 badges
+- **`safety.astro`**: Protocol 66 manifest gains 3 new v1.6 fields: `min_loa_for_control` (default 1), `federation_enabled` (default false), `supported_transports` (default ["http"]); complete v1.6 manifest example
+
+### Metadata
+- `public/sdk-status.json`: spec_version updated to "1.6"; SDK versions updated to 0.6.0
+- `public/compatibility.json`: v1.6 entry added; v1.5 status updated to "maintained"
+
+### No New MessageType Integers
+v1.6 extends existing types without adding new integers. The canonical v1.5 table (types 1–31) remains unchanged.
+
+### SDK Compatibility
+- rcan-py >= 0.6.0
+- rcan-ts >= 0.6.0
+- OpenCastor >= 2026.4.x
+
+---
+
 ## v1.5.0 — 2026-03-16
 
 ### Summary

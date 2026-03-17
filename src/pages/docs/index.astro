@@ -166,6 +166,36 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </section>
 
     <section class="doc-section">
+      <h2>v1.6 Features <span class="badge-v16-section">v1.6</span></h2>
+      <ul class="doc-list">
+        <li>
+          <a href="/docs/federation/" class="doc-link">
+            <span class="doc-title">Registry Federation Protocol <span class="badge-v16">v1.6</span></span>
+            <span class="doc-desc">§18 — cross-registry JWT trust chains, federated consent, ESTOP propagation</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/constrained-transport/" class="doc-link">
+            <span class="doc-title">Constrained Transport Encoding <span class="badge-v16">v1.6</span></span>
+            <span class="doc-desc">§19 — RCAN-Compact (CBOR), RCAN-Minimal (32-byte LoRa), BLE L2CAP framing</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/multimodal/" class="doc-link">
+            <span class="doc-title">Multi-Modal Payloads <span class="badge-v16">v1.6</span></span>
+            <span class="doc-desc">§5.4 — media_chunks[], inline/reference mode, streaming video, TRAINING_DATA migration</span>
+          </a>
+        </li>
+        <li>
+          <a href="/docs/identity/" class="doc-link">
+            <span class="doc-title">Identity Verification &amp; LoA <span class="badge-v16">v1.6</span></span>
+            <span class="doc-desc">§8.7 — Level of Assurance 1/2/3, registry tiers, FIDO2/WebAuthn, P66 min_loa_for_control</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="doc-section">
       <h2>Integration</h2>
       <ul class="doc-list">
         <li>
@@ -284,6 +314,30 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     background: rgba(34, 211, 238, 0.12);
     color: var(--color-accent);
     border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
+  }
+
+  .badge-v16 {
+    display: inline-block;
+    background: rgba(168, 85, 247, 0.12);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
+  }
+
+  .badge-v16-section {
+    display: inline-block;
+    background: rgba(168, 85, 247, 0.12);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.35);
     border-radius: 3px;
     font-size: 0.65rem;
     font-weight: 600;

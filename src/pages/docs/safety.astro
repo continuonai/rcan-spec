@@ -381,6 +381,78 @@ X-Audit-Issuer-Sig: ed25519:...      // Ed25519 signature over root hash</code><
 &#125;</code></pre>
     </section>
 
+    <section id="v16-manifest-fields">
+      <h2>Protocol 66 Manifest — v1.6 Fields <span class="badge new-v15">v1.6</span></h2>
+      <p>Three new fields are added to <code>GET /api/safety/manifest</code> in v1.6, covering identity assurance, federation, and constrained transport support.</p>
+
+      <pre><code>&#123;
+  "protocol":             66,
+  "rcan_version":         "1.6",
+  ...
+  "min_loa_for_control":  2,             // NEW v1.6 — default 1 (backward compat). See §8.7.
+  "federation_enabled":   false,         // NEW v1.6 — default false. See §18.
+  "trusted_registries":   [],            // NEW v1.6 — federation allowlist; [] = trust all authoritative
+  "supported_transports": ["http"],      // NEW v1.6 — constrained transport tiers. See §19.
+  ...
+&#125;</code></pre>
+
+      <h3>min_loa_for_control</h3>
+      <ul>
+        <li>Type: <code>integer</code> — values 1, 2, or 3 (Level of Assurance — see <a href="/docs/identity/">§8.7</a>)</li>
+        <li>Default: <code>1</code> (backward compatible — existing v1.5 deployments are unaffected)</li>
+        <li>Robots MUST reject <code>control</code>-scope commands from JWTs whose <code>loa</code> field is below this value</li>
+        <li>Recommended production setting: <code>2</code> (email-verified identity minimum)</li>
+        <li>ESTOP is always exempt from LoA enforcement (P66 invariant)</li>
+      </ul>
+
+      <h3>federation_enabled</h3>
+      <ul>
+        <li>Type: <code>boolean</code> — default <code>false</code></li>
+        <li>When <code>false</code>: the robot rejects all cross-registry commands and ignores <code>FEDERATION_SYNC</code> messages</li>
+        <li>When <code>true</code>: the robot participates in the §18 federation protocol</li>
+        <li>The optional <code>trusted_registries</code> array, when non-empty, acts as an explicit federation allowlist</li>
+      </ul>
+
+      <h3>supported_transports</h3>
+      <ul>
+        <li>Type: <code>string[]</code> — values from <code>["http", "compact", "minimal", "ble"]</code></li>
+        <li>Default: <code>["http"]</code> (unchanged v1.5 behaviour)</li>
+        <li>Senders use this field during transport negotiation (see <a href="/docs/constrained-transport/">§19</a>)</li>
+        <li>A robot advertising <code>"minimal"</code> MUST support the 32-byte RCAN-Minimal ESTOP frame</li>
+      </ul>
+
+      <h3>Complete v1.6 Manifest Example</h3>
+      <pre><code>&#123;
+  "protocol":              66,
+  "rcan_version":          "1.6",
+  "invariants": &#123;
+    "local_safety_wins":               true,
+    "safety_messages_bypass_queues":   true,
+    "estop_requires_explicit_clear":   true,
+    "ai_cannot_override_safety":       true,
+    "audit_trail_complete":            true
+  &#125;,
+  "hardware_safety": &#123; "physical_estop": false, "sil_level": "none" &#125;,
+  "envelope": &#123;
+    "max_linear_speed_mps":   1.0,
+    "emergency_stop_distance": 0.3
+  &#125;,
+  "clock_synchronized":    true,
+  "clock_source":          "ntp",
+  "clock_drift_ms":        8.2,
+  "offline_mode":          false,
+  "offline_since_s":       0,
+  "audit_enabled":         true,
+  "audit_retention_days":  90,
+  "audit_count":           1847,
+  "audit_last_event":      1741050001.0,
+  "min_loa_for_control":   2,
+  "federation_enabled":    false,
+  "trusted_registries":    [],
+  "supported_transports":  ["http", "compact"]
+&#125;</code></pre>
+    </section>
+
     <section>
       <h2>Conformance Badges</h2>
       <p>RCAN-compliant robots can display conformance badges to signal their safety posture. Badges are available for:</p>

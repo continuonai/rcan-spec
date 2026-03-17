@@ -1,0 +1,347 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Constrained Transport Encoding" description="RCAN §19 — RCAN-HTTP, RCAN-Compact (CBOR), RCAN-Minimal (32-byte LoRa/BLE ESTOP), transport negotiation, and BLE L2CAP framing.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§19 — Constrained Transport Encoding <span class="badge-new">v1.6</span></h1>
+    <p class="lead">RCAN v1.0–v1.5 was entirely HTTP-based. A standard RCAN message with JWT and Ed25519 signature is 400–800 bytes — impossible over LoRa (255 bytes/frame), tight over BLE (251 byte MTU), and wasteful over constrained cellular. v1.6 defines three transport encodings plus BLE fragmentation rules.</p>
+
+    <div class="callout callout-safety">
+      <strong>Protocol 66 Invariant — ESTOP always fits:</strong> The RCAN-Minimal 32-byte format is designed so ESTOP always fits in a single LoRa frame at SF12. ESTOP is the only command supported in RCAN-Minimal. Any implementation that cannot send ESTOP in a single frame MUST fall back to a higher encoding tier.
+    </div>
+
+    <section>
+      <h2>Transport Encoding Tiers</h2>
+      <table>
+        <thead>
+          <tr><th>Encoding</th><th>Transport</th><th>Format</th><th>Max Size</th><th>Supported Messages</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RCAN-HTTP</strong></td>
+            <td>WiFi, Ethernet, 4G/5G (unconstrained)</td>
+            <td>Full JSON over HTTP/1.1 or HTTP/2</td>
+            <td>64 KB</td>
+            <td>All 31 message types</td>
+          </tr>
+          <tr>
+            <td><strong>RCAN-Compact</strong></td>
+            <td>WiFi/LTE-constrained, BLE (non-ESTOP)</td>
+            <td>CBOR with mandatory field abbreviations</td>
+            <td>512 bytes</td>
+            <td>All message types (with size budgets)</td>
+          </tr>
+          <tr>
+            <td><strong>RCAN-Minimal</strong></td>
+            <td>LoRa, SMS, BLE (ESTOP only)</td>
+            <td>Fixed 32-byte binary frame</td>
+            <td>32 bytes</td>
+            <td>ESTOP (type 6) and ACK only</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>RCAN-HTTP (Existing)</h2>
+      <p>RCAN-HTTP is unchanged from v1.5. Full JSON envelope, up to 64 KB per message, transmitted over HTTPS. All message types supported. Used as the baseline for transport negotiation.</p>
+
+      <pre><code>POST /api/v1/message HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer &lt;jwt&gt;
+Content-Length: 487
+
+&#123; "id": "uuid", "type": 6, "priority": 3, ... &#125;</code></pre>
+
+      <p>RCAN-HTTP is the <strong>only</strong> encoding that supports multi-modal payloads (§5.4). All other encodings MUST use reference mode (<code>ref_url</code>) for binary data.</p>
+    </section>
+
+    <section>
+      <h2>RCAN-Compact</h2>
+      <p>RCAN-Compact uses <strong>CBOR</strong> (RFC 7049) encoding with mandatory single-character field abbreviations. It is intended for WiFi or LTE links where bandwidth is scarce but not extreme (e.g., 1–10 KB/s).</p>
+
+      <h3>Field Abbreviation Map</h3>
+      <table>
+        <thead>
+          <tr><th>Full Field Name</th><th>Compact Key</th><th>CBOR Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>type</code> (msg_type)</td><td><code>t</code></td><td>uint</td><td>MessageType integer 1–31</td></tr>
+          <tr><td><code>id</code> (msg_id)</td><td><code>i</code></td><td>bstr (16 bytes)</td><td>UUID as raw bytes, not string</td></tr>
+          <tr><td><code>timestamp</code></td><td><code>ts</code></td><td>uint</td><td>Unix epoch seconds (32-bit)</td></tr>
+          <tr><td><code>source</code> (from_rrn)</td><td><code>f</code></td><td>bstr</td><td>Compressed RRN (see §19.3)</td></tr>
+          <tr><td><code>target</code> (to_rrn)</td><td><code>to</code></td><td>bstr</td><td>Compressed RRN</td></tr>
+          <tr><td><code>scope</code></td><td><code>s</code></td><td>uint</td><td>Scope bitmask (see below)</td></tr>
+          <tr><td><code>payload</code></td><td><code>p</code></td><td>map or bstr</td><td>CBOR map or raw bytes</td></tr>
+          <tr><td><code>signature</code></td><td><code>sig</code></td><td>bstr (64 bytes)</td><td>Full Ed25519 signature</td></tr>
+          <tr><td><code>qos</code></td><td><code>q</code></td><td>uint</td><td>0, 1, or 2</td></tr>
+          <tr><td><code>priority</code></td><td><code>pr</code></td><td>uint</td><td>0=LOW 1=NORMAL 2=HIGH 3=SAFETY</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Scope Bitmask</h3>
+      <pre><code>// Scope encoded as uint bitmask instead of string array
+SCOPE_DISCOVER  = 0x01
+SCOPE_STATUS    = 0x02
+SCOPE_CONTROL   = 0x04
+SCOPE_CONFIG    = 0x08
+SCOPE_TRAINING  = 0x10
+SCOPE_SAFETY    = 0x20
+SCOPE_OBSERVER  = 0x40
+
+// Example: ["control", "status"] → 0x06</code></pre>
+
+      <h3>Byte Budget Targets</h3>
+      <ul>
+        <li><strong>ESTOP message:</strong> target &lt; 200 bytes (no payload needed)</li>
+        <li><strong>STATUS message:</strong> target &lt; 512 bytes (position, battery, mode)</li>
+        <li><strong>COMMAND message:</strong> target &lt; 512 bytes (typical action command)</li>
+      </ul>
+
+      <h3>Example: ESTOP in RCAN-Compact</h3>
+      <pre><code>// JSON (469 bytes including JWT):
+&#123; "id": "550e8400-e29b-41d4-a716-446655440000", "type": 6, "priority": 3,
+  "source": "rcan://rcan.dev/acme/arm/v1/001", "target": "rcan://rcan.dev/acme/arm/v1/002",
+  "payload": &#123;"action": "ESTOP"&#125;, "timestamp": 1741000000, "scope": ["safety"],
+  "signature": "ed25519:64byteshex...", "qos": 2 &#125;
+
+// CBOR/Compact (≈ 148 bytes):
+a7                     # map(7)
+   61 74 06           # "t": 6    (msg_type=SAFETY)
+   61 69 50 ...       # "i": 16-byte UUID bytes
+   62 74 73 1a ...    # "ts": uint32 unix timestamp
+   61 66 48 ...       # "f": 8-byte compressed RRN-from
+   62 74 6f 48 ...    # "to": 8-byte compressed RRN-to
+   61 73 20           # "s": 0x20  (SCOPE_SAFETY bitmask)
+   63 73 69 67 58 40  # "sig": 64-byte Ed25519 signature</code></pre>
+
+      <h3>Content-Type Header</h3>
+      <pre><code>// HTTP header for RCAN-Compact
+Content-Type: application/rcan+cbor; version=1.6; encoding=compact</code></pre>
+    </section>
+
+    <section>
+      <h2>RCAN-Minimal</h2>
+      <p>RCAN-Minimal is a fixed <strong>32-byte binary frame</strong> for extreme bandwidth constraints: LoRa, SMS (160 byte limit, base64 overhead considered), and BLE (single packet).</p>
+
+      <div class="callout callout-warn">
+        <strong>Security note:</strong> RCAN-Minimal uses a <strong>truncated 8-byte signature</strong>. This provides authentication against casual spoofing but NOT against a determined adversary with cryptographic resources. RCAN-Minimal is <strong>ONLY</strong> for ESTOP and ACK. It MUST NOT be used for control commands, consent, or any high-value operation.
+      </div>
+
+      <h3>32-Byte Frame Layout</h3>
+      <pre><code>Byte offset  Length  Field              Description
+───────────────────────────────────────────────────────
+0x00         2       type               Message type: 0x0006=ESTOP, 0x0011=ACK
+0x02         8       rrn_from           RRN-from: 8 compressed bytes (see §19.3)
+0x0A         8       rrn_to             RRN-to: 8 compressed bytes
+0x12         4       timestamp_unix32   Unix epoch seconds (uint32, big-endian)
+0x16         8       sig_truncated      First 8 bytes of Ed25519 signature
+0x1E         2       checksum           CRC-16/CCITT over bytes 0x00–0x1D
+
+Total: 32 bytes</code></pre>
+
+      <h3>Type Field Values (RCAN-Minimal)</h3>
+      <table>
+        <thead><tr><th>Value (uint16 BE)</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>0x0006</code></td><td>ESTOP — emergency stop</td></tr>
+          <tr><td><code>0x0011</code></td><td>ACK — acknowledgement of received ESTOP</td></tr>
+        </tbody>
+      </table>
+
+      <h3>RRN Compression (§19.3)</h3>
+      <p>Full RRURIs like <code>rcan://registry.acme.com/org/model/v1/unit-042</code> are compressed to 8 bytes using a registered-hash scheme:</p>
+      <pre><code>// 8-byte compressed RRN:
+// [2B registry-id hash][2B org hash][2B model hash][2B unit-id hash]
+// Each hash: first 2 bytes of SHA-256(component-string)
+// Robots pre-register their compressed RRN with their local registry.
+// Collision probability in a fleet of 1000 robots: ~1 in 4 billion.</code></pre>
+
+      <h3>LoRa SF12 Timing</h3>
+      <pre><code>LoRa SF12, BW=125kHz, CR=4/5:
+  Data rate: ~250 bps
+  32 bytes = 256 bits
+  Air time: ~1.0 second (including preamble: ~1.2s total)
+
+  → ESTOP in RCAN-Minimal fits in a single LoRa frame at all standard LoRa settings.
+  → At SF7 (fastest): ~60ms air time for 32 bytes.
+
+  LoRa duty cycle (EU 868 MHz, 1%): max 36s/hour continuous TX
+  → At SF12: ~30 ESTOP messages per hour on EU bands
+  → At SF7:  ~600 ESTOP messages per hour</code></pre>
+
+      <h3>Verification on Receipt</h3>
+      <pre><code>RECEIVING ROBOT (verifying RCAN-Minimal ESTOP):
+
+1. Parse frame: check length == 32 bytes
+2. Verify CRC-16 over bytes 0–29
+3. Decompress rrn_from → full RURI
+4. Check timestamp freshness: now - timestamp &lt;= 10s (SAFETY window)
+5. Lookup sender's Ed25519 public key (from local cache)
+6. Compute Ed25519 signature over bytes 0–21 (type+rrn_from+rrn_to+timestamp)
+7. Compare computed_sig[0:8] == frame.sig_truncated  (truncated compare)
+8. If all pass: execute ESTOP immediately
+9. Send RCAN-Minimal ACK (type=0x0011) back to sender</code></pre>
+    </section>
+
+    <section>
+      <h2>BLE L2CAP Framing</h2>
+      <p>BLE L2CAP has an MTU of 251 bytes (BLE 4.2+) or up to 512 bytes (BLE 5.x with LE Data Length Extension). RCAN-Compact messages exceeding the MTU MUST be fragmented.</p>
+
+      <h3>Fragmentation Protocol</h3>
+      <pre><code>// BLE L2CAP RCAN fragment header (4 bytes prepended to each fragment):
+Byte  0:     fragment_flags  // 0x00=middle, 0x01=first, 0x02=last, 0x03=only
+Byte  1:     frag_index      // Fragment sequence number (0-based)
+Byte  2-3:   total_length    // uint16 BE: total CBOR payload length
+
+// Fragment assembly:
+// - First fragment (flags=0x01): store total_length, start buffer
+// - Middle fragments (flags=0x00): append to buffer
+// - Last fragment (flags=0x02): append to buffer, parse CBOR
+// - Only fragment (flags=0x03): skip reassembly, parse directly
+
+// MTU 251 bytes - 4 byte header = 247 bytes payload per fragment
+// Max fragments per message: ceil(512 / 247) = 3 for RCAN-Compact max size</code></pre>
+
+      <h3>BLE L2CAP Channel</h3>
+      <pre><code>// BLE RCAN service UUID (128-bit):
+RCAN_SERVICE_UUID  = "6e726361-6e2d-7263-616e-726361726361"
+// ("nrcan-rcan-rcan" encoded as ASCII UUID)
+
+// Characteristics:
+RCAN_TX_CHAR_UUID  = "6e726361-6e2d-0001-0000-726361726361"  // Robot → Client
+RCAN_RX_CHAR_UUID  = "6e726361-6e2d-0002-0000-726361726361"  // Client → Robot
+RCAN_MTU_CHAR_UUID = "6e726361-6e2d-0003-0000-726361726361"  // Negotiated MTU (read-only)</code></pre>
+
+      <p>RCAN-Minimal frames (32 bytes) are sent unfragmented over BLE. RCAN-Compact messages MUST use the L2CAP fragmentation protocol above when exceeding the MTU.</p>
+    </section>
+
+    <section>
+      <h2>Transport Negotiation</h2>
+      <p>Robots advertise their supported transport encodings in the DISCOVER response payload:</p>
+
+      <pre><code>// DISCOVER response (v1.6) — payload addition
+&#123;
+  "rcan_version":        "1.6",
+  "capabilities":        ["control", "safety", "training"],
+  "p66_conformance_pct": 94.0,
+  "supported_transports": ["http", "compact", "minimal", "ble"],
+  "transport_config": &#123;
+    "http_max_kb":         64,
+    "compact_max_bytes":   512,
+    "ble_mtu":             251,
+    "lora_region":         "EU868",
+    "lora_sf":             12
+  &#125;
+&#125;</code></pre>
+
+      <h3>Transport Selection Rules</h3>
+      <ul>
+        <li>Senders MUST select the highest-capability encoding that the receiver supports AND that fits the message type.</li>
+        <li>ESTOP over LoRa MUST use RCAN-Minimal (single frame guaranteed).</li>
+        <li>ESTOP over BLE MAY use RCAN-Minimal (32 bytes, well within MTU) or RCAN-Compact if the sender prefers full signature.</li>
+        <li>All non-ESTOP messages MUST use RCAN-Compact or RCAN-HTTP (not RCAN-Minimal).</li>
+        <li>If the receiver does not list <code>"minimal"</code> in <code>supported_transports</code>, senders MUST NOT use RCAN-Minimal.</li>
+      </ul>
+
+      <p>The <code>supported_transports</code> list is also exposed in the Protocol 66 manifest (see <a href="/docs/safety/">Safety &amp; P66 Conformance</a>).</p>
+    </section>
+
+    <section>
+      <h2>rcan-py Implementation</h2>
+      <pre><code>from rcan.transport import CompactEncoder, MinimalEncoder, encode_for_transport
+
+# Auto-select encoding based on transport
+msg_bytes = encode_for_transport(
+    msg=estop_message,
+    transport="lora",          # "http" | "compact" | "minimal" | "ble"
+    receiver_capabilities=["minimal"],
+)
+# → returns 32-byte RCAN-Minimal frame for LoRa
+
+# Manual CBOR compact encoding
+encoder = CompactEncoder()
+cbor_bytes = encoder.encode(msg)
+assert len(cbor_bytes) &lt; 200   # ESTOP budget
+
+# Decode on receipt
+msg = CompactEncoder().decode(cbor_bytes)
+
+# RCAN-Minimal encode/decode
+minimal_frame = MinimalEncoder.encode_estop(
+    from_ruri="rcan://acme.com/org/arm/v1/001",
+    to_ruri="rcan://acme.com/org/arm/v1/002",
+    signing_key=private_key,
+)
+assert len(minimal_frame) == 32</code></pre>
+    </section>
+
+    <section>
+      <h2>Implementation Notes</h2>
+      <ul>
+        <li><strong>CBOR library requirement:</strong> Implementations MUST use a CBOR library that correctly handles indefinite-length items — do NOT use CBOR streaming encoding for RCAN-Compact (receivers need total_length for BLE fragmentation).</li>
+        <li><strong>Replay prevention on Minimal:</strong> The 32-byte frame has a 4-byte Unix timestamp. RCAN-Minimal receivers MUST still apply the 10-second ESTOP replay window. If the timestamp cannot be checked (no local clock), the message MUST be rejected.</li>
+        <li><strong>JWT absence in Minimal:</strong> RCAN-Minimal does not carry a JWT. Authentication relies on the Ed25519 signature (truncated) and the sender's public key cached from a prior RCAN-HTTP/Compact exchange. Robots MUST NOT accept RCAN-Minimal from senders whose public keys are not already cached.</li>
+        <li><strong>SMS transport:</strong> RCAN-Minimal frames can be base64-encoded (≈43 chars) and sent as SMS. Ensure the SMS sender's number is pre-registered with the target robot.</li>
+        <li><strong>BLE MTU negotiation:</strong> Always negotiate the highest MTU the client supports before sending RCAN-Compact over BLE. A larger MTU means fewer fragments and lower latency for STATUS/COMMAND messages.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/safety/">Safety &amp; P66 Conformance</a> — <code>supported_transports</code> in Protocol 66 manifest</li>
+        <li><a href="/docs/multimodal/">§5.4 Multi-Modal Payloads</a> — size limits by transport tier</li>
+        <li><a href="/docs/replay-prevention/">§8.3 Replay Attack Prevention</a> — timestamp freshness applies to all encodings</li>
+        <li><a href="/docs/messages/#type-reference">Message Type Reference</a> — which types are supported per encoding</li>
+        <li><a href="/docs/qos/">§5.3 QoS &amp; Delivery Guarantees</a> — QoS interaction with constrained transports</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-safety {
+    background: rgba(239, 68, 68, 0.06);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

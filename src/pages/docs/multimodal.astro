@@ -1,0 +1,358 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Multi-Modal Payloads" description="RCAN §5.4 — media_chunks array, inline base64 vs reference mode, CommitmentRecord extension, streaming video, and TRAINING_DATA deprecation.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§5.4 — Multi-Modal Payloads <span class="badge-new">v1.6</span></h1>
+    <p class="lead">RCAN v1.5 message payloads were JSON-only. This meant binary data (images, audio, video) had to be transported outside the RCAN trust boundary — breaking the signed-message audit trail. v1.6 adds a <code>media_chunks[]</code> field to the message envelope so binary data is hashed and bound to the Ed25519 signature.</p>
+
+    <div class="callout callout-info">
+      <strong>Audit trail integrity:</strong> The signed RCAN message proves <em>what data was sent</em> via the <code>hash_sha256</code> on each chunk. The actual bytes may be stored separately (reference mode) or inline (base64 mode). Either way, the hash in the commitment record is tamper-evident.
+    </div>
+
+    <section>
+      <h2>media_chunks[] Field Schema</h2>
+      <p>The <code>media_chunks</code> field is an optional array on <code>RCANMessage</code> (top-level envelope, not inside <code>payload</code>). It may contain 1–N chunks.</p>
+
+      <pre><code>// RCANMessage envelope extension (v1.6)
+&#123;
+  "id":           "uuid",
+  "type":         10,        // e.g. TRAINING_DATA
+  "payload":      &#123; ... &#125;,
+  ...
+  "media_chunks": [          // NEW in v1.6
+    &#123;
+      "chunk_id":    "uuid-v4",          // Required: unique ID for this chunk
+      "mime_type":   "image/jpeg",       // Required: RFC 2046 MIME type
+      "encoding":    "base64",           // Required: "base64" | "ref"
+      "hash_sha256": "sha256:4a3f...",   // Required: SHA-256 of the raw binary data
+      "size_bytes":  143872,             // Required: byte count of raw binary data
+      "data_b64":    "...",              // Required if encoding=="base64"
+      "ref_url":     null,               // Required if encoding=="ref"; null otherwise
+      "ref_expires": null                // Unix timestamp: when ref_url becomes invalid
+    &#125;
+  ]
+&#125;</code></pre>
+
+      <h3>Field Reference</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Required</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>chunk_id</code></td><td>✅</td><td>UUID string</td><td>Unique identifier for this media chunk. Referenced in CommitmentRecord.</td></tr>
+          <tr><td><code>mime_type</code></td><td>✅</td><td>string</td><td>RFC 2046 MIME type (e.g. <code>image/jpeg</code>, <code>audio/wav</code>, <code>video/mp4</code>).</td></tr>
+          <tr><td><code>encoding</code></td><td>✅</td><td><code>"base64"</code> or <code>"ref"</code></td><td>How the data is delivered: inline or by reference URL.</td></tr>
+          <tr><td><code>hash_sha256</code></td><td>✅</td><td>string (<code>sha256:...</code>)</td><td>SHA-256 of the raw bytes (before base64). MUST be verified by receiver before use.</td></tr>
+          <tr><td><code>size_bytes</code></td><td>✅</td><td>integer</td><td>Size of the raw binary data in bytes.</td></tr>
+          <tr><td><code>data_b64</code></td><td>if base64</td><td>string</td><td>Base64-encoded binary data. Only present when <code>encoding=="base64"</code>.</td></tr>
+          <tr><td><code>ref_url</code></td><td>if ref</td><td>string (URL)</td><td>Signed URL to fetch the data. Only present when <code>encoding=="ref"</code>.</td></tr>
+          <tr><td><code>ref_expires</code></td><td>if ref</td><td>integer</td><td>Unix timestamp when <code>ref_url</code> expires. Default TTL: 300s (5 min).</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Inline Mode (Base64)</h2>
+      <p>Use inline mode for small binary payloads. The data is embedded directly in the RCAN message JSON as a base64 string.</p>
+
+      <h3>Size Limit</h3>
+      <ul>
+        <li>Inline mode MUST NOT be used for payloads exceeding <strong>64 KB</strong> (65,536 bytes raw data).</li>
+        <li>Base64 encoding overhead: ~33%; a 64 KB binary becomes ~86 KB in the JSON.</li>
+        <li>Receivers MUST reject inline chunks where <code>size_bytes &gt; 65536</code>.</li>
+      </ul>
+
+      <h3>Example: Image Status Response</h3>
+      <pre><code>&#123;
+  "id":   "550e8400-...",
+  "type": 3,           // STATUS
+  "payload": &#123;
+    "mode": "active",
+    "camera_frame": &#123; "chunk_id": "abc-123", "note": "see media_chunks" &#125;
+  &#125;,
+  "media_chunks": [
+    &#123;
+      "chunk_id":    "abc-123",
+      "mime_type":   "image/jpeg",
+      "encoding":    "base64",
+      "hash_sha256": "sha256:9a4f8c...",
+      "size_bytes":  43520,
+      "data_b64":    "/9j/4AAQSkZJRg..."   // Base64-encoded JPEG
+    &#125;
+  ]
+&#125;</code></pre>
+
+      <h3>Receiver Verification</h3>
+      <pre><code>// Receiver MUST verify hash before processing
+import hashlib, base64
+
+raw_bytes = base64.b64decode(chunk["data_b64"])
+computed = "sha256:" + hashlib.sha256(raw_bytes).hexdigest()
+assert computed == chunk["hash_sha256"], "Media chunk hash mismatch — reject"</code></pre>
+    </section>
+
+    <section>
+      <h2>Reference Mode (ref_url)</h2>
+      <p>Use reference mode for large payloads. The RCAN message carries only the hash and a signed URL; the actual bytes are fetched separately by the receiver.</p>
+
+      <h3>Signed URL Generation</h3>
+      <p>The sending robot generates a signed URL using HMAC-SHA256 over the chunk content:</p>
+      <pre><code>// Signed URL format
+GET /api/v1/media/&#123;chunk_id&#125;?expires=&#123;unix_ts&#125;&sig=&#123;hmac_hex&#125;
+
+// HMAC key: derived from robot's Ed25519 private key (first 32 bytes)
+// HMAC message: "GET:/api/v1/media/{chunk_id}:{expires}"
+// Default TTL: 300 seconds (5 minutes)
+
+// Example ref_url:
+"ref_url": "https://robot-042.local/api/v1/media/abc-123?expires=1741003900&sig=4a3f8c..."</code></pre>
+
+      <h3>Size Limits by Transport</h3>
+      <table>
+        <thead><tr><th>Transport</th><th>Max Size (Reference Mode)</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>RCAN-HTTP</td><td>64 MB</td><td>HTTPS fetch; robot must serve the media endpoint</td></tr>
+          <tr><td>RCAN-Compact</td><td>512 KB</td><td>Media must be fetched via HTTP; ref_url in compact message</td></tr>
+          <tr><td>RCAN-Minimal</td><td>Not supported</td><td>No media chunks in 32-byte minimal frames</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Robot Media Endpoint</h3>
+      <pre><code>// Required endpoint (v1.6 multi-modal robots):
+GET /api/v1/media/&#123;chunk_id&#125;
+
+// Query params:
+//   expires  — Unix timestamp (required when sig present)
+//   sig      — HMAC-SHA256 signature (required)
+
+// Response:
+HTTP 200 OK
+Content-Type: image/jpeg          // mime_type from media_chunks entry
+Content-Length: 43520
+X-Chunk-Hash: sha256:9a4f8c...    // SHA-256 for receiver verification
+
+[binary data]
+
+// Error responses:
+HTTP 404  chunk_id not found
+HTTP 410  URL expired (expires &lt; now)
+HTTP 403  signature invalid</code></pre>
+    </section>
+
+    <section>
+      <h2>CommitmentRecord Extension</h2>
+      <p>Every message with <code>media_chunks</code> MUST extend its CommitmentRecord to include the media hashes. This ensures the audit trail proves exactly what binary data was sent.</p>
+
+      <pre><code>// CommitmentRecord v1.6 extension
+&#123;
+  "commitment_id":   "uuid",
+  "msg_id":          "uuid",
+  "timestamp":       1741000000,
+  "cmd":             "sensor_snapshot",
+  "operator":        "user-uuid",
+  "commitment_hash": "sha256:...",    // HMAC over text payload fields
+  "media_hashes":    &#123;              // NEW in v1.6 — included in HMAC chain
+    "abc-123": "sha256:9a4f8c...",    // chunk_id → hash_sha256
+    "def-456": "sha256:1b2c3d..."
+  &#125;,
+  "chain_hash":      "sha256:..."    // HMAC over (commitment_hash + media_hashes)
+&#125;</code></pre>
+
+      <div class="callout callout-info">
+        <strong>HMAC chain integrity:</strong> The <code>chain_hash</code> is computed over <em>both</em> the text payload commitment and the <code>media_hashes</code> dict. Omitting <code>media_hashes</code> from the HMAC chain MUST be treated as a commitment integrity violation.
+      </div>
+    </section>
+
+    <section>
+      <h2>Streaming Mode</h2>
+      <p>For continuous video streams (e.g. a robot camera feed), use <code>SENSOR_DATA</code> (type 7) with streaming fields on the message envelope:</p>
+
+      <pre><code>// SENSOR_DATA streaming message (v1.6)
+&#123;
+  "id":          "uuid-per-chunk",
+  "type":        7,              // SENSOR_DATA
+  "payload": &#123;
+    "sensor":    "front_camera",
+    "stream_id": "uuid-for-this-stream",  // Same for all chunks in stream
+    "chunk_index": 42,                    // 0-based frame counter
+    "is_final":   false                   // true on last frame
+  &#125;,
+  "media_chunks": [
+    &#123;
+      "chunk_id":    "frame-042-uuid",
+      "mime_type":   "image/jpeg",
+      "encoding":    "base64",
+      "hash_sha256": "sha256:...",
+      "size_bytes":  38912,
+      "data_b64":    "..."
+    &#125;
+  ]
+&#125;</code></pre>
+
+      <h3>Stream Lifecycle</h3>
+      <ul>
+        <li>The <code>stream_id</code> is assigned by the sender at stream start and MUST be the same across all chunks.</li>
+        <li>Receivers buffer frames using <code>chunk_index</code> for ordering.</li>
+        <li>The frame with <code>is_final: true</code> signals stream end. Receivers MUST NOT expect further frames for this <code>stream_id</code>.</li>
+        <li>Dropped frames are logged but do not invalidate the stream — video streams are QoS 0 (fire-and-forget).</li>
+        <li>Each frame produces its own CommitmentRecord with its own <code>media_hashes</code>. The audit trail is per-frame, not per-stream.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>TRAINING_DATA — JSON-Only Deprecated in v1.6</h2>
+
+      <div class="callout callout-warn">
+        <strong>Deprecation notice:</strong> In RCAN v1.6, sending a <code>TRAINING_DATA</code> (type 10) message with image, video, or audio data encoded inside the JSON <code>payload</code> field (e.g., as a base64 string within the payload dict) is <strong>deprecated</strong>. From v1.6, all image/video/audio training data MUST be delivered via <code>media_chunks[]</code>.
+      </div>
+
+      <h3>Why?</h3>
+      <ul>
+        <li>JSON-embedded binary is outside the CommitmentRecord's <code>media_hashes</code> HMAC chain → audit trail does not prove what data was collected.</li>
+        <li>EU AI Act Article 10 requires verifiable provenance for training data. <code>media_chunks</code> provides this via hash binding.</li>
+        <li>Chunked media supports the training consent token flow (see <a href="/docs/training-consent/">§17 Training Data Consent</a>) with per-chunk consent attribution.</li>
+      </ul>
+
+      <h3>v1.6 TRAINING_DATA Required Format</h3>
+      <pre><code>// v1.6 TRAINING_DATA — MUST use media_chunks for binary data
+&#123;
+  "id":     "uuid",
+  "type":   10,     // TRAINING_DATA
+  "payload": &#123;
+    "dataset_id":    "dataset-uuid",
+    "consent_token": "training-consent-token-uuid",   // Required per §17
+    "data_categories": ["video", "audio"],
+    "collection_context": "warehouse-sweep-2026-03-16"
+    // Do NOT embed image/video/audio data here
+  &#125;,
+  "media_chunks": [                                   // Required for binary data
+    &#123;
+      "chunk_id":    "video-frame-001",
+      "mime_type":   "video/mp4",
+      "encoding":    "ref",
+      "hash_sha256": "sha256:...",
+      "size_bytes":  2097152,
+      "ref_url":     "https://robot.local/api/v1/media/video-frame-001?...",
+      "ref_expires": 1741003900
+    &#125;
+  ]
+&#125;</code></pre>
+
+      <h3>Migration Timeline</h3>
+      <table>
+        <thead><tr><th>Version</th><th>JSON-in-payload binary</th><th>media_chunks binary</th></tr></thead>
+        <tbody>
+          <tr><td>v1.5 and earlier</td><td>Allowed (no standard alternative)</td><td>Not available</td></tr>
+          <tr><td>v1.6</td><td>Deprecated — triggers WARNING audit event</td><td>✅ Required for image/video/audio</td></tr>
+          <tr><td>v1.7 (planned)</td><td>Rejected — COMMAND_NACK with <code>TRAINING_DATA_NO_MEDIA_CHUNKS</code></td><td>✅ Required</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>rcan-py Implementation</h2>
+      <pre><code>from rcan.multimodal import MediaChunk, encode_inline, encode_ref
+from rcan.message import RCANMessage, MessageType
+
+# Inline mode (small image)
+with open("snapshot.jpg", "rb") as f:
+    image_bytes = f.read()
+
+chunk = encode_inline(
+    data=image_bytes,
+    mime_type="image/jpeg",
+)
+# chunk.chunk_id, chunk.hash_sha256 set automatically
+
+msg = RCANMessage(
+    type=MessageType.SENSOR_DATA,
+    payload=&#123;"sensor": "front_camera"&#125;,
+    media_chunks=[chunk],
+    ...
+)
+
+# Reference mode (large video)
+chunk_ref = encode_ref(
+    chunk_id="video-001",
+    mime_type="video/mp4",
+    size_bytes=10_000_000,
+    hash_sha256=precomputed_hash,
+    signing_key=robot_private_key,
+    ttl_seconds=300,
+    base_url="https://robot.local",
+)
+# chunk_ref.ref_url is signed and ready
+
+# Verify received chunk
+from rcan.multimodal import verify_chunk_hash
+raw = base64.b64decode(received_chunk.data_b64)
+verify_chunk_hash(raw, received_chunk.hash_sha256)  # raises MediaHashError on mismatch</code></pre>
+    </section>
+
+    <section>
+      <h2>Implementation Notes</h2>
+      <ul>
+        <li><strong>Hash before base64:</strong> Always compute <code>hash_sha256</code> over the <em>raw bytes</em>, not the base64 string. Receivers must decode base64 before verifying.</li>
+        <li><strong>ref_url over plaintext HTTP:</strong> Robots on isolated local networks MAY serve <code>ref_url</code> over plain HTTP (<code>http://robot.local/...</code>) but MUST still include the HMAC signature query parameter. HTTPS is strongly recommended for any network-reachable deployment.</li>
+        <li><strong>CommitmentRecord ordering:</strong> <code>media_hashes</code> MUST be included in the HMAC chain <em>before</em> <code>chain_hash</code> is computed. Implementations that compute <code>chain_hash</code> without <code>media_hashes</code> are non-conformant from v1.6.</li>
+        <li><strong>Large chunk limits:</strong> Reference-mode chunks larger than 64 MB over RCAN-HTTP MUST be split into multiple chunks (max 64 MB each). Use a shared <code>stream_id</code> and sequential <code>chunk_index</code>.</li>
+        <li><strong>RCAN-Compact and media:</strong> Over RCAN-Compact, only <code>encoding: "ref"</code> is supported (ref_url compressed in CBOR). Inline base64 in RCAN-Compact is not permitted.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="/docs/training-consent/">§17 Training Data Consent</a> — <code>consent_token</code> required on TRAINING_DATA with media_chunks</li>
+        <li><a href="/docs/constrained-transport/">§19 Constrained Transport</a> — size limits by encoding tier</li>
+        <li><a href="/docs/safety/">Safety &amp; P66 Conformance</a> — audit trail integrity requirements</li>
+        <li><a href="/docs/messages/#type-reference">Message Type Reference</a> — SENSOR_DATA (type 7), TRAINING_DATA (type 10)</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .doc-nav { margin-bottom: 2rem; }
+  .doc-nav a { color: var(--color-text-muted); font-size: 0.875rem; }
+  .lead { font-size: 1.25rem; color: var(--color-text-muted); margin-bottom: 2rem; }
+
+  .badge-new {
+    display: inline-block;
+    background: rgba(34, 211, 238, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 211, 238, 0.4);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+  }
+
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout-info {
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+  }
+  .callout-warn {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; border: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-bg-alt); font-weight: 600; }
+  section { margin-bottom: 2.5rem; }
+  ol { padding-left: 1.5rem; }
+  ol li { margin-bottom: 0.4rem; }
+</style>

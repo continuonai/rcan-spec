@@ -17,6 +17,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </section>
 
+    <section id="v16-changes">
+      <div class="callout callout-info">
+        <strong>v1.6 Message Changes</strong> — No new MessageType integers are added in v1.6. Three existing types gain extended payload schemas:
+        <ul style="margin: 0.5rem 0 0 1.25rem;">
+          <li><strong>Type 9 (DISCOVER):</strong> Response payload gains <code>supported_transports</code> field (§19 constrained transport negotiation). See <a href="/docs/constrained-transport/">§19</a>.</li>
+          <li><strong>Type 10 (TRAINING_DATA):</strong> JSON-only binary in <code>payload</code> deprecated. Image/video/audio MUST use <code>media_chunks[]</code>. See <a href="/docs/multimodal/">§5.4</a>.</li>
+          <li><strong>Type 12 (FEDERATION_SYNC):</strong> Full payload spec defined — <code>&#123;source_registry, target_registry, sync_type, payload, signature&#125;</code>. See <a href="/docs/federation/">§18</a>.</li>
+        </ul>
+      </div>
+    </section>
+
     <section id="envelope">
       <h2>§3 — Envelope</h2>
       <p>Every RCAN message uses the same JSON envelope regardless of type:</p>
@@ -141,14 +152,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <tr>
             <td><code>9</code></td>
             <td><strong>DISCOVER</strong></td>
-            <td>mDNS / peer discovery probe. Responders reply with RURI, capabilities, and <code>rcan_version</code>.</td>
+            <td>mDNS / peer discovery probe. Responders reply with RURI, capabilities, <code>rcan_version</code>, and (v1.6) <code>supported_transports</code>. See <a href="/docs/constrained-transport/#transport-negotiation">§19 Transport Negotiation</a>.</td>
             <td>NORMAL</td>
             <td>0</td>
           </tr>
           <tr>
             <td><code>10</code></td>
             <td><strong>TRAINING_DATA</strong></td>
-            <td>Training data submission. MUST carry <code>consent_token</code> for biometric/audio/visual data. See <a href="/docs/training-consent/">Training Consent</a>.</td>
+            <td>Training data submission. MUST carry <code>consent_token</code> for biometric/audio/visual data. <strong>v1.6:</strong> JSON-only binary in <code>payload</code> is deprecated — use <code>media_chunks[]</code> for image/video/audio. See <a href="/docs/training-consent/">Training Consent</a>, <a href="/docs/multimodal/">§5.4 Multi-Modal Payloads</a>.</td>
             <td>NORMAL</td>
             <td>0</td>
           </tr>
@@ -162,9 +173,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <tr>
             <td><code>12</code></td>
             <td><strong>FEDERATION_SYNC</strong></td>
-            <td>Cross-registry federation synchronization. Full protocol deferred to v1.6.</td>
+            <td>Cross-registry federation synchronization. <a href="/docs/federation/">§18 full protocol defined in v1.6</a>. Payload: <code>&#123;source_registry, target_registry, sync_type: "consent"|"revocation"|"key", payload, signature&#125;</code>.</td>
             <td>NORMAL</td>
-            <td>0</td>
+            <td>1</td>
           </tr>
           <tr>
             <td><code>13</code></td>
