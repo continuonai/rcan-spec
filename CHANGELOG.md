@@ -1,5 +1,22 @@
 # RCAN Spec Changelog
 
+## v1.6.1 — 2026-03-17
+
+### Summary
+Maintenance release finalizing the v1.6 spec. Adds EU AI Act compliance templates, CONFIG_SHARE RFC, and R2RAM implementation reference. No changes to message types, wire formats, or protocol semantics.
+
+### Added
+- **EU AI Act compliance templates**: conformance checklists and documentation templates for RCAN deployments subject to EU AI Act requirements.
+- **CONFIG_SHARE RFC**: formal specification for the CONFIG_SHARE protocol used by OpenCastor Community Hub (robot profile sharing, version pinning, config discovery).
+- **R2RAM implementation reference**: reference implementation notes for Robot-to-Robot Access Model (R2RAM) — covers role mapping, scope enforcement, and cross-registry consent flows.
+- **OpenCastor 2026.3.17.13 conformance**: verified 100/100 conformance score against v1.6 spec; referenced in ecosystem registry.
+
+### Metadata
+- `package.json`: `version` bumped from `1.0.0` → `1.6.1`
+- Ecosystem registry (`opencastor-ops/config/repos.json`): `rcan_spec_version` updated to `"1.6"`
+
+---
+
 ## v1.6.0 — 2026-03-16
 
 ### Summary
