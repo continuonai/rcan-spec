@@ -1,19 +1,16 @@
 {
-  "updated": "2026-03-17T01:44:54Z",
-  "spec_version": "1.6",
-  "p66_conformance_pct": 94,
+  "updated": "2026-03-17T01:47:09Z",
+  "spec_version": "1.3",
   "sdks": {
     "rcan-py": {
-      "version": "0.6.0",
-      "status": "pending",
-      "pypi": "https://pypi.org/project/rcan/",
-      "notes": "v0.6.0 implements GAP-14, GAP-16, GAP-17, GAP-18 from v1.6 spec"
+      "version": "0.5.0",
+      "status": "pass",
+      "pypi": "https://pypi.org/project/rcan/"
     },
     "rcan-ts": {
-      "version": "0.6.0",
-      "status": "pending",
-      "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts",
-      "notes": "v0.6.0 mirrors rcan-py v0.6.0 feature set"
+      "version": "0.5.0",
+      "status": "pass",
+      "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts"
     }
   }
 }
