@@ -2,14 +2,14 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Message Types" description="Complete reference for RCAN v1.5 protocol message types, version compatibility rules, QoS, CONFIG_UPDATE, and fleet operations.">
+<BaseLayout title="Message Types" description="Complete reference for RCAN v1.6 protocol message types, version compatibility rules, QoS, CONFIG_UPDATE, and fleet operations.">
   <nav class="doc-nav">
     <a href="/docs/">← Documentation</a>
   </nav>
 
   <article class="doc-article">
     <h1>Message Type Reference</h1>
-    <p class="lead">RCAN v1.5 defines 31 message types covering discovery, control, safety, invocation, registry operations, consent, fleet, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour.</p>
+    <p class="lead">RCAN v1.6 defines 31 message types covering discovery, control, safety, invocation, registry operations, consent, fleet, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour.</p>
 
     <section id="v15-changes">
       <div class="callout callout-info">
@@ -42,7 +42,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   "ttl":             0,                  // Seconds until expiry (0 = no expiry)
   "reply_to":        null,               // ID of message being replied to
   "scope":           ["control"],        // Required RBAC scopes
-  "rcan_version":    "1.5",             // MUST be present; validated first
+  "rcan_version":    "1.6",             // MUST be present; validated first
   "qos":             1,                  // 0=fire-and-forget 1=at-least-once 2=exactly-once
   "sender_type":     "human",           // "human"|"robot"|"cloud_function"|"system"
   "key_id":          "kid-abc123"       // Optional: signing key identifier (GAP-09)
@@ -85,8 +85,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </section>
 
     <section id="type-reference">
-      <h2>§4 — Canonical MessageType Table (v1.5)</h2>
-      <p>This table is authoritative for v1.5. All SDKs MUST use these integer values. Integer values are listed for interop reference only — implementations MUST use named enum constants in code.</p>
+      <h2>§4 — Canonical MessageType Table (v1.5+)</h2>
+      <p>This table is authoritative for v1.5 and v1.6. All SDKs MUST use these integer values. Integer values are listed for interop reference only — implementations MUST use named enum constants in code.</p>
 
       <table class="msg-table">
         <thead>
@@ -495,7 +495,7 @@ msg = RCANMessage.command(
 )
 
 # SPEC_VERSION is the single source of truth — do not hardcode version strings
-print(SPEC_VERSION)  # "1.5"</code></pre>
+print(SPEC_VERSION)  # "1.6"</code></pre>
     </section>
 
     <section>
