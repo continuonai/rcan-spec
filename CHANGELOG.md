@@ -1,5 +1,31 @@
 # RCAN Spec Changelog
 
+## v1.6.2 — 2026-03-18
+
+### Summary
+Patch release closing the gap between RCAN v1.6 and OpenCastor channel/agent implementation. Adds formal spec for channel-layer scope assignment and multi-hop scope propagation. No changes to message type integers, wire formats, or existing section numbering.
+
+### Added
+
+#### §2.6 — Channel-Layer Scope Assignment
+- Implementations receiving commands via messaging channels (WhatsApp, Telegram, Slack, Signal, etc.) MUST assign `rcan_scope` at the channel boundary before command processing
+- **Scope resolution table** (priority order): Owner/admin → `chat` (loa=1); Allowlisted → `chat` (loa=0); Robot peer (RRN) → `status` (loa=0); Pairing/unverified → `discover` (loa=0); Unknown → Block
+- **§2.6.2** `/api/chat` endpoint MUST enforce `sender_scope` ≤ `chat`; any higher claim silently downgraded and logged
+- **§2.6.3** `sender_scope` + `sender_loa` SHOULD be included in inbound message metadata
+- New config key: `rcan_protocol.channel_admin_scope` for operator override above `chat`
+
+#### §2.7 — Multi-Hop Scope Propagation
+- Formalizes non-escalation invariant for R2R delegation chains: `scope_level(C) ≤ scope_level(B) ≤ scope_level(A)` for any A → B → C chain
+- **§2.7.2** Delegated commands MUST carry `originating_scope` + `delegated_scope` fields alongside the existing `delegation_chain` (§12); `delegated_scope` MUST be ≤ `originating_scope`
+- **§2.7.3** Reference action allowlist per scope level for sub-agent action filtering (vetoed by safety/guardian layer)
+- Scope level ordering: `discover` < `status` < `chat` < `control` < `system` < `safety`
+
+### Notes
+- §2.6–2.7 are additive; existing §2.1–2.5 and all other sections are unchanged
+- §4 (mDNS Discovery) is unaffected; new sections placed in §2 (RBAC) where scope is defined
+
+---
+
 ## v1.6.1 — 2026-03-17
 
 ### Summary

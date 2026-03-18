@@ -36,6 +36,9 @@ const gatewayRoles = [
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
       RCAN v1.3
     </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+      §2.6–2.7 added in v1.6.2
+    </span>
     <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       ← Back to Specification
     </a>
@@ -44,11 +47,13 @@ const gatewayRoles = [
   <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
     <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
     <ol class="grid md:grid-cols-2 gap-2 text-sm">
-      <li><a href="#overview"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.1</span> Overview</a></li>
-      <li><a href="#role-hierarchy" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.2</span> Role Hierarchy</a></li>
-      <li><a href="#scopes"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.3</span> Scopes</a></li>
-      <li><a href="#gateway-roles"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.4</span> Gateway Roles</a></li>
-      <li><a href="#conformance"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.5</span> Conformance Requirements</a></li>
+      <li><a href="#overview"              class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.1</span> Overview</a></li>
+      <li><a href="#role-hierarchy"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.2</span> Role Hierarchy</a></li>
+      <li><a href="#scopes"               class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.3</span> Scopes</a></li>
+      <li><a href="#gateway-roles"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.4</span> Gateway Roles</a></li>
+      <li><a href="#conformance"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.5</span> Conformance Requirements</a></li>
+      <li><a href="#channel-scope"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.6</span> Channel-Layer Scope Assignment <span class="ml-1 text-purple-400 text-xs">v1.6.2</span></a></li>
+      <li><a href="#multihop-scope"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.7</span> Multi-Hop Scope Propagation <span class="ml-1 text-purple-400 text-xs">v1.6.2</span></a></li>
     </ol>
   </div>
 
@@ -182,6 +187,197 @@ const gatewayRoles = [
           Any attempt from a lower role MUST be audited and rejected. See §16.3.</li>
       <li>Messages with <code>Priority.SAFETY</code> MUST skip rate-limiting queues (§6).</li>
     </ul>
+  </section>
+
+  <hr />
+
+  <section id="channel-scope">
+    <h2>2.6 Channel-Layer Scope Assignment <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 ml-2 align-middle">v1.6.2</span></h2>
+    <p>
+      Implementations that receive commands via messaging channels (WhatsApp, Telegram, Slack, Signal, etc.)
+      MUST assign an <code>rcan_scope</code> value to each inbound message at the channel boundary before
+      passing the message to the command processing layer.
+    </p>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 my-4">
+      <p class="text-sm text-cyan-300/80">
+        <strong class="text-cyan-400">Channel scope vs. JWT scope:</strong> The <code>rcan_scope</code> assigned
+        at the channel boundary is a coarse trust level for routing and rate-limiting purposes. It is distinct
+        from the fine-grained JWT scopes in §2.3 (<code>status</code>, <code>control</code>, etc.), which are
+        validated after authentication. Channel scope establishes the upper bound of what a sender may request;
+        JWT scope enforces what an authenticated principal is granted.
+      </p>
+    </div>
+
+    <h3 id="channel-scope-resolution">2.6.1 Scope Resolution Rules</h3>
+    <p>
+      The assigned scope SHALL be determined by the sender's identity as follows, in priority order:
+    </p>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Sender type</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Assigned <code>rcan_scope</code></th>
+            <th class="text-left py-3 text-text-muted font-medium">Minimum LOA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 text-text-muted text-xs">Owner / admin ID</td>
+            <td class="py-3 pr-4 font-mono text-accent text-xs">chat</td>
+            <td class="py-3 text-text-muted text-xs">1</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 text-text-muted text-xs">Allowlisted sender</td>
+            <td class="py-3 pr-4 font-mono text-accent text-xs">chat</td>
+            <td class="py-3 text-text-muted text-xs">0</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 text-text-muted text-xs">Robot peer (RRN pattern)</td>
+            <td class="py-3 pr-4 font-mono text-accent text-xs">status</td>
+            <td class="py-3 text-text-muted text-xs">0</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 text-text-muted text-xs">Pairing / unverified</td>
+            <td class="py-3 pr-4 font-mono text-accent text-xs">discover</td>
+            <td class="py-3 text-text-muted text-xs">0</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 text-text-muted text-xs">Unknown</td>
+            <td class="py-3 pr-4 font-mono text-red-400 text-xs">Block (no scope)</td>
+            <td class="py-3 text-text-muted text-xs">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-yellow-300/80">
+        Implementations MUST NOT assign a scope higher than <code>chat</code> to any channel-layer sender
+        without explicit operator configuration (<code>rcan_protocol.channel_admin_scope</code>).
+      </p>
+    </div>
+
+    <h3 id="channel-scope-downgrade">2.6.2 Scope Downgrade at API Boundary</h3>
+    <p>
+      The <code>/api/chat</code> endpoint (or equivalent inbound command handler) MUST enforce that
+      <code>sender_scope</code> does not exceed <code>chat</code>. Any sender claiming a higher scope
+      via channel metadata SHALL be silently downgraded to <code>chat</code> and the event logged.
+    </p>
+
+    <h3 id="channel-scope-metadata">2.6.3 Scope Metadata Field</h3>
+    <p>
+      Implementations SHOULD include <code>sender_scope</code> and <code>sender_loa</code> in the inbound
+      message metadata object:
+    </p>
+    <pre><code>&#123;
+  "sender_id":    "...",
+  "sender_scope": "chat",
+  "sender_loa":   0,
+  "channel":      "whatsapp"
+&#125;</code></pre>
+  </section>
+
+  <hr />
+
+  <section id="multihop-scope">
+    <h2>2.7 Multi-Hop Scope Propagation <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 ml-2 align-middle">v1.6.2</span></h2>
+    <p>
+      When a robot delegates a task to a peer robot or sub-agent (R2R delegation), the originating command's
+      scope MUST be preserved and propagated through the delegation chain.
+    </p>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 my-4">
+      <p class="text-sm text-cyan-300/80">
+        <strong class="text-cyan-400">Relationship to §12 delegation chains:</strong> Multi-hop scope propagation
+        extends the <code>delegation_chain</code> model in §12 with an explicit non-escalation invariant.
+        Each <code>DelegationHop</code> already carries a <code>scope</code> array; this section formalizes
+        the ordering constraint and introduces <code>originating_scope</code> tracking at the envelope level.
+      </p>
+    </div>
+
+    <h3 id="multihop-invariant">2.7.1 Non-Escalation Invariant</h3>
+    <p>For any delegation chain A → B → C:</p>
+    <pre><code>scope_level(C's task) ≤ scope_level(B's task) ≤ scope_level(A's command)</code></pre>
+    <p>
+      Implementations MUST enforce this invariant at the delegation point. Scope demotion (lower scope than
+      originating) is always permitted. Scope escalation is a protocol violation and MUST be rejected
+      with a logged error.
+    </p>
+    <p>
+      The scope level ordering for this invariant is defined by the coarse channel-scope hierarchy
+      (§2.6): <code>discover</code> &lt; <code>status</code> &lt; <code>chat</code> &lt;
+      <code>control</code> &lt; <code>system</code> &lt; <code>safety</code>.
+    </p>
+
+    <h3 id="multihop-intent">2.7.2 Scope in Delegated Intent</h3>
+    <p>
+      When a robot issues a delegated command to a peer or sub-agent, the envelope MUST carry two scope
+      fields alongside the existing <code>delegation_chain</code> (§12):
+    </p>
+    <pre><code>&#123;
+  "intent_id":         "...",
+  "originating_scope": "chat",
+  "delegated_scope":   "chat",
+  "delegation_chain":  [ ... ]
+&#125;</code></pre>
+    <p>
+      <code>delegated_scope</code> MUST be ≤ <code>originating_scope</code> as defined by the scope level
+      ordering in §2.6. Receivers MUST reject delegated commands where
+      <code>delegated_scope</code> &gt; <code>originating_scope</code>.
+    </p>
+
+    <h3 id="multihop-filtering">2.7.3 Agent Action Filtering</h3>
+    <p>
+      Robot implementations that use sub-agents to execute delegated tasks SHOULD enforce action-type
+      filtering based on the delegated scope. The following is the reference action allowlist:
+    </p>
+
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Scope</th>
+            <th class="text-left py-3 text-text-muted font-medium">Allowed action types</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-accent text-xs">discover</td>
+            <td class="py-3 text-text-muted text-xs">ping, status, get_info</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-accent text-xs">status</td>
+            <td class="py-3 text-text-muted text-xs">+ get_telemetry, get_pose</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-accent text-xs">chat</td>
+            <td class="py-3 text-text-muted text-xs">+ speak, navigate_to, describe_scene</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-accent text-xs">control</td>
+            <td class="py-3 text-text-muted text-xs">All actions</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-accent text-xs">system</td>
+            <td class="py-3 text-text-muted text-xs">All actions</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-accent text-xs">safety</td>
+            <td class="py-3 text-text-muted text-xs">All actions (including emergency stop)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-yellow-300/80">
+        Actions not in the allowlist for the current scope SHALL be vetoed by the safety/guardian layer.
+        See §6 Safety Invariants for enforcement layer responsibilities.
+      </p>
+    </div>
   </section>
 
   <hr />
