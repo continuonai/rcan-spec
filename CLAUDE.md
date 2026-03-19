@@ -6,7 +6,9 @@
 
 The official specification for the RCAN (Robot Communication and Autonomy Network) protocol. Published at **rcan.dev** via Cloudflare Pages. Astro-based static site.
 
-**Current version**: v1.4 | **Repo**: continuonai/rcan-spec | **Branch**: master
+**Current version**: v1.6.1 | **Repo**: continuonai/rcan-spec | **Branch**: master
+
+Version format: `vMAJOR.MINOR.PATCH` — this is the primary compliance reference for all ecosystem repos.
 
 ## Repository Layout
 
@@ -49,8 +51,11 @@ rcan-spec/
 | v1.0 | RURI, RBAC, Message Format, Discovery, Auth | Archive |
 | v1.1 | + ConfidenceGate (§7), Ed25519 signing (§9), offline fallback | Archive |
 | v1.2 | + AuditChain (§16), HiTL (§8), federation (§12), §17–§20, Appendix B | Archive |
-| v1.3 | + §21 Registry Integration, structured URI RRN, L4 conformance | Stable |
-| v1.4 | + §1–§16 dedicated section pages (full content, replaces stubs) | **Current** |
+| v1.3 | + §21 Registry Integration, structured URI RRN, L4 conformance | Archive |
+| v1.4 | + §1–§16 dedicated section pages (full content, replaces stubs) | Archive |
+| v1.5 | + VERSION_NEGOTIATION, REPLAY_PREVENTION, CLOCK_SYNC, QOS_DELIVERY, KEY_ROTATION, CONSENT_WIRE, FLEET_BROADCAST, OBSERVER_MODE, PHYSICAL_PRESENCE, FAULT_REPORTING, AUDIT_EXPORT | Archive |
+| v1.6 | + FEDERATED_CONSENT, CONSTRAINED_TRANSPORT, MULTIMODAL_PAYLOADS, IDENTITY_LOA | Archive |
+| v1.6.1 | Patch: HMAC verification fix, LoA enforcement, security hardening | **Current** |
 
 ## Styling Rules
 
@@ -104,8 +109,8 @@ Always run both before committing.
 
 1. `src/pages/changelog.astro` — add new version entry at top of `versions` array
 2. `src/pages/about.astro` — add to versions timeline array
-3. `src/pages/spec/index.astro` — update `<DocsLayout title="Specification vX.Y.0">`
-4. `src/pages/spec/vX.Y.astro` — create new snapshot page
+3. `src/pages/spec/index.astro` — update `<DocsLayout title="Specification vX.Y.Z">`
+4. `src/pages/spec/vX.Y.astro` — create new snapshot page (GAPs 1–18 are in the spec)
 5. `public/sdk-status.json` — update `spec_version` field and `updated` timestamp
 6. `src/pages/implementations/index.astro` — update OpenCastor + rcan-py version badges
 7. `src/pages/conformance/index.astro` — update description and badge block if new L-level added
@@ -116,10 +121,10 @@ Updated by CI (or manually):
 ```json
 {
   "updated": "2026-03-13T08:00:00Z",
-  "spec_version": "1.4",
+  "spec_version": "1.6.1",
   "sdks": {
-    "rcan-py": { "version": "0.4.0", "status": "pass", "pypi": "..." },
-    "rcan-ts": { "version": "0.3.0", "status": "pass", "npm": "..." }
+    "rcan-py": { "version": "0.6.0", "status": "pass", "pypi": "..." },
+    "rcan-ts": { "version": "0.6.0", "status": "pass", "npm": "..." }
   }
 }
 ```
