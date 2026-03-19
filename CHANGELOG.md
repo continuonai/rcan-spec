@@ -3,7 +3,7 @@
 ## v1.6.3 — 2026-03-18
 
 ### Summary
-Adds §2.8 Multi-Participant Mission Threads (R2R2H). Formalizes the data model, fanout dispatch protocol, scope invariants, and @mention handling for multi-robot group chat sessions. No changes to existing sections.
+Adds §2.8 Multi-Participant Mission Threads (R2R2H) with full multi-human enterprise support. Formalizes the data model, fanout dispatch protocol, scope invariants, @mention handling, human role hierarchy, and audit requirements for multi-robot, multi-human group mission sessions.
 
 ### Added
 
@@ -13,7 +13,10 @@ Adds §2.8 Multi-Participant Mission Threads (R2R2H). Formalizes the data model,
 - **§2.8.2** Mission scope is `chat` by default; robots MUST NOT escalate scope; P66 invariants apply independently per robot
 - **§2.8.3** After processing, robot MUST write response to `missions/{id}/messages/`; fanout is bridge coordinator's responsibility
 - **§2.8.4** Robots in `mentions[]` SHOULD prioritize responding; unmentioned robots MAY respond; advisory only
+- **§2.8.5** Human Role Hierarchy: `owner > operator > observer`; only owner/operator may dispatch robot commands; observer is read-only; fanout scope capped by sender role (non-escalation §2.7); owner role assigned at creation only
+- **§2.8.6** Multi-Human Audit: all messages retained; `from_role` on every human message; deletion requires owner role; `participant_uids` flat array for efficient Firestore queries; `mission_invites` subcollection is permanent audit record
 - New Astro doc page: `/docs/missions`
+- New Cloud Functions: `inviteToMission`, `joinMission`
 
 ---
 

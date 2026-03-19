@@ -153,6 +153,69 @@ Stay collaborative and concise.</code></pre>
     </section>
 
     <section>
+      <h2>2.8.5 — Human Role Hierarchy <span class="badge-new">v1.6.3</span></h2>
+      <p>Missions support multiple human participants, each assigned a role:</p>
+      <table>
+        <thead><tr><th>Role</th><th>Permissions</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>owner</code></td>
+            <td>Full control — invite/remove participants, end mission, all scopes (chat/control/system)</td>
+          </tr>
+          <tr>
+            <td><code>operator</code></td>
+            <td>Send chat and control commands; invite observers</td>
+          </tr>
+          <tr>
+            <td><code>observer</code></td>
+            <td>Read-only — can receive messages but <strong>MUST NOT</strong> send commands to robots</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Role Invariants</h3>
+      <ul>
+        <li>Only <code>owner</code> and <code>operator</code> roles may dispatch robot commands via <code>sendMissionMessage</code>.</li>
+        <li><code>observer</code> messages MUST be rejected by <code>sendMissionMessage</code> with <code>permission-denied</code>.</li>
+        <li>Operators cannot grant <code>owner</code> role when inviting participants.</li>
+        <li>The scope granted to robots in a fanout is capped by the sending human's role:
+          <code>scope_level(fanout_cmd) ≤ scope_level(sender_role)</code> — consistent with §2.7 non-escalation.</li>
+        <li><code>owner</code> role is assigned exclusively at mission creation; it cannot be transferred via invite.</li>
+      </ul>
+      <h3>Invite Flow</h3>
+      <pre><code>inviteToMission(missionId, email_or_uid, role)
+  ├─ Looks up user by email via Firebase Admin auth.getUserByEmail()
+  ├─ Adds to participants[] with joined=false
+  ├─ Writes mission_invites/{uid}/invites/{missionId} → status: "pending"
+  └─ App shows MissionInviteBanner: "Craig invited you to 'Kitchen Exploration' [Join] [Decline]"
+
+joinMission(missionId)
+  ├─ Validates invite exists and is pending
+  ├─ accept=true  → sets participant.joined=true, updates invite to "accepted"
+  └─ accept=false → removes from participants, updates invite to "declined"</code></pre>
+    </section>
+
+    <section>
+      <h2>2.8.6 — Multi-Human Audit <span class="badge-new">v1.6.3</span></h2>
+      <ul>
+        <li>All mission messages (human and robot) are retained in <code>missions/&#123;id&#125;/messages/</code> in Firestore.</li>
+        <li>Message documents include <code>from_role</code> for human senders to support role-based audit queries.</li>
+        <li>Deletion of mission message history <strong>MUST</strong> require <code>owner</code> role — operators and observers may not delete.</li>
+        <li>The <code>participant_uids</code> top-level array field on the mission document MUST be maintained for efficient membership queries (<code>array-contains</code>).</li>
+        <li><code>mission_invites/&#123;uid&#125;/invites/&#123;missionId&#125;</code> tracks all invite state (<code>pending</code>, <code>accepted</code>, <code>declined</code>) as a permanent audit record.</li>
+      </ul>
+
+      <h3>Firestore Index Requirements</h3>
+      <table>
+        <thead><tr><th>Collection</th><th>Fields</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>missions</td><td>participant_uids (array-contains), last_message_at (desc)</td><td>listMissions query</td></tr>
+          <tr><td>missions/{id}/messages</td><td>timestamp (asc)</td><td>real-time chat stream</td></tr>
+          <tr><td>mission_invites/{uid}/invites</td><td>status, invited_at (desc)</td><td>pending invite banner</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
       <h2>Security Notes</h2>
       <ul>
         <li>Mission creation validates robot ownership — a user cannot add robots belonging to others.</li>
