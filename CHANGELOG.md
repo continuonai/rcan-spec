@@ -1,5 +1,22 @@
 # RCAN Spec Changelog
 
+## v1.6.3 — 2026-03-18
+
+### Summary
+Adds §2.8 Multi-Participant Mission Threads (R2R2H). Formalizes the data model, fanout dispatch protocol, scope invariants, and @mention handling for multi-robot group chat sessions. No changes to existing sections.
+
+### Added
+
+#### §2.8 — Multi-Participant Mission Threads (R2R2H)
+- A **Mission** is a scoped conversation context shared by one or more robots and zero or more human principals
+- **§2.8.1** Mission commands MUST include `mission_id`, `participants` (RRN list), and `context: "mission_thread"`
+- **§2.8.2** Mission scope is `chat` by default; robots MUST NOT escalate scope; P66 invariants apply independently per robot
+- **§2.8.3** After processing, robot MUST write response to `missions/{id}/messages/`; fanout is bridge coordinator's responsibility
+- **§2.8.4** Robots in `mentions[]` SHOULD prioritize responding; unmentioned robots MAY respond; advisory only
+- New Astro doc page: `/docs/missions`
+
+---
+
 ## v1.6.2 — 2026-03-18
 
 ### Summary

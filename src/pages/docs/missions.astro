@@ -1,0 +1,166 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Mission Threads (R2R2H)" description="RCAN §2.8 — Multi-Participant Mission Threads: R2R2H group chat, fanout dispatch, @mention handling, and scope invariants.">
+  <nav class="doc-nav">
+    <a href="/docs/">← Documentation</a>
+  </nav>
+
+  <article class="doc-article">
+    <h1>§2.8 — Multi-Participant Mission Threads <span class="badge-new">v1.6.3</span></h1>
+    <p class="lead">A <strong>Mission</strong> is a scoped conversation context shared by one or more robots and zero or more human principals. Unlike a 1:1 robot ↔ human chat, missions create a unified timeline where all participants (robots and humans) see every message in real time.</p>
+
+    <section>
+      <h2>Concept</h2>
+      <p>Example flow:</p>
+      <pre><code>Craig: "Bob, Alex — work together to describe what's in front of you and then navigate to the table"
+Bob:   "I can see a chair and a box. @Alex can you confirm from your side?"
+Alex:  "Confirmed — I see the same. I'll navigate first, Bob follows."
+Bob:   "Understood. Starting approach."</code></pre>
+
+      <p>Each participant sees the same thread. Robots respond autonomously. Humans observe and direct.</p>
+    </section>
+
+    <section>
+      <h2>Firestore Data Model</h2>
+
+      <h3>missions/{missionId}</h3>
+      <pre><code>&#123;
+  "id": "mission-abc123",
+  "title": "Kitchen Exploration",
+  "created_by": "GAi2kq961zWUnXMQzu6qLCmCOtR2",
+  "created_at": "2026-03-18T17:00:00Z",
+  "participants": [
+    &#123;"type": "human", "uid": "GAi2kq...", "name": "Craig"&#125;,
+    &#123;"type": "robot", "rrn": "RRN-000000000001", "name": "Bob"&#125;,
+    &#123;"type": "robot", "rrn": "RRN-000000000005", "name": "Alex"&#125;
+  ],
+  "status": "active",
+  "last_message_at": "2026-03-18T17:01:00Z"
+&#125;</code></pre>
+
+      <h3>missions/{missionId}/messages/{msgId}</h3>
+      <pre><code>&#123;
+  "id": "msg-xyz",
+  "from_type": "human" | "robot",
+  "from_uid": "GAi2kq...",
+  "from_rrn": "RRN-000000000001",
+  "from_name": "Bob",
+  "content": "I can see a chair. @Alex can you confirm?",
+  "mentions": ["RRN-000000000005"],
+  "timestamp": "2026-03-18T17:01:05Z",
+  "scope": "chat",
+  "status": "delivered" | "processing" | "responded"
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>2.8.1 — Mission Context Fields</h2>
+      <p>Commands dispatched within a mission <strong>MUST</strong> include:</p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>mission_id</code></td><td>string</td><td>Stable identifier for the mission thread</td></tr>
+          <tr><td><code>participants</code></td><td>string[]</td><td>List of RRNs participating in the mission</td></tr>
+          <tr><td><code>context</code></td><td><code>"mission_thread"</code></td><td>Identifies the dispatch context</td></tr>
+        </tbody>
+      </table>
+
+      <p>Example command written to <code>robots/&#123;rrn&#125;/commands/&#123;cmdId&#125;</code>:</p>
+      <pre><code>&#123;
+  "instruction": "describe what you see",
+  "scope": "chat",
+  "mission_id": "mission-abc123",
+  "participants": ["RRN-000000000001", "RRN-000000000005"],
+  "context": "mission_thread",
+  "sender_type": "cloud_function",
+  "status": "pending"
+&#125;</code></pre>
+    </section>
+
+    <section>
+      <h2>2.8.2 — Scope Invariants in Missions</h2>
+      <ul>
+        <li>Mission scope is <code>chat</code> unless explicitly elevated to <code>control</code> by an authorized human principal.</li>
+        <li>Robots <strong>MUST NOT</strong> escalate scope within a mission thread (§2.7 non-escalation applies).</li>
+        <li>Each robot's P66 invariants apply independently regardless of mission context. A mission does not grant any robot expanded safety permissions.</li>
+        <li>Mission creation is owner-only — only the robot's registered Firebase UID may add it as a participant.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2.8.3 — Response Routing</h2>
+      <p>After processing a mission command, the robot <strong>MUST</strong> write its response to the shared mission messages subcollection (<code>missions/&#123;id&#125;/messages/</code>), making it visible to all participants.</p>
+      <p>The robot <strong>SHOULD NOT</strong> write directly to other robots' command queues — fanout is the bridge coordinator's responsibility (<code>sendMissionMessage</code> Cloud Function).</p>
+
+      <h3>Fanout Sequence</h3>
+      <pre><code>Flutter App
+  └─ sendMissionMessage(missionId, content)
+      ├─ writes → missions/{id}/messages/{msgId}   (human message)
+      ├─ writes → robots/RRN-0001/commands/{cmdId}  (with mission_id, participants, context)
+      └─ writes → robots/RRN-0005/commands/{cmdId}  (concurrent via Promise.all)
+
+Bridge (each robot, independently)
+  └─ receives command with context="mission_thread"
+      ├─ builds mission system context string
+      ├─ dispatches to /api/command with system_context prepended
+      └─ writes robot response → missions/{id}/messages/{replyId}
+
+Flutter App (real-time)
+  └─ onSnapshot(missions/{id}/messages) → renders unified timeline</code></pre>
+    </section>
+
+    <section>
+      <h2>2.8.4 — @Mention Handling</h2>
+      <p>A robot receiving a mission message with its RRN in <code>mentions[]</code> <strong>SHOULD</strong> prioritize responding. Robots NOT mentioned <strong>MAY</strong> respond if contextually relevant.</p>
+      <p>This is advisory — enforcement is at the application layer. The bridge does not suppress responses from unmentioned robots.</p>
+
+      <p>@Mention extraction is performed by <code>sendMissionMessage</code>: any <code>@RRN-XXXXXXXX</code> token in the message content is matched against the robot participant list and added to <code>mentions[]</code>.</p>
+    </section>
+
+    <section>
+      <h2>Mission Context Injection (Bridge)</h2>
+      <p>When the bridge receives a command with <code>context == "mission_thread"</code>, it prepends a system context block to the instruction before forwarding to <code>/api/command</code>:</p>
+      <pre><code>You are in a multi-robot mission (id: mission-abc123) with participants:
+RRN-000000000001, RRN-000000000005.
+You can @mention other robots by their RRN.
+When you respond, your message will be visible to all participants in the mission thread.
+Stay collaborative and concise.</code></pre>
+      <p>This is passed as <code>system_context</code> in the <code>CommandRequest</code> payload (RCAN §2.8 field).</p>
+    </section>
+
+    <section>
+      <h2>Flutter UI</h2>
+      <ul>
+        <li><strong>MissionListScreen</strong> — active missions, FAB to create new</li>
+        <li><strong>CreateMissionSheet</strong> — title + multi-select robot fleet → calls <code>createMission</code></li>
+        <li><strong>MissionScreen</strong> — real-time group chat; robot messages have a colored left border (consistent per-robot color); human messages right-aligned; @mention auto-suggest</li>
+      </ul>
+      <p>Routes: <code>/missions</code> · <code>/missions/:id</code> · <code>/missions/new</code></p>
+    </section>
+
+    <section>
+      <h2>Cloud Functions</h2>
+      <table>
+        <thead><tr><th>Function</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>createMission(title, robot_rrns)</code></td><td>Creates mission doc, validates robot ownership, returns missionId</td></tr>
+          <tr><td><code>sendMissionMessage(missionId, content)</code></td><td>Writes human message, fans out to all robot command queues via <code>Promise.all()</code></td></tr>
+          <tr><td><code>listMissions()</code></td><td>Returns missions where <code>created_by == auth.uid</code>, ordered by recency</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Security Notes</h2>
+      <ul>
+        <li>Mission creation validates robot ownership — a user cannot add robots belonging to others.</li>
+        <li>Only mission participants can send messages (checked by <code>sendMissionMessage</code>).</li>
+        <li>Missions are scoped to <code>chat</code> — no <code>control</code> or <code>safety</code> escalation at creation.</li>
+        <li>P66 (ESTOP) is always honored by each robot independently, regardless of mission state.</li>
+        <li>All existing RCAN security layers (replay prevention, federation trust, LoA) apply to mission commands before dispatch.</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
