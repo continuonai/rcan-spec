@@ -25,7 +25,7 @@ Bob:   "Understood. Starting approach."</code></pre>
     <section>
       <h2>Firestore Data Model</h2>
 
-      <h3>missions/{missionId}</h3>
+      <h3>missions/&#123;missionId&#125;</h3>
       <pre><code>&#123;
   "id": "mission-abc123",
   "title": "Kitchen Exploration",
@@ -40,7 +40,7 @@ Bob:   "Understood. Starting approach."</code></pre>
   "last_message_at": "2026-03-18T17:01:00Z"
 &#125;</code></pre>
 
-      <h3>missions/{missionId}/messages/{msgId}</h3>
+      <h3>missions/&#123;missionId&#125;/messages/&#123;msgId&#125;</h3>
       <pre><code>&#123;
   "id": "msg-xyz",
   "from_type": "human" | "robot",
@@ -97,18 +97,18 @@ Bob:   "Understood. Starting approach."</code></pre>
       <h3>Fanout Sequence</h3>
       <pre><code>Flutter App
   └─ sendMissionMessage(missionId, content)
-      ├─ writes → missions/{id}/messages/{msgId}   (human message)
-      ├─ writes → robots/RRN-0001/commands/{cmdId}  (with mission_id, participants, context)
-      └─ writes → robots/RRN-0005/commands/{cmdId}  (concurrent via Promise.all)
+      ├─ writes → missions/&#123;id&#125;/messages/&#123;msgId&#125;   (human message)
+      ├─ writes → robots/RRN-0001/commands/&#123;cmdId&#125;  (with mission_id, participants, context)
+      └─ writes → robots/RRN-0005/commands/&#123;cmdId&#125;  (concurrent via Promise.all)
 
 Bridge (each robot, independently)
   └─ receives command with context="mission_thread"
       ├─ builds mission system context string
       ├─ dispatches to /api/command with system_context prepended
-      └─ writes robot response → missions/{id}/messages/{replyId}
+      └─ writes robot response → missions/&#123;id&#125;/messages/&#123;replyId&#125;
 
 Flutter App (real-time)
-  └─ onSnapshot(missions/{id}/messages) → renders unified timeline</code></pre>
+  └─ onSnapshot(missions/&#123;id&#125;/messages) → renders unified timeline</code></pre>
     </section>
 
     <section>
@@ -185,7 +185,7 @@ Stay collaborative and concise.</code></pre>
       <pre><code>inviteToMission(missionId, email_or_uid, role)
   ├─ Looks up user by email via Firebase Admin auth.getUserByEmail()
   ├─ Adds to participants[] with joined=false
-  ├─ Writes mission_invites/{uid}/invites/{missionId} → status: "pending"
+  ├─ Writes mission_invites/&#123;uid&#125;/invites/&#123;missionId&#125; → status: "pending"
   └─ App shows MissionInviteBanner: "Craig invited you to 'Kitchen Exploration' [Join] [Decline]"
 
 joinMission(missionId)
@@ -209,8 +209,8 @@ joinMission(missionId)
         <thead><tr><th>Collection</th><th>Fields</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>missions</td><td>participant_uids (array-contains), last_message_at (desc)</td><td>listMissions query</td></tr>
-          <tr><td>missions/{id}/messages</td><td>timestamp (asc)</td><td>real-time chat stream</td></tr>
-          <tr><td>mission_invites/{uid}/invites</td><td>status, invited_at (desc)</td><td>pending invite banner</td></tr>
+          <tr><td>missions/&#123;id&#125;/messages</td><td>timestamp (asc)</td><td>real-time chat stream</td></tr>
+          <tr><td>mission_invites/&#123;uid&#125;/invites</td><td>status, invited_at (desc)</td><td>pending invite banner</td></tr>
         </tbody>
       </table>
     </section>
