@@ -1,0 +1,294 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const canonicalTable = [
+  { range: '1–8',   label: 'Core Protocol',        types: 'COMMAND, RESPONSE, STATUS, HEARTBEAT, CONFIG, SAFETY, AUTH, ERROR' },
+  { range: '9–10',  label: 'Discovery & Auth',      types: 'DISCOVER, PENDING_AUTH' },
+  { range: '11–13', label: 'Skill Invocation',      types: 'INVOKE, INVOKE_RESULT, INVOKE_CANCEL' },
+  { range: '14–15', label: 'Registry',              types: 'REGISTRY_REGISTER, REGISTRY_RESOLVE' },
+  { range: '16',    label: 'Audit',                 types: 'TRANSPARENCY' },
+  { range: '17–18', label: 'QoS',                   types: 'COMMAND_ACK, COMMAND_NACK' },
+  { range: '19–22', label: 'Identity & Consent',    types: 'ROBOT_REVOCATION, CONSENT_REQUEST, CONSENT_GRANT, CONSENT_DENY' },
+  { range: '23–25', label: 'Fleet & Telemetry',     types: 'FLEET_COMMAND, SUBSCRIBE, UNSUBSCRIBE' },
+  { range: '26–28', label: 'Diagnostics',           types: 'FAULT_REPORT, KEY_ROTATION, COMMAND_COMMIT' },
+  { range: '29–32', label: 'Sensor & Training',     types: 'SENSOR_DATA, TRAINING_CONSENT_REQUEST, TRAINING_CONSENT_GRANT, TRAINING_CONSENT_DENY' },
+  { range: '33–35', label: 'Contribute (v1.7)',     types: 'CONTRIBUTE_REQUEST, CONTRIBUTE_RESULT, CONTRIBUTE_CANCEL' },
+  { range: '36',    label: 'Training Data (v1.8)',   types: 'TRAINING_DATA' },
+];
+
+const migrationPy = [
+  { old: 'AUTH = 7',             new_val: 'AUTH = 7',              change: 'no change' },
+  { old: 'AUTHORIZE = 8',       new_val: '(removed)',             change: 'merged into AUTH' },
+  { old: 'PENDING_AUTH = 9',    new_val: 'PENDING_AUTH = 10',     change: 'moved +1' },
+  { old: 'INVOKE = 10',         new_val: 'INVOKE = 11',           change: 'moved +1' },
+  { old: 'INVOKE_RESULT = 11',  new_val: 'INVOKE_RESULT = 12',   change: 'moved +1' },
+  { old: 'INVOKE_CANCEL = 12',  new_val: 'INVOKE_CANCEL = 13',   change: 'moved +1' },
+  { old: 'TRANSPARENCY = 18',   new_val: 'TRANSPARENCY = 16',    change: 'moved -2' },
+  { old: 'KEY_ROTATION = 27',   new_val: 'KEY_ROTATION = 27',    change: 'no change' },
+  { old: 'COMMAND_NACK = 28',   new_val: 'COMMAND_NACK = 18',    change: 'moved -10' },
+  { old: 'COMMAND_COMMIT = 29', new_val: 'COMMAND_COMMIT = 28',  change: 'moved -1' },
+];
+
+const migrationTs = [
+  { old: 'SENSOR_DATA = 7',      new_val: 'SENSOR_DATA = 29',     change: 'moved +22' },
+  { old: 'AUDIT = 8',            new_val: '(removed)',             change: 'merged into TRANSPARENCY' },
+  { old: 'DISCOVER = 9',         new_val: 'DISCOVER = 9',         change: 'no change' },
+  { old: 'TRANSPARENCY = 11',    new_val: 'TRANSPARENCY = 16',    change: 'moved +5' },
+  { old: 'FEDERATION_SYNC = 12', new_val: '(removed)',             change: 'use FLEET_COMMAND (23)' },
+  { old: 'ALERT = 13',           new_val: '(removed)',             change: 'use FAULT_REPORT (26)' },
+  { old: 'TELEOP = 14',          new_val: '(removed)',             change: 'use COMMAND (1) with scope=teleop' },
+  { old: 'CHAT = 15',            new_val: '(removed)',             change: 'use COMMAND (1) with scope=chat' },
+  { old: 'ERROR = 16',           new_val: 'ERROR = 8',            change: 'moved -8' },
+  { old: 'COMMAND_COMMIT = 18',  new_val: 'COMMAND_COMMIT = 28',  change: 'moved +10' },
+  { old: 'COMMAND_NACK = 27',    new_val: 'COMMAND_NACK = 18',    change: 'moved -9' },
+];
+
+const changes = [
+  { type: 'breaking', text: 'Canonical MessageType table — all 36 types assigned definitive integer values. Both rcan-py and rcan-ts MUST match exactly.' },
+  { type: 'breaking', text: 'rcan-py: PENDING_AUTH, INVOKE, INVOKE_RESULT, INVOKE_CANCEL renumbered (+1 each). TRANSPARENCY moved from 18→16. COMMAND_NACK from 28→18. COMMAND_COMMIT from 29→28. AUTHORIZE removed (merged into AUTH).' },
+  { type: 'breaking', text: 'rcan-ts: SENSOR_DATA moved from 7→29. ERROR from 16→8. TRANSPARENCY from 11→16. COMMAND_COMMIT from 18→28. COMMAND_NACK from 27→18. AUDIT, FEDERATION_SYNC, ALERT, TELEOP, CHAT removed (consolidated into existing types).' },
+  { type: 'feat', text: 'New types: SENSOR_DATA (29), TRAINING_CONSENT_REQUEST/GRANT/DENY (30–32) now have canonical positions.' },
+  { type: 'feat', text: 'TRAINING_DATA assigned definitive value 36 (was 10 in rcan-ts, 34→36 in rcan-py).' },
+  { type: 'feat', text: 'Added RESPONSE (2) and HEARTBEAT (4) as explicit core types — previously implicit in implementations.' },
+  { type: 'feat', text: '§3 payload table expanded to all 36 types with scope requirements and field schemas.' },
+  { type: 'fix', text: 'TRAINING_DATA/CONTRIBUTE_RESULT collision at value 34 eliminated — TRAINING_DATA moved to 36.' },
+  { type: 'chore', text: 'Cross-SDK compatibility test requirement: both SDKs must pass identical MessageType value assertions.' },
+  { type: 'chore', text: 'Compatibility: rcan-py ≥0.7.0, rcan-ts ≥0.7.0 required for v1.8 compliance.' },
+];
+
+const typeStyle: Record<string, string> = {
+  breaking: 'bg-red-500/10 text-red-400 border-red-500/20',
+  feat:     'bg-accent/10 text-accent border-accent/20',
+  fix:      'bg-green-500/10 text-green-400 border-green-500/20',
+  chore:    'bg-gray-500/10 text-gray-400 border-gray-500/20',
+};
+---
+
+<DocsLayout title="RCAN v1.8 — Canonical MessageType Table" description="RCAN v1.8: definitive MessageType numbering across spec, rcan-py, and rcan-ts. Breaking change: all 36 message types canonicalized.">
+  <div class="flex items-center gap-4 mb-4">
+    <a href="/spec/" class="text-sm text-muted hover:text-accent">&larr; Spec</a>
+    <span class="text-muted">/</span>
+    <span class="text-sm font-medium">v1.8</span>
+  </div>
+
+  <h1 class="mb-0">RCAN v1.8 — Canonical MessageType Table</h1>
+  <p class="text-muted mt-1 mb-8">March 2026</p>
+
+  <!-- Overview -->
+  <section class="mb-12">
+    <h2>Overview</h2>
+    <p>
+      v1.8 is a <strong>breaking canonicalization release</strong>. The MessageType enum diverged across the spec,
+      rcan-py, and rcan-ts over several versions. This release publishes a single definitive table of 36 message
+      types that all implementations MUST use. No new functionality is added — this is purely a numbering
+      reconciliation.
+    </p>
+    <div class="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mt-4">
+      <p class="text-sm text-red-300">
+        <strong class="text-red-400">⚠️ Breaking change:</strong> Wire-level message type integers change for
+        many types. Systems using rcan-py &lt;0.7.0 or rcan-ts &lt;0.7.0 are NOT wire-compatible with v1.8
+        implementations. Upgrade both endpoints simultaneously or use version negotiation.
+      </p>
+    </div>
+  </section>
+
+  <!-- Canonical Table -->
+  <section class="mb-12">
+    <h2>Canonical MessageType Table</h2>
+    <p>This is the <strong>single source of truth</strong>. Integer values are final and MUST NOT be reassigned.</p>
+    <table class="w-full text-sm border-collapse mt-4">
+      <thead>
+        <tr class="border-b border-white/10">
+          <th class="text-left py-2 pr-4">Range</th>
+          <th class="text-left py-2 pr-4">Category</th>
+          <th class="text-left py-2">Types</th>
+        </tr>
+      </thead>
+      <tbody>
+        {canonicalTable.map(row => (
+          <tr class="border-b border-white/5">
+            <td class="py-2 pr-4 font-mono text-accent text-xs">{row.range}</td>
+            <td class="py-2 pr-4 font-medium text-sm">{row.label}</td>
+            <td class="py-2 text-sm text-muted font-mono">{row.types}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Full Integer Assignment -->
+  <section class="mb-12">
+    <h2>Complete Integer Assignment</h2>
+    <div class="grid md:grid-cols-2 gap-4 mt-4">
+      <div class="bg-bg-alt border border-white/5 rounded-lg p-4">
+        <h3 class="text-sm font-bold mb-3">Values 1–18</h3>
+        <pre class="text-xs font-mono leading-relaxed"> 1  COMMAND
+ 2  RESPONSE
+ 3  STATUS
+ 4  HEARTBEAT
+ 5  CONFIG
+ 6  SAFETY
+ 7  AUTH
+ 8  ERROR
+ 9  DISCOVER
+10  PENDING_AUTH
+11  INVOKE
+12  INVOKE_RESULT
+13  INVOKE_CANCEL
+14  REGISTRY_REGISTER
+15  REGISTRY_RESOLVE
+16  TRANSPARENCY
+17  COMMAND_ACK
+18  COMMAND_NACK</pre>
+      </div>
+      <div class="bg-bg-alt border border-white/5 rounded-lg p-4">
+        <h3 class="text-sm font-bold mb-3">Values 19–36</h3>
+        <pre class="text-xs font-mono leading-relaxed">19  ROBOT_REVOCATION
+20  CONSENT_REQUEST
+21  CONSENT_GRANT
+22  CONSENT_DENY
+23  FLEET_COMMAND
+24  SUBSCRIBE
+25  UNSUBSCRIBE
+26  FAULT_REPORT
+27  KEY_ROTATION
+28  COMMAND_COMMIT
+29  SENSOR_DATA
+30  TRAINING_CONSENT_REQUEST
+31  TRAINING_CONSENT_GRANT
+32  TRAINING_CONSENT_DENY
+33  CONTRIBUTE_REQUEST
+34  CONTRIBUTE_RESULT
+35  CONTRIBUTE_CANCEL
+36  TRAINING_DATA</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Migration: rcan-py -->
+  <section class="mb-12">
+    <h2>Migration: rcan-py</h2>
+    <p>Changes from rcan-py v0.6.x to v0.7.0:</p>
+    <table class="w-full text-sm border-collapse mt-4">
+      <thead>
+        <tr class="border-b border-white/10">
+          <th class="text-left py-2">Old (v0.6.x)</th>
+          <th class="text-left py-2">New (v0.7.0)</th>
+          <th class="text-left py-2">Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        {migrationPy.map(row => (
+          <tr class="border-b border-white/5">
+            <td class="py-2 font-mono text-xs">{row.old}</td>
+            <td class="py-2 font-mono text-xs text-accent">{row.new_val}</td>
+            <td class="py-2 text-sm text-muted">{row.change}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Migration: rcan-ts -->
+  <section class="mb-12">
+    <h2>Migration: rcan-ts</h2>
+    <p>Changes from rcan-ts v0.6.x to v0.7.0:</p>
+    <table class="w-full text-sm border-collapse mt-4">
+      <thead>
+        <tr class="border-b border-white/10">
+          <th class="text-left py-2">Old (v0.6.x)</th>
+          <th class="text-left py-2">New (v0.7.0)</th>
+          <th class="text-left py-2">Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        {migrationTs.map(row => (
+          <tr class="border-b border-white/5">
+            <td class="py-2 font-mono text-xs">{row.old}</td>
+            <td class="py-2 font-mono text-xs text-accent">{row.new_val}</td>
+            <td class="py-2 text-sm text-muted">{row.change}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Removed Types -->
+  <section class="mb-12">
+    <h2>Removed Types</h2>
+    <p>The following rcan-ts types are removed in v1.8. Use the canonical replacement:</p>
+    <table class="w-full text-sm border-collapse mt-4">
+      <thead>
+        <tr class="border-b border-white/10">
+          <th class="text-left py-2">Removed</th>
+          <th class="text-left py-2">Replacement</th>
+          <th class="text-left py-2">Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-white/5"><td class="py-2 font-mono text-xs">AUDIT (8)</td><td class="py-2 font-mono text-xs text-accent">TRANSPARENCY (16)</td><td class="py-2 text-sm text-muted">Consolidated audit into EU AI Act transparency</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2 font-mono text-xs">FEDERATION_SYNC (12)</td><td class="py-2 font-mono text-xs text-accent">FLEET_COMMAND (23)</td><td class="py-2 text-sm text-muted">Federation is fleet coordination</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2 font-mono text-xs">ALERT (13)</td><td class="py-2 font-mono text-xs text-accent">FAULT_REPORT (26)</td><td class="py-2 text-sm text-muted">Alerts are structured fault reports</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2 font-mono text-xs">TELEOP (14)</td><td class="py-2 font-mono text-xs text-accent">COMMAND (1) + scope=teleop</td><td class="py-2 text-sm text-muted">Teleop is a command with a scope, not a separate type</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2 font-mono text-xs">CHAT (15)</td><td class="py-2 font-mono text-xs text-accent">COMMAND (1) + scope=chat</td><td class="py-2 text-sm text-muted">Chat is a command with a scope, not a separate type</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2 font-mono text-xs">AUTHORIZE (8, rcan-py)</td><td class="py-2 font-mono text-xs text-accent">AUTH (7)</td><td class="py-2 text-sm text-muted">Authorization is part of authentication handshake</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Changelog -->
+  <section class="mb-12">
+    <h2>Changelog</h2>
+    <div class="space-y-3">
+      {changes.map(c => (
+        <div class={`flex gap-3 items-start p-3 rounded-lg border ${typeStyle[c.type]}`}>
+          <span class="text-xs font-mono uppercase tracking-wider mt-0.5 shrink-0">{c.type}</span>
+          <span class="text-sm">{c.text}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Compliance -->
+  <section>
+    <h2>Compliance Test</h2>
+    <p>Both SDKs MUST pass this assertion (pseudocode):</p>
+    <pre class="bg-bg-alt border border-white/5 rounded-lg p-4 text-xs font-mono mt-4 overflow-x-auto">
+assert MessageType.COMMAND            == 1
+assert MessageType.RESPONSE           == 2
+assert MessageType.STATUS             == 3
+assert MessageType.HEARTBEAT          == 4
+assert MessageType.CONFIG             == 5
+assert MessageType.SAFETY             == 6
+assert MessageType.AUTH               == 7
+assert MessageType.ERROR              == 8
+assert MessageType.DISCOVER           == 9
+assert MessageType.PENDING_AUTH       == 10
+assert MessageType.INVOKE             == 11
+assert MessageType.INVOKE_RESULT      == 12
+assert MessageType.INVOKE_CANCEL      == 13
+assert MessageType.REGISTRY_REGISTER  == 14
+assert MessageType.REGISTRY_RESOLVE   == 15
+assert MessageType.TRANSPARENCY       == 16
+assert MessageType.COMMAND_ACK        == 17
+assert MessageType.COMMAND_NACK       == 18
+assert MessageType.ROBOT_REVOCATION   == 19
+assert MessageType.CONSENT_REQUEST    == 20
+assert MessageType.CONSENT_GRANT      == 21
+assert MessageType.CONSENT_DENY       == 22
+assert MessageType.FLEET_COMMAND      == 23
+assert MessageType.SUBSCRIBE          == 24
+assert MessageType.UNSUBSCRIBE        == 25
+assert MessageType.FAULT_REPORT       == 26
+assert MessageType.KEY_ROTATION       == 27
+assert MessageType.COMMAND_COMMIT     == 28
+assert MessageType.SENSOR_DATA        == 29
+assert MessageType.TRAINING_CONSENT_REQUEST == 30
+assert MessageType.TRAINING_CONSENT_GRANT   == 31
+assert MessageType.TRAINING_CONSENT_DENY    == 32
+assert MessageType.CONTRIBUTE_REQUEST == 33
+assert MessageType.CONTRIBUTE_RESULT  == 34
+assert MessageType.CONTRIBUTE_CANCEL  == 35
+assert MessageType.TRAINING_DATA      == 36</pre>
+  </section>
+</DocsLayout>

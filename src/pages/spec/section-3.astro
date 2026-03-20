@@ -16,25 +16,71 @@ const protobufCode = `message RCANMessage {
   string reply_to       = 11;  // RURI to reply to (optional)
   repeated string scope = 12;  // Required scopes for this message
 
+  // ═══════════════════════════════════════════════════════════
+  // v1.8 Canonical MessageType Table
+  // This is the SINGLE SOURCE OF TRUTH. Both rcan-py and
+  // rcan-ts MUST use these exact integer assignments.
+  // ═══════════════════════════════════════════════════════════
   enum MessageType {
-    DISCOVER      = 1;
-    STATUS        = 2;
-    COMMAND       = 3;
-    STREAM        = 4;
-    EVENT         = 5;
-    HANDOFF       = 6;
-    ACK           = 7;
-    ERROR         = 8;
-    AUTHORIZE     = 9;   // HiTL out-of-band authorization (v1.2)
-    PENDING_AUTH  = 10;  // HiTL gate awaiting authorization (v1.2)
-    // §19 Skill Invocation
+    // Core protocol (1–8)
+    COMMAND            = 1;   // §3 — instruction to robot
+    RESPONSE           = 2;   // §3 — response to command
+    STATUS             = 3;   // §3 — robot state report
+    HEARTBEAT          = 4;   // §3 — keepalive ping
+    CONFIG             = 5;   // §8 — configuration update
+    SAFETY             = 6;   // §6 — safety/ESTOP signal
+    AUTH               = 7;   // §5 — authentication handshake
+    ERROR              = 8;   // §3 — error response
+
+    // Discovery & authorization (9–10)
+    DISCOVER           = 9;   // §4 — mDNS/network discovery
+    PENDING_AUTH       = 10;  // §5 — HiTL gate awaiting authorization (v1.2)
+
+    // Skill invocation (11–13)
     INVOKE             = 11;  // §19.2 — skill/behavior invocation
     INVOKE_RESULT      = 12;  // §19.3 — result of INVOKE
-    // §21 Registry (wire values 13–14 were assigned before §19.4 was finalised)
-    REGISTRY_REGISTER  = 13;  // §21.4 — register robot with RRF
-    REGISTRY_RESOLVE   = 14;  // §21.5 — resolve RRN to RURI/metadata
-    // §19.4 Cancel — wire value 15 added after §21; logically part of §19
-    INVOKE_CANCEL      = 15;  // §19.4 — cancel an in-progress skill invocation
+    INVOKE_CANCEL      = 13;  // §19.4 — cancel an in-progress invocation
+
+    // Registry (14–15)
+    REGISTRY_REGISTER  = 14;  // §21.4 — register robot with RRF
+    REGISTRY_RESOLVE   = 15;  // §21.5 — resolve RRN to RURI/metadata
+
+    // Audit & transparency (16)
+    TRANSPARENCY       = 16;  // §16 — EU AI Act Art. 13 audit record
+
+    // Acknowledgement & QoS (17–18)
+    COMMAND_ACK        = 17;  // QoS ≥ 1 acknowledgement
+    COMMAND_NACK       = 18;  // Negative acknowledgement
+
+    // Identity & consent (19–22)
+    ROBOT_REVOCATION   = 19;  // Broadcast: revoke robot identity
+    CONSENT_REQUEST    = 20;  // Request cross-robot consent
+    CONSENT_GRANT      = 21;  // Owner grants consent
+    CONSENT_DENY       = 22;  // Owner denies consent
+
+    // Fleet & telemetry (23–25)
+    FLEET_COMMAND      = 23;  // Broadcast command to robot group
+    SUBSCRIBE          = 24;  // Subscribe to telemetry stream
+    UNSUBSCRIBE        = 25;  // Cancel telemetry subscription
+
+    // Diagnostics (26–28)
+    FAULT_REPORT       = 26;  // Structured fault report
+    KEY_ROTATION       = 27;  // Key rotation broadcast
+    COMMAND_COMMIT     = 28;  // Exactly-once commit phase
+
+    // Sensor & training data (29–32)
+    SENSOR_DATA        = 29;  // Raw sensor payload
+    TRAINING_CONSENT_REQUEST = 30;  // Training data consent request
+    TRAINING_CONSENT_GRANT   = 31;  // Training data consent grant
+    TRAINING_CONSENT_DENY    = 32;  // Training data consent deny
+
+    // Idle compute contribution — v1.7 (33–35)
+    CONTRIBUTE_REQUEST = 33;  // Coordinator → robot: deliver work unit
+    CONTRIBUTE_RESULT  = 34;  // Robot → coordinator: return results
+    CONTRIBUTE_CANCEL  = 35;  // Robot → coordinator: cancellation notice
+
+    // Multimodal training data — v1.8 (36)
+    TRAINING_DATA      = 36;  // Multi-modal training data payload
   }
 
   enum Priority {
@@ -46,21 +92,54 @@ const protobufCode = `message RCANMessage {
 }`;
 
 const payloadTypes = [
-  { type: 'DISCOVER',          scope: 'none',    fields: 'capabilities[], ruri' },
-  { type: 'STATUS',            scope: 'status',  fields: 'state, battery_v, loop_latency_ms' },
-  { type: 'COMMAND',           scope: 'control', fields: 'instruction, image_b64 (optional)' },
-  { type: 'STREAM',            scope: 'stream',  fields: 'See §13 Telemetry Streaming' },
-  { type: 'EVENT',             scope: 'status',  fields: 'event_type, data' },
-  { type: 'HANDOFF',           scope: 'control', fields: 'target_ruri, reason' },
-  { type: 'ACK',               scope: '—',       fields: 'ref_id, ok' },
-  { type: 'ERROR',             scope: '—',       fields: 'code, message, ref_id' },
-  { type: 'AUTHORIZE',         scope: 'control', fields: 'ref_message_id (str), decision ("approve"|"deny")' },
-  { type: 'PENDING_AUTH',      scope: 'none',    fields: 'pending_id, action_type, description, timeout_remaining_ms' },
-  { type: 'INVOKE',            scope: 'control', fields: 'skill_id (str), params (obj), timeout_ms (int) — §19.2' },
-  { type: 'INVOKE_RESULT',     scope: '—',       fields: 'reply_to, status ("success"|"failure"|"timeout"|"cancelled"), result (obj) — §19.3' },
-  { type: 'REGISTRY_REGISTER', scope: 'admin',   fields: 'rrn (str), ruri (str), metadata (obj) — §21.4' },
-  { type: 'REGISTRY_RESOLVE',  scope: 'status',  fields: 'rrn (str) — §21.5; response carries ruri, metadata' },
-  { type: 'INVOKE_CANCEL',     scope: 'control', fields: 'payload.msg_id (str) — §19.4; msg_id of the INVOKE to cancel' },
+  // Core protocol (1–8)
+  { type: 'COMMAND (1)',           scope: 'control',     fields: 'instruction, image_b64 (optional)' },
+  { type: 'RESPONSE (2)',         scope: '—',           fields: 'ref_id, status, result' },
+  { type: 'STATUS (3)',           scope: 'status',      fields: 'state, battery_v, loop_latency_ms' },
+  { type: 'HEARTBEAT (4)',        scope: 'none',        fields: 'uptime_ms, sequence' },
+  { type: 'CONFIG (5)',           scope: 'control',     fields: 'config_diff, scope, rollback_config — §8' },
+  { type: 'SAFETY (6)',           scope: 'safety',      fields: 'action ("estop"|"resume"|"fault"), reason — §6' },
+  { type: 'AUTH (7)',             scope: 'none',        fields: 'jwt_token, challenge, response — §5' },
+  { type: 'ERROR (8)',            scope: '—',           fields: 'code, message, ref_id' },
+  // Discovery & auth (9–10)
+  { type: 'DISCOVER (9)',         scope: 'none',        fields: 'capabilities[], ruri — §4' },
+  { type: 'PENDING_AUTH (10)',    scope: 'none',        fields: 'pending_id, action_type, description, timeout_remaining_ms' },
+  // Skill invocation (11–13)
+  { type: 'INVOKE (11)',          scope: 'control',     fields: 'skill_id (str), params (obj), timeout_ms (int) — §19.2' },
+  { type: 'INVOKE_RESULT (12)',   scope: '—',           fields: 'reply_to, status, result (obj) — §19.3' },
+  { type: 'INVOKE_CANCEL (13)',   scope: 'control',     fields: 'payload.msg_id (str) — §19.4' },
+  // Registry (14–15)
+  { type: 'REGISTRY_REGISTER (14)', scope: 'admin',    fields: 'rrn, ruri, metadata — §21.4' },
+  { type: 'REGISTRY_RESOLVE (15)',  scope: 'status',   fields: 'rrn — §21.5; response carries ruri, metadata' },
+  // Audit (16)
+  { type: 'TRANSPARENCY (16)',    scope: 'status',      fields: 'model_id, decision, confidence, explanation — §16' },
+  // QoS (17–18)
+  { type: 'COMMAND_ACK (17)',     scope: '—',           fields: 'ref_id, ok' },
+  { type: 'COMMAND_NACK (18)',    scope: '—',           fields: 'ref_id, reason, code' },
+  // Identity & consent (19–22)
+  { type: 'ROBOT_REVOCATION (19)', scope: 'admin',     fields: 'rrn, reason, effective_at' },
+  { type: 'CONSENT_REQUEST (20)',  scope: 'control',   fields: 'requested_scopes[], consent_type, requester_ruri' },
+  { type: 'CONSENT_GRANT (21)',    scope: 'control',   fields: 'ref_id, granted_scopes[], expires_at' },
+  { type: 'CONSENT_DENY (22)',     scope: 'control',   fields: 'ref_id, reason' },
+  // Fleet & telemetry (23–25)
+  { type: 'FLEET_COMMAND (23)',   scope: 'control',     fields: 'group_id, instruction, target_filter' },
+  { type: 'SUBSCRIBE (24)',       scope: 'status',      fields: 'stream_id, interval_ms, fields[]' },
+  { type: 'UNSUBSCRIBE (25)',     scope: 'status',      fields: 'stream_id' },
+  // Diagnostics (26–28)
+  { type: 'FAULT_REPORT (26)',    scope: 'status',      fields: 'fault_code, severity, component, description' },
+  { type: 'KEY_ROTATION (27)',    scope: 'admin',       fields: 'new_key_id, algorithm, effective_at' },
+  { type: 'COMMAND_COMMIT (28)',  scope: '—',           fields: 'ref_id, phase ("prepare"|"commit"|"rollback")' },
+  // Sensor & training consent (29–32)
+  { type: 'SENSOR_DATA (29)',     scope: 'status',      fields: 'sensor_type, readings[], timestamp_ms' },
+  { type: 'TRAINING_CONSENT_REQ (30)', scope: 'control', fields: 'data_types[], purpose, retention_days' },
+  { type: 'TRAINING_CONSENT_GRANT (31)', scope: 'control', fields: 'ref_id, approved_types[], conditions' },
+  { type: 'TRAINING_CONSENT_DENY (32)',  scope: 'control', fields: 'ref_id, reason' },
+  // Contribute — v1.7 (33–35)
+  { type: 'CONTRIBUTE_REQUEST (33)', scope: 'contribute', fields: 'work_unit_id, project, model_format, input_data, timeout_s' },
+  { type: 'CONTRIBUTE_RESULT (34)',  scope: 'contribute', fields: 'work_unit_id, output, latency_ms, hw_profile, status' },
+  { type: 'CONTRIBUTE_CANCEL (35)', scope: 'contribute', fields: 'work_unit_id, reason, partial_result' },
+  // Training data — v1.8 (36)
+  { type: 'TRAINING_DATA (36)',   scope: 'control',     fields: 'data_type, modality, payload_b64, consent_ref' },
 ];
 ---
 
@@ -73,7 +152,7 @@ const payloadTypes = [
       Status: Stable
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      RCAN v1.3
+      RCAN v1.8
     </span>
     <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       ← Back to Specification
