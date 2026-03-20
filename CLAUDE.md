@@ -52,6 +52,7 @@ rcan-spec/
 | v1.1 | + ConfidenceGate (§7), Ed25519 signing (§9), offline fallback | Archive |
 | v1.2 | + AuditChain (§16), HiTL (§8), federation (§12), §17–§20, Appendix B | Archive |
 | v1.3 | + §21 Registry Integration, structured URI RRN, L4 conformance | Archive |
+| v1.7 | + `contribute` scope (level 2.5), CONTRIBUTE_REQUEST/RESULT/CANCEL message types, credit/reputation tiers, fleet coordination protocol, NPU `npu`/`tops` TXT fields in §4, safety invariants for idle compute | Draft |
 | v1.4 | + §1–§16 dedicated section pages (full content, replaces stubs) | Archive |
 | v1.5 | + VERSION_NEGOTIATION, REPLAY_PREVENTION, CLOCK_SYNC, QOS_DELIVERY, KEY_ROTATION, CONSENT_WIRE, FLEET_BROADCAST, OBSERVER_MODE, PHYSICAL_PRESENCE, FAULT_REPORTING, AUDIT_EXPORT | Archive |
 | v1.6 | + FEDERATED_CONSENT, CONSTRAINED_TRANSPORT, MULTIMODAL_PAYLOADS, IDENTITY_LOA | Archive |
