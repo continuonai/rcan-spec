@@ -18,6 +18,8 @@ const txtFields = [
   { key: 'version', req: 'SHOULD', desc: 'RCAN protocol version (semver)' },
   { key: 'name',    req: 'MAY',    desc: 'Human-readable robot name for display in discovery UIs' },
   { key: 'status',  req: 'SHOULD', desc: 'One of: idle, running, paused, error' },
+  { key: 'npu',     req: 'MAY',    desc: 'NPU/accelerator identifier (e.g. hailo-8l, coral-tpu). Null if none. (v1.7)' },
+  { key: 'tops',    req: 'MAY',    desc: 'Peak NPU throughput in TOPS (e.g. 26). Omit if no NPU. (v1.7)' },
 ];
 ---
 

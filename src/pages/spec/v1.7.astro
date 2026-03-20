@@ -1,0 +1,103 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const changes = [
+  { type: 'feat', text: 'contribute scope (level 2.5) — idle compute donation to approved science coordinators. Opt-in, immediately preempted by any higher-priority scope.' },
+  { type: 'feat', text: 'CONTRIBUTE_REQUEST, CONTRIBUTE_RESULT, CONTRIBUTE_CANCEL message types — coordinator↔robot work unit lifecycle.' },
+  { type: 'feat', text: 'Telemetry: contribute object in §13 status stream — enabled, active, coordinator, project, work_units_total, contribute_minutes_today/lifetime.' },
+  { type: 'feat', text: '§4 Discovery: npu and tops TXT fields for NPU capability advertisement in mDNS.' },
+  { type: 'feat', text: 'Contribution credit/reputation system — robots earn credits for sustained contribution (bronze/silver/gold/diamond tiers).' },
+  { type: 'feat', text: 'Fleet coordination protocol — CONTRIBUTE_FLEET_STATUS, CONTRIBUTE_ASSIGN, CONTRIBUTE_CAPACITY message types for cross-robot work distribution.' },
+  { type: 'security', text: 'contribute scope requires explicit user consent separate from chat consent. Cannot actuate physical systems.' },
+  { type: 'chore', text: 'Compatibility: OpenCastor ≥2026.3.20, rcan-py ≥0.6.0, rcan-ts ≥0.6.0' },
+];
+
+const typeStyle: Record<string, string> = {
+  feat:     'bg-accent/10 text-accent border-accent/20',
+  fix:      'bg-green-500/10 text-green-400 border-green-500/20',
+  security: 'bg-red-500/10 text-red-400 border-red-500/20',
+  chore:    'bg-gray-500/10 text-gray-400 border-gray-500/20',
+};
+---
+
+<DocsLayout title="RCAN v1.7 — Idle Compute Contribution" description="RCAN v1.7 changelog: contribute scope, fleet coordination, NPU capability advertisement, credit system.">
+  <div class="flex items-center gap-4 mb-4">
+    <a href="/spec/" class="text-sm text-muted hover:text-accent">&larr; Spec</a>
+    <span class="text-muted">/</span>
+    <span class="text-sm font-medium">v1.7 (Draft)</span>
+  </div>
+
+  <h1 class="mb-0">RCAN v1.7 — Idle Compute Contribution</h1>
+  <p class="text-muted mt-1 mb-8">Draft — March 2026</p>
+
+  <section class="mb-12">
+    <h2>Overview</h2>
+    <p>
+      v1.7 introduces the <code>contribute</code> scope, enabling robots to donate idle NPU/CPU
+      compute to approved science coordinators (climate modeling, protein folding, biodiversity).
+      Contribution is opt-in, requires explicit user consent separate from chat consent, and is
+      immediately preempted by any higher-priority scope (P66 invariant).
+    </p>
+  </section>
+
+  <section class="mb-12">
+    <h2>Changelog</h2>
+    <div class="space-y-3">
+      {changes.map(c => (
+        <div class={`flex gap-3 items-start p-3 rounded-lg border ${typeStyle[c.type]}`}>
+          <span class="text-xs font-mono uppercase tracking-wider mt-0.5 shrink-0">{c.type}</span>
+          <span class="text-sm">{c.text}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2>Contribution Credit System</h2>
+    <p>Robots earn reputation credits for sustained contribution. Credits are non-transferable (tied to RRN) and verifiable via registry lookup.</p>
+    <table class="w-full text-sm border-collapse mt-4">
+      <thead>
+        <tr class="border-b border-white/10">
+          <th class="text-left py-2">Tier</th>
+          <th class="text-left py-2">Threshold</th>
+          <th class="text-left py-2">Benefits</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-white/5"><td class="py-2">&#x1f7eb; Bronze</td><td>0 hours</td><td>Basic participation</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2">&#x1f7e0; Silver</td><td>100 hours</td><td>Priority work unit assignment</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2">&#x1f7e1; Gold</td><td>1,000 hours</td><td>Compute cost offset credits</td></tr>
+        <tr><td class="py-2">&#x1f535; Diamond</td><td>10,000 hours</td><td>Featured in registry, research co-authorship eligibility</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-12">
+    <h2>Fleet Coordination Messages</h2>
+    <table class="w-full text-sm border-collapse mt-4">
+      <thead>
+        <tr class="border-b border-white/10">
+          <th class="text-left py-2">Message Type</th>
+          <th class="text-left py-2">Direction</th>
+          <th class="text-left py-2">Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-white/5"><td class="py-2"><code>CONTRIBUTE_FLEET_STATUS</code></td><td>coordinator → fleet</td><td>Aggregate contribution stats broadcast</td></tr>
+        <tr class="border-b border-white/5"><td class="py-2"><code>CONTRIBUTE_ASSIGN</code></td><td>coordinator → robot</td><td>Assign specific work unit to specific robot</td></tr>
+        <tr><td class="py-2"><code>CONTRIBUTE_CAPACITY</code></td><td>robot → coordinator</td><td>Report available compute capacity (NPU/CPU/thermal/battery)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Safety Invariants</h2>
+    <ul class="list-disc pl-6 space-y-2 text-sm">
+      <li><strong>P66 preemption</strong>: Any command at <code>control</code> scope or higher immediately cancels active contribution.</li>
+      <li><strong>Thermal protection</strong>: Contribution pauses if SoC temperature exceeds 80°C.</li>
+      <li><strong>Battery protection</strong>: Contribution pauses if battery drops below 10%.</li>
+      <li><strong>No physical actuation</strong>: <code>contribute</code> scope cannot drive motors, move arms, or activate any physical system.</li>
+      <li><strong>Separate consent</strong>: Contribution requires explicit opt-in consent separate from chat/control consent.</li>
+    </ul>
+  </section>
+</DocsLayout>
