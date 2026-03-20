@@ -33,6 +33,7 @@ const fields = [
   { field: 'obstacles',        req: 'SHOULD', type: 'object | null',  desc: 'Obstacle zone schema from §12. null if no depth hardware.' },
   { field: 'nav_running',      req: 'SHOULD', type: 'bool',           desc: 'Whether a nav job is currently executing (§10).' },
   { field: 'behavior_name',    req: 'SHOULD', type: 'string | null',  desc: 'Name of the currently running behavior, or null (§11).' },
+  { field: 'contribute',       req: 'MAY',    type: 'object | null',  desc: 'Idle compute contribution status (v1.7). Fields: enabled (bool), active (bool), coordinator (string|null), project (string|null), work_units_total (int), contribute_minutes_today (int), contribute_minutes_lifetime (int).' },
 ];
 ---
 

@@ -447,6 +447,7 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
       </thead>
       <tbody>
         <tr><td><code>status</code></td><td>GUEST</td><td>Read health, telemetry, sensor data</td></tr>
+        <tr><td><code>contribute</code></td><td>USER</td><td>Donate idle NPU/CPU compute to approved science coordinators. Opt-in only; immediately preempted by any higher-priority scope. Requires explicit user consent separate from chat consent. <em>(v1.7)</em></td></tr>
         <tr><td><code>control</code></td><td>USER</td><td>Issue commands, drive motors, run behaviors</td></tr>
         <tr><td><code>config</code></td><td>OWNER</td><td>Modify RCAN config, reload, OTA</td></tr>
         <tr><td><code>training</code></td><td>OWNER</td><td>Submit episodes, trigger learner, export data</td></tr>
@@ -506,6 +507,9 @@ const swarmBroadcast = `// POST /api/command (broadcast to all swarm nodes)
         <tr><td><code>REGISTRY_REGISTER</code></td><td>admin</td><td><code>rrn</code> (str), <code>ruri</code> (str), <code>metadata</code> (obj) — §21.4</td></tr>
         <tr><td><code>REGISTRY_RESOLVE</code></td><td>status</td><td><code>rrn</code> (str) — §21.5; response carries <code>ruri</code>, <code>metadata</code></td></tr>
         <tr><td><code>INVOKE_CANCEL</code></td><td>control</td><td><code>payload.msg_id</code> (str) — §19.4; <code>msg_id</code> of the INVOKE to cancel; best-effort in-flight cancellation</td></tr>
+        <tr><td><code>CONTRIBUTE_REQUEST</code></td><td>contribute</td><td><code>work_unit_id</code> (str), <code>project</code> (str), <code>model_url</code> (str), <code>input_data</code> (obj), <code>timeout_seconds</code> (int), <code>coordinator_type</code> (str) — <em>v1.7</em></td></tr>
+        <tr><td><code>CONTRIBUTE_RESULT</code></td><td>contribute</td><td><code>work_unit_id</code> (str), <code>output</code> (obj), <code>latency_ms</code> (float), <code>hw_profile</code> (obj), <code>status</code> (<code>"complete"</code>|<code>"failed"</code>|<code>"cancelled"</code>) — <em>v1.7</em></td></tr>
+        <tr><td><code>CONTRIBUTE_CANCEL</code></td><td>contribute</td><td><code>work_unit_id</code> (str), <code>reason</code> (str) — <em>v1.7</em></td></tr>
       </tbody>
     </table>
   </section>
