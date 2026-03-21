@@ -1,0 +1,221 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="RCAN Foundation — Governance"
+  description="RCAN Foundation and Robot Registry Foundation: mission, board structure, certification program, and how to get involved."
+>
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Hero -->
+    <div class="mb-16">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Foundation Formation · Q3–Q4 2026 Target
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold text-text mb-6 leading-tight">
+        Open governance for<br/>
+        <span class="text-accent">open robotics infrastructure</span>
+      </h1>
+      <p class="text-xl text-text-muted leading-relaxed">
+        The RCAN protocol and the Robot Registry are public goods. Two independent foundations
+        will steward them — ensuring no single company controls the standard.
+      </p>
+    </div>
+
+    <!-- RCAN Foundation -->
+    <section class="mb-14">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-accent"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-text mb-0">RCAN Foundation</h2>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-1">
+            Formation target: Q3 2026
+          </span>
+        </div>
+      </div>
+
+      <p class="text-text-muted leading-relaxed mb-4">
+        The RCAN Foundation is a planned 501(c)(3) non-profit responsible for maintaining the open
+        RCAN specification, running certification programs, and ensuring interoperability across the
+        robot ecosystem.
+      </p>
+
+      <div class="grid gap-4 mb-6">
+        {[
+          { label: 'Mission', value: 'Maintain the open RCAN specification, administer the conformance certification program, and facilitate cross-vendor interoperability.' },
+          { label: 'Structure', value: '501(c)(3) non-profit. 7-seat board of directors.' },
+          { label: 'Board composition', value: '2 industry seats · 1 compliance/legal · 1 regulatory · 1 open-source community · 1 academic/research · 1 independent.' },
+          { label: 'Formation target', value: 'Q3 2026. Board seat recruitment is active — academic and IEEE contacts welcome.' },
+        ].map(item => (
+          <div class="bg-bg-card border border-border rounded-xl p-5">
+            <div class="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">{item.label}</div>
+            <div class="text-text-muted text-sm leading-relaxed">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Robot Registry Foundation -->
+    <section class="mb-14">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-400"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-text mb-0">Robot Registry Foundation</h2>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-1">
+            Formation target: Q4 2026
+          </span>
+        </div>
+      </div>
+
+      <p class="text-text-muted leading-relaxed mb-4">
+        A separate 501(c)(3) non-profit will govern the global Robot Registry Number (RRN) namespace.
+        This separation ensures that identity infrastructure for all robots remains independent from
+        protocol governance.
+      </p>
+
+      <div class="grid gap-4 mb-6">
+        {[
+          { label: 'Mission', value: 'Maintain the global RRN namespace, public lookup API, transfer protocols, and dispute resolution procedures.' },
+          { label: 'Structure', value: 'Separate 501(c)(3) non-profit from the RCAN Foundation, with its own board and bylaws.' },
+          { label: 'Responsibilities', value: 'RRN issuance · namespace integrity · public API uptime · transfer protocol standards · registration tier governance.' },
+          { label: 'Formation target', value: 'Q4 2026, following the RCAN Foundation establishment.' },
+        ].map(item => (
+          <div class="bg-bg-card border border-border rounded-xl p-5">
+            <div class="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">{item.label}</div>
+            <div class="text-text-muted text-sm leading-relaxed">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- OpenCastor relationship -->
+    <section class="mb-14">
+      <h2 class="text-2xl font-bold text-text mb-4">OpenCastor's relationship</h2>
+      <p class="text-text-muted leading-relaxed mb-6">
+        OpenCastor Inc. (a California Benefit Corporation) is a founding sponsor of both foundations.
+        Commercial success funds the open ecosystem — but governance remains independent.
+      </p>
+
+      <div class="bg-bg-alt border border-white/10 rounded-2xl p-8 mb-6">
+        <div class="text-sm font-bold text-text-muted uppercase tracking-wider mb-6">Revenue commitment</div>
+        <div class="flex flex-col sm:flex-row gap-6">
+          <div class="flex-1 text-center">
+            <div class="text-4xl font-bold text-accent mb-1">5%</div>
+            <div class="text-sm text-text-muted">of OpenCastor revenue</div>
+            <div class="text-xs text-text-faint mt-2">→ RCAN Foundation</div>
+          </div>
+          <div class="hidden sm:block w-px bg-white/10"></div>
+          <div class="flex-1 text-center">
+            <div class="text-4xl font-bold text-accent mb-1">5%</div>
+            <div class="text-sm text-text-muted">of OpenCastor revenue</div>
+            <div class="text-xs text-text-faint mt-2">→ Robot Registry Foundation</div>
+          </div>
+          <div class="hidden sm:block w-px bg-white/10"></div>
+          <div class="flex-1 text-center">
+            <div class="text-4xl font-bold text-text mb-1">10%</div>
+            <div class="text-sm text-text-muted">total committed</div>
+            <div class="text-xs text-text-faint mt-2">to open infrastructure</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-5">
+        <p class="text-sm text-cyan-300/80">
+          <strong class="text-cyan-400">Independence guarantee:</strong> OpenCastor holds no blocking board votes
+          in either foundation after formation. Founding sponsor status grants advisory participation only.
+          The spec and registry remain community property.
+        </p>
+      </div>
+    </section>
+
+    <!-- Certification Program -->
+    <section class="mb-14">
+      <h2 class="text-2xl font-bold text-text mb-4">Certification Program</h2>
+      <p class="text-text-muted leading-relaxed mb-6">
+        The RCAN-Certified program provides hardware partners and software implementers a formal
+        path to demonstrate protocol compliance.
+      </p>
+
+      <div class="grid gap-3 mb-6">
+        {[
+          { icon: '📋', title: 'Spec compliance', desc: 'Devices must implement RCAN v1.6 or later. Full §1–§21 conformance is required.' },
+          { icon: '🛡️', title: 'P66 safety tests', desc: 'Must pass the full RCAN P66 safety preemption test suite. No exceptions for hardware-constrained devices.' },
+          { icon: '📄', title: 'Conformance report', desc: 'Applicants must publish a signed conformance report generated by the RCAN test harness.' },
+          { icon: '🏷️', title: 'Certification badge', desc: 'Approved devices receive the RCAN-Certified badge for use in datasheets, packaging, and marketing materials.' },
+        ].map(item => (
+          <div class="flex gap-4 bg-bg-card border border-border rounded-xl p-5">
+            <div class="text-2xl shrink-0">{item.icon}</div>
+            <div>
+              <div class="font-semibold text-text mb-1">{item.title}</div>
+              <div class="text-sm text-text-muted">{item.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="bg-bg-alt border border-white/10 rounded-xl p-5">
+        <p class="text-sm text-text-muted">
+          Certification is administered by the RCAN Foundation once formed. Until Q3 2026, OpenCastor
+          runs a pre-certification self-assessment program. Contact
+          <a href="mailto:cert@opencastor.ai" class="text-accent hover:underline">cert@opencastor.ai</a> for details.
+        </p>
+      </div>
+    </section>
+
+    <!-- Get Involved -->
+    <section class="mb-14">
+      <h2 class="text-2xl font-bold text-text mb-4">How to get involved</h2>
+      <p class="text-text-muted leading-relaxed mb-6">
+        Both foundations are in formation. Board seats are being recruited now — academic institutions,
+        IEEE working groups, and compliance experts are especially welcome.
+      </p>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <a
+          href="https://github.com/continuonai"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="group flex flex-col gap-3 bg-bg-card border border-border hover:border-white/20 rounded-xl p-6 transition-colors"
+        >
+          <div class="flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-text-muted group-hover:text-text transition-colors"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            <span class="font-semibold text-text">continuonai on GitHub</span>
+          </div>
+          <p class="text-sm text-text-muted">Contribute to the spec, open issues, and review proposals in the continuonai org.</p>
+        </a>
+
+        <div class="flex flex-col gap-3 bg-bg-card border border-border rounded-xl p-6">
+          <div class="flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-text-muted"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="font-semibold text-text">Board seat inquiry</span>
+          </div>
+          <p class="text-sm text-text-muted">
+            Academic, IEEE, and compliance professionals: contact
+            <a href="mailto:foundation@opencastor.ai" class="text-accent hover:underline">foundation@opencastor.ai</a>
+            with your affiliation and area of expertise.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer nav -->
+    <div class="flex flex-wrap gap-4 pt-8 border-t border-border">
+      <a href="/spec/" class="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors text-sm">
+        Read the Spec →
+      </a>
+      <a href="/conformance/" class="inline-flex items-center gap-2 px-5 py-2.5 bg-bg-alt text-text border border-border font-semibold rounded-lg hover:border-white/20 transition-colors text-sm">
+        Conformance Levels
+      </a>
+      <a href="/about" class="inline-flex items-center gap-2 px-5 py-2.5 bg-bg-alt text-text border border-border font-semibold rounded-lg hover:border-white/20 transition-colors text-sm">
+        About RCAN
+      </a>
+    </div>
+
+  </div>
+</BaseLayout>
