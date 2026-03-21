@@ -1,5 +1,14 @@
 # RCAN Spec Changelog
 
+## [1.9.0] - 2026-03-21
+### Added
+- Castor Credits protocol — full reference for CONTRIBUTE scope (credit grants, badge tiers, payout schema)
+- RCAN Foundation governance framework page
+- Competition formats reference (Sprint, Threshold Race, Model×Hardware Brackets)
+- "See also" link in MessageType section pointing to Credits protocol
+
+---
+
 ## v1.6.3 — 2026-03-18
 
 ### Summary

@@ -1,7 +1,7 @@
 {
   "name": "rcan-spec",
   "type": "module",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "RCAN Protocol Specification - Robot Communication & Addressing Network",
   "scripts": {
     "dev": "astro dev",
