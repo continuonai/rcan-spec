@@ -108,6 +108,7 @@ Open issues and proposals at [github.com/continuonai/rcan-spec/issues](https://g
 | [OpenCastor](https://github.com/craigm26/OpenCastor) | v2026.3.17.1 | Robot runtime (reference impl) |
 | [RRF](https://robotregistryfoundation.org) | v1.6.0 | Robot identity registry |
 | [Fleet UI](https://app.opencastor.com) | live | Web fleet dashboard |
+| [Docs](https://docs.opencastor.com) | live | Runtime reference, RCAN, API |
 
 ## License
 
