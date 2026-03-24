@@ -2,9 +2,9 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite v1.4 — L1 Core, L2 Safety, L3 AI Accountability, L4 Registry Integration.">
+<BaseLayout title="Conformance Tests" description="RCAN Protocol Conformance Test Suite v1.10 — L1 Core, L2 Safety, L3 AI Accountability, L4 Registry Integration.">
 
-  <h1>Conformance Test Suite <span style="font-size:0.55em;color:var(--color-text-muted);font-weight:400;">v1.4</span></h1>
+  <h1>Conformance Test Suite <span class="text-[0.55em] text-text-muted font-normal">v1.10</span></h1>
   <p>A conforming RCAN implementation <strong>MUST</strong> pass all tests at the level it claims. Levels are cumulative — an <strong>L3</strong> implementation must also pass <strong>L1</strong> and <strong>L2</strong>.</p>
 
   <div class="flex flex-wrap items-center gap-4 mb-6 px-4 py-3 bg-white/[.04] border border-white/10 rounded-lg text-sm">
@@ -265,13 +265,13 @@ python3 scripts/conformance/check_l1.py \
     <h3>Machine-Readable Test Cases</h3>
     <p>
       The full test suite is in
-      <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/rcan-conformance-v1.4.json"><code>scripts/conformance/rcan-conformance-v1.4.json</code></a>.
+      <a href="https://github.com/continuonai/rcan-spec/blob/main/scripts/conformance/rcan-conformance-v1.10.json"><code>scripts/conformance/rcan-conformance-v1.10.json</code></a>.
       Drive your own harness against it:
     </p>
 
     <pre><code class="language-python">import json
 
-with open("scripts/conformance/rcan-conformance-v1.4.json") as f:
+with open("scripts/conformance/rcan-conformance-v1.10.json") as f:
     suite = json.load(f)
 
 for level, tests in suite["levels"].items():
@@ -281,10 +281,10 @@ for level, tests in suite["levels"].items():
         # compare result to t["expect"]</code></pre>
 
     <h3>Conformance Badges</h3>
-    <pre><code>L1 CORE       ✅ RCAN Conformant v1.4
-L2 SAFETY     ✅ RCAN Safety Conformant v1.4
-L3 AI-ACCT    ✅ RCAN AI-Accountable v1.4
-L4 REGISTRY   ✅ RCAN Registry-Integrated v1.4</code></pre>
+    <pre><code>L1 CORE       ✅ RCAN Conformant v1.10
+L2 SAFETY     ✅ RCAN Safety Conformant v1.10
+L3 AI-ACCT    ✅ RCAN AI-Accountable v1.10
+L4 REGISTRY   ✅ RCAN Registry-Integrated v1.10</code></pre>
   </section>
 
   <hr />

@@ -1,9 +1,17 @@
 {
-  "updated": "2026-03-16",
+  "updated": "2026-03-24",
   "spec_versions": [
     {
-      "version": "1.6",
+      "version": "1.10",
       "status": "current",
+      "rcan_py": ">=0.9.0",
+      "rcan_ts": ">=0.9.0",
+      "opencastor": ">=2026.3.24.0",
+      "notes": "Competition protocol: COMPETITION_ENTER (37), COMPETITION_SCORE (38), SEASON_STANDING (39), PERSONAL_RESEARCH_RESULT (40). Canonical MessageType table extended to 40 entries."
+    },
+    {
+      "version": "1.6",
+      "status": "maintained",
       "rcan_py": ">=0.6.0",
       "rcan_ts": ">=0.6.0",
       "opencastor": ">=2026.3.17.1",
