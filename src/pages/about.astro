@@ -12,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="mb-16">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Protocol v1.6 · March 2026
+        Protocol v1.10 · March 2026
       </div>
       <h1 class="text-4xl md:text-5xl font-bold text-text mb-6 leading-tight">
         The open protocol for<br/>
@@ -120,7 +120,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           { version: "v1.3", status: "archived", label: "Archived", desc: "§17–§20 + Appendix B promoted to Stable. §21 Robot Registry Integration — RRN↔RURI canonical mapping, ownership proof, registry handshake. Conformance L4." },
           { version: "v1.4", status: "archived", label: "Archived", desc: "§1–§16 dedicated section pages — all 16 core spec sections now have standalone pages with full content, code examples, and cross-references. CLAUDE.md agent context files added to all ecosystem repos." },
           { version: "v1.5", status: "archived", label: "Archived", desc: "18 of 22 security/safety gaps addressed: replay attack prevention (30s window), robot identity revocation, command delegation chains, consent wire protocol, ESTOP QoS exactly-once, offline operation mode, training data consent (EU AI Act Art.10), cloud relay identity audit. P66 conformance 87%→94%. rcan-py v0.5.0, rcan-ts v0.5.0." },
-          { version: "v1.6", status: "live", label: "Current", desc: "4 deferred gaps closed: federated consent protocol (FEDERATION_SYNC, cross-registry JWT trust, 3-tier registry hierarchy), bandwidth-constrained transports (32-byte RCAN-Minimal for LoRa, RCAN-Compact CBOR, BLE L2CAP), multi-modal payloads (media_chunks SHA-256 audit trail, streaming), human identity LoA 1/2/3 (FIDO2, min_loa_for_control). All 22 original audit gaps addressed. rcan-py v0.6.0, rcan-ts v0.6.0." },
+          { version: "v1.6", status: "archived", label: "Archived", desc: "4 deferred gaps closed: federated consent protocol (FEDERATION_SYNC, cross-registry JWT trust, 3-tier registry hierarchy), bandwidth-constrained transports (32-byte RCAN-Minimal for LoRa, RCAN-Compact CBOR, BLE L2CAP), multi-modal payloads (media_chunks SHA-256 audit trail, streaming), human identity LoA 1/2/3 (FIDO2, min_loa_for_control). All 22 original audit gaps addressed. rcan-py v0.6.0, rcan-ts v0.6.0." },
+          { version: "v1.10", status: "live", label: "Current", desc: "Competition protocol: COMPETITION_ENTER (37), COMPETITION_SCORE (38), SEASON_STANDING (39) for fleet competition events. PERSONAL_RESEARCH_RESULT (40) for private local research runs. Canonical MessageType table extended to 40 entries." },
           { version: "v2.0", status: "vision", label: "Vision", desc: "Signed firmware manifests, supply chain attestation, ISO/TC 299 liaison, EU AI Act §16 reference implementation." },
         ].map(item => (
           <div class="flex gap-6 mb-8 relative pl-10">

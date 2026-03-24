@@ -3,10 +3,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v1.4',
-    date: '2026-03-13',
+    version: 'v1.10',
+    date: '2026-03-24',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'feat', text: 'COMPETITION_ENTER (37) — robot announces competition entry on fleet bus' },
+      { type: 'feat', text: 'COMPETITION_SCORE (38) — robot publishes verified score submission' },
+      { type: 'feat', text: 'SEASON_STANDING (39) — cloud broadcasts current season class standings' },
+      { type: 'feat', text: 'PERSONAL_RESEARCH_RESULT (40) — local-only personal run result (never broadcast)' },
+      { type: 'feat', text: 'New spec page: /spec/competitions/ — full competition protocol documentation' },
+      { type: 'chore', text: 'Canonical MessageType table extended to 40 entries in §3' },
+    ],
+  },
+  {
+    version: 'v1.4',
+    date: '2026-03-13',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'feat', text: '§1–§16 dedicated section pages — all 16 spec sections now have standalone dedicated pages with full content, tables, code examples, and cross-references' },
       { type: 'feat', text: 'CLAUDE.md agent context files added to all ecosystem repos (OpenCastor, rcan-py, rcan-spec, RRF)' },

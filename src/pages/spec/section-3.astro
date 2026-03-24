@@ -81,6 +81,14 @@ const protobufCode = `message RCANMessage {
 
     // Multimodal training data — v1.8 (36)
     TRAINING_DATA      = 36;  // Multi-modal training data payload
+
+    // Competition — v1.10 (37–39)
+    COMPETITION_ENTER  = 37;  // Robot announces competition entry
+    COMPETITION_SCORE  = 38;  // Robot publishes verified score
+    SEASON_STANDING    = 39;  // Cloud broadcasts season standings
+
+    // Personal research — v1.10 (40)
+    PERSONAL_RESEARCH_RESULT = 40;  // Local-only personal run result
   }
 
   enum Priority {
@@ -140,6 +148,12 @@ const payloadTypes = [
   { type: 'CONTRIBUTE_CANCEL (35)', scope: 'contribute', fields: 'work_unit_id, reason, partial_result' },
   // Training data — v1.8 (36)
   { type: 'TRAINING_DATA (36)',   scope: 'control',     fields: 'data_type, modality, payload_b64, consent_ref' },
+  // Competition — v1.10 (37–39)
+  { type: 'COMPETITION_ENTER (37)',  scope: 'control',   fields: 'competition_id, competition_format, hardware_tier, model_id, robot_rrn, entered_at' },
+  { type: 'COMPETITION_SCORE (38)',  scope: 'control',   fields: 'competition_id, candidate_id, score, hardware_tier, verified, submitted_at' },
+  { type: 'SEASON_STANDING (39)',    scope: 'status',    fields: 'season_id, class_id, standings[], days_remaining' },
+  // Personal research — v1.10 (40)
+  { type: 'PERSONAL_RESEARCH_RESULT (40)', scope: 'status', fields: 'run_id, run_type, candidate_id, score, hardware_tier, model_id, owner_uid, metrics, submitted_to_community, created_at' },
 ];
 ---
 
@@ -152,7 +166,7 @@ const payloadTypes = [
       Status: Stable
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      RCAN v1.8
+      RCAN v1.10
     </span>
     <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       ← Back to Specification
@@ -270,6 +284,7 @@ const payloadTypes = [
     <h2>See also</h2>
     <ul>
       <li><a href="/spec/credits/">Castor Credits</a> — Full protocol for CONTRIBUTE_REQUEST (33), CONTRIBUTE_RESULT (34), and CONTRIBUTE_CANCEL (35), including the credit grant schema and badge tiers.</li>
+      <li><a href="/spec/competitions/">Competitions</a> — Full protocol for COMPETITION_ENTER (37), COMPETITION_SCORE (38), SEASON_STANDING (39), and PERSONAL_RESEARCH_RESULT (40).</li>
     </ul>
   </section>
 
