@@ -1,0 +1,363 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const competitionEnterExample = `{
+  "version": "1.10.0",
+  "message_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "source_ruri": "rcan://owner.example.com/opencastor-rpi5/bot-1",
+  "target_ruri": "broadcast",
+  "type": 37,
+  "priority": 2,
+  "payload": {
+    "competition_id": "sprint-2026-04-pi5-hailo8l",
+    "competition_format": "sprint",
+    "hardware_tier": "pi5-hailo8l",
+    "model_id": "gemini-2.5-flash",
+    "robot_rrn": "RRN-000000000001",
+    "entered_at": "2026-03-21T12:00:00Z"
+  }
+}`;
+
+const competitionScoreExample = `{
+  "version": "1.10.0",
+  "message_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "source_ruri": "rcan://owner.example.com/opencastor-rpi5/bot-1",
+  "target_ruri": "broadcast",
+  "type": 38,
+  "priority": 2,
+  "payload": {
+    "competition_id": "sprint-2026-04-pi5-hailo8l",
+    "candidate_id": "lower_cost_gate",
+    "score": 0.8846,
+    "hardware_tier": "pi5-hailo8l",
+    "verified": true,
+    "submitted_at": "2026-03-21T13:00:00Z"
+  }
+}`;
+
+const seasonStandingExample = `{
+  "version": "1.10.0",
+  "message_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "source_ruri": "rcan://cloud.castor.ai/standings",
+  "target_ruri": "broadcast",
+  "type": 39,
+  "priority": 2,
+  "payload": {
+    "season_id": "2026-03",
+    "class_id": "pi5-hailo8l__gemini-2.5-flash",
+    "standings": [
+      {"rank": 1, "rrn": "RRN-000000000001", "score": 0.9101, "badge": "gold"},
+      {"rank": 2, "rrn": "RRN-000000000005", "score": 0.8812, "badge": "silver"},
+      {"rank": 3, "rrn": "RRN-000000000012", "score": 0.8503, "badge": "bronze"}
+    ],
+    "days_remaining": 9
+  }
+}`;
+
+const personalResearchResultExample = `{
+  "version": "1.10.0",
+  "message_id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+  "source_ruri": "rcan://owner.example.com/opencastor-rpi5/bot-1",
+  "target_ruri": "rcan://owner.example.com/gateway",
+  "type": 40,
+  "priority": 1,
+  "payload": {
+    "run_id": "personal-2026-03-21-abc123",
+    "run_type": "personal",
+    "candidate_id": "lower_cost_gate",
+    "score": 0.8846,
+    "hardware_tier": "pi5-hailo8l",
+    "model_id": "gemini-2.5-flash",
+    "owner_uid": "GAi2kq961zWUnXMQzu6qLCmCOtR2",
+    "metrics": {
+      "success_rate": 0.93,
+      "p66_rate": 0.97,
+      "token_efficiency": 0.72,
+      "latency_score": 0.68
+    },
+    "submitted_to_community": false,
+    "created_at": "2026-03-21T12:00:00Z"
+  }
+}`;
+
+const messageTypes = [
+  { value: 37, name: 'COMPETITION_ENTER', direction: 'robot → fleet', description: 'Robot announces it is entering a named competition' },
+  { value: 38, name: 'COMPETITION_SCORE', direction: 'robot → fleet', description: 'Robot publishes a verified score submission' },
+  { value: 39, name: 'SEASON_STANDING', direction: 'cloud → robot', description: 'Fleet broadcast: current season class standings' },
+  { value: 40, name: 'PERSONAL_RESEARCH_RESULT', direction: 'robot → local gateway', description: 'Private personal run result (never broadcast to fleet)' },
+];
+---
+
+<DocsLayout title="Competitions Protocol" description="RCAN Competition MessageTypes — COMPETITION_ENTER (37), COMPETITION_SCORE (38), SEASON_STANDING (39), and PERSONAL_RESEARCH_RESULT (40).">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex items-center gap-4 mb-4">
+      <h1 class="mb-0">Competitions Protocol</h1>
+    </div>
+    <div class="flex gap-2 mb-8 flex-wrap">
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        Status: Draft
+      </span>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+        RCAN v1.10
+      </span>
+      <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+        ← Back to Specification
+      </a>
+    </div>
+
+    <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+      <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+      <ol class="grid md:grid-cols-2 gap-2 text-sm">
+        <li><a href="#overview" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1</span> Overview</a></li>
+        <li><a href="#message-types" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2</span> Message Types</a></li>
+        <li><a href="#competition-enter" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3</span> COMPETITION_ENTER (37)</a></li>
+        <li><a href="#competition-score" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">4</span> COMPETITION_SCORE (38)</a></li>
+        <li><a href="#season-standing" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5</span> SEASON_STANDING (39)</a></li>
+        <li><a href="#personal-runs" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6</span> Personal Runs</a></li>
+        <li><a href="#conformance" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7</span> Conformance</a></li>
+      </ol>
+    </div>
+
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
+      <p class="text-sm text-cyan-300/80">
+        <strong class="text-cyan-400">Overview:</strong> The competition protocol allows robots to announce participation in
+        fleet competitions, publish verified scores, and receive season standings via the RCAN bus — making competition state
+        observable across the fleet without requiring cloud polling.
+      </p>
+    </div>
+
+    <hr />
+
+    <section id="overview">
+      <h2>1. Overview</h2>
+      <p>
+        Fleet competitions provide a structured way for robots to compete on optimization tasks within hardware and model
+        classes. Each competition is identified by a unique <code>competition_id</code> that encodes the format, time period,
+        and hardware tier. Robots enter competitions, submit verified scores, and receive standings broadcasts — all
+        communicated as standard RCAN messages on the fleet bus.
+      </p>
+      <p>
+        Personal research runs operate outside the competition bus. Results are emitted locally to the robot's gateway
+        and are never relayed to the fleet. When a personal result passes verification, it can be promoted to a
+        <code>COMPETITION_SCORE</code> by setting <code>submitted_to_community: true</code>.
+      </p>
+    </section>
+
+    <hr />
+
+    <section id="message-types">
+      <h2>2. Message Types</h2>
+      <div class="not-prose overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-3 pr-4 text-text-muted font-medium">Value</th>
+              <th class="text-left py-3 pr-4 text-text-muted font-medium">Name</th>
+              <th class="text-left py-3 pr-4 text-text-muted font-medium">Direction</th>
+              <th class="text-left py-3 text-text-muted font-medium">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {messageTypes.map(m => (
+              <tr class="border-b border-border/50">
+                <td class="py-3 pr-4 font-mono text-accent text-xs">{m.value}</td>
+                <td class="py-3 pr-4 font-mono text-xs">{m.name}</td>
+                <td class="py-3 pr-4 text-text-muted text-xs">{m.direction}</td>
+                <td class="py-3 text-text-muted text-xs">{m.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="competition-enter">
+      <h2>3. COMPETITION_ENTER (37)</h2>
+      <p>
+        Sent by a robot to the fleet bus when it enters a competition. The message includes the competition identifier,
+        format (e.g. <code>sprint</code>), hardware tier, model, and the robot's RRN. Other fleet members can observe
+        entries to track participation.
+      </p>
+      <h3>Payload Fields</h3>
+      <div class="not-prose overflow-x-auto mb-6">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Field</th>
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Type</th>
+              <th class="text-left py-2 text-text-muted font-medium">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">competition_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Unique competition identifier (e.g. <code>sprint-2026-04-pi5-hailo8l</code>)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">competition_format</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Format of competition (<code>sprint</code>, <code>marathon</code>, etc.)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">hardware_tier</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Hardware class (e.g. <code>pi5-hailo8l</code>)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">model_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Model used for inference</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">robot_rrn</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Robot's registered RRN</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">entered_at</td><td class="py-2 pr-4 text-text-muted text-xs">ISO-8601</td><td class="py-2 text-text-muted text-xs">Entry timestamp</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="not-prose">
+        <CodeWindow code={competitionEnterExample} language="json" title="COMPETITION_ENTER example" />
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="competition-score">
+      <h2>4. COMPETITION_SCORE (38)</h2>
+      <p>
+        Published by a robot after completing a verified score submission. The score has been validated before broadcast.
+        Fleet peers and the standings service observe these messages to update leaderboards.
+      </p>
+      <h3>Payload Fields</h3>
+      <div class="not-prose overflow-x-auto mb-6">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Field</th>
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Type</th>
+              <th class="text-left py-2 text-text-muted font-medium">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">competition_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Competition this score belongs to</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">candidate_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Identifier for the optimization candidate</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">score</td><td class="py-2 pr-4 text-text-muted text-xs">number</td><td class="py-2 text-text-muted text-xs">Verified score (0.0–1.0)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">hardware_tier</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Hardware class used</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">verified</td><td class="py-2 pr-4 text-text-muted text-xs">boolean</td><td class="py-2 text-text-muted text-xs">Must be <code>true</code> for broadcast</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">submitted_at</td><td class="py-2 pr-4 text-text-muted text-xs">ISO-8601</td><td class="py-2 text-text-muted text-xs">Submission timestamp</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="not-prose">
+        <CodeWindow code={competitionScoreExample} language="json" title="COMPETITION_SCORE example" />
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="season-standing">
+      <h2>5. SEASON_STANDING (39)</h2>
+      <p>
+        Broadcast from the cloud standings service to all fleet members. Contains the current season leaderboard
+        for a given hardware/model class. Robots use this to display standings locally without polling.
+      </p>
+      <h3>Payload Fields</h3>
+      <div class="not-prose overflow-x-auto mb-6">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Field</th>
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Type</th>
+              <th class="text-left py-2 text-text-muted font-medium">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">season_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Season identifier (e.g. <code>2026-03</code>)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">class_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Hardware/model class (e.g. <code>pi5-hailo8l__gemini-2.5-flash</code>)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">standings</td><td class="py-2 pr-4 text-text-muted text-xs">array</td><td class="py-2 text-text-muted text-xs">Ordered array of <code>{`{rank, rrn, score, badge}`}</code></td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">days_remaining</td><td class="py-2 pr-4 text-text-muted text-xs">integer</td><td class="py-2 text-text-muted text-xs">Days until season ends</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="not-prose">
+        <CodeWindow code={seasonStandingExample} language="json" title="SEASON_STANDING example" />
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="personal-runs">
+      <h2>6. Personal Runs</h2>
+      <h3>PERSONAL_RESEARCH_RESULT (40)</h3>
+      <p>
+        Emitted locally by the robot after a personal research run. This message is sent only to the local gateway —
+        it is <strong>never relayed to the fleet bus</strong>. Personal runs let robot owners experiment with
+        optimization candidates privately before deciding whether to submit results to community competitions.
+      </p>
+
+      <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 my-4">
+        <p class="text-sm"><strong class="text-yellow-400">Privacy invariant:</strong> Implementations MUST NOT
+        relay <code>PERSONAL_RESEARCH_RESULT</code> messages beyond the local gateway. The message target MUST be
+        the robot's own gateway RURI, never <code>broadcast</code>.</p>
+      </div>
+
+      <h3>Payload Fields</h3>
+      <div class="not-prose overflow-x-auto mb-6">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Field</th>
+              <th class="text-left py-2 pr-4 text-text-muted font-medium">Type</th>
+              <th class="text-left py-2 text-text-muted font-medium">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">run_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Unique run identifier</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">run_type</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Always <code>"personal"</code></td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">candidate_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Optimization candidate tested</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">score</td><td class="py-2 pr-4 text-text-muted text-xs">number</td><td class="py-2 text-text-muted text-xs">Result score (0.0–1.0)</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">hardware_tier</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Hardware class used</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">model_id</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Model used for inference</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">owner_uid</td><td class="py-2 pr-4 text-text-muted text-xs">string</td><td class="py-2 text-text-muted text-xs">Robot owner's UID</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">metrics</td><td class="py-2 pr-4 text-text-muted text-xs">object</td><td class="py-2 text-text-muted text-xs"><code>{`{success_rate, p66_rate, token_efficiency, latency_score}`}</code></td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">submitted_to_community</td><td class="py-2 pr-4 text-text-muted text-xs">boolean</td><td class="py-2 text-text-muted text-xs">When <code>true</code> after verification, a COMPETITION_SCORE (38) is emitted instead</td></tr>
+            <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-xs">created_at</td><td class="py-2 pr-4 text-text-muted text-xs">ISO-8601</td><td class="py-2 text-text-muted text-xs">Timestamp of result creation</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="not-prose">
+        <CodeWindow code={personalResearchResultExample} language="json" title="PERSONAL_RESEARCH_RESULT example" />
+      </div>
+
+      <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-6">
+        <p class="text-sm text-cyan-300/80">
+          <strong class="text-cyan-400">Promotion flow:</strong> When <code>submitted_to_community</code> is set to
+          <code>true</code> after verification, the personal result is promoted — a <code>COMPETITION_SCORE</code> (38)
+          message is emitted to the fleet bus with the verified score. The original personal result remains stored locally.
+        </p>
+      </div>
+    </section>
+
+    <hr />
+
+    <section id="conformance">
+      <h2>7. Conformance Requirements</h2>
+      <ul>
+        <li>Implementations supporting competitions MUST handle all four MessageTypes (37–40).</li>
+        <li><code>COMPETITION_ENTER</code> and <code>COMPETITION_SCORE</code> MUST be broadcast to the fleet bus.</li>
+        <li><code>SEASON_STANDING</code> messages MUST be accepted from cloud sources only (verified by JWT issuer).</li>
+        <li><code>PERSONAL_RESEARCH_RESULT</code> MUST NOT be relayed beyond the local gateway.</li>
+        <li><code>COMPETITION_SCORE</code> MUST have <code>verified: true</code> — unverified scores MUST be rejected.</li>
+        <li>All <code>score</code> fields MUST be in the range 0.0–1.0 inclusive.</li>
+      </ul>
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>See also</h2>
+      <ul>
+        <li><a href="/spec/section-3/">§3 Message Format</a> — Canonical MessageType table with all 40 types.</li>
+        <li><a href="/spec/credits/">Castor Credits</a> — Credit grants from idle compute contribution.</li>
+      </ul>
+    </section>
+
+    <div class="not-prose mt-12 flex flex-wrap gap-4">
+      <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+        ← Full Specification
+      </a>
+      <a href="/spec/section-3/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+        ← §3 Message Format
+      </a>
+      <a href="/spec/credits/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+        Castor Credits →
+      </a>
+    </div>
+  </div>
+</DocsLayout>
