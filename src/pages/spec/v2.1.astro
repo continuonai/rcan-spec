@@ -16,17 +16,17 @@ const constraints = [
   { text: 'M2M_TRUSTED MUST NOT issue further tokens to other principals.' },
   { text: 'ESTOP (Priority.SAFETY) is ALWAYS honored regardless of role level — level 6 does not bypass safety.' },
   { text: 'Any CREATOR can revoke consent at any time; revocation takes effect within one poll interval (≤ 60 s).' },
-  { text: 'v2.0 receivers MUST reject rcan_role: "m2m_trusted" tokens until they declare v2.1 conformance.' },
+  { text: 'v1.x receivers MUST reject rcan_role: "m2m_trusted" tokens. v2.1 is a clean break — no v1.x/v2.1 mixed fleets.' },
 ];
 ---
 
-<DocsLayout title="RCAN v2.1 Snapshot (Planned)" description="RCAN v2.1 specification snapshot. Planned features including M2M_TRUSTED (level 6) for RRF-issued fleet orchestration and the fleet.trusted scope.">
+<DocsLayout title="RCAN v2.1 Snapshot" description="RCAN v2.1 specification snapshot. Full v2 release including M2M_TRUSTED (level 6), signed firmware manifests, SBOM attestation, EU AI Act authority access, and signed RURI.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">RCAN v2.1 Snapshot</h1>
   </div>
   <div class="flex gap-2 mb-8 flex-wrap">
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
-      Status: Planned — not yet ratified
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+      Status: Stable — Target Q1 2027
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
       Builds on RCAN v2.0
@@ -39,16 +39,16 @@ const constraints = [
     </a>
   </div>
 
-  <div class="not-prose bg-orange-500/5 border border-orange-500/20 rounded-xl p-6 mb-10">
-    <p class="text-sm text-orange-300/80">
-      <strong class="text-orange-400">Planned, not ratified.</strong> The features on this page are finalized at the design level and reserved in the protocol (level 6 is reserved, <code>rcan_role: "m2m_trusted"</code> MUST be rejected by v2.0 receivers), but MUST NOT be implemented until this snapshot is promoted to stable. This page is provided so implementors can plan ahead.
+  <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-cyan-300/80">
+      <strong class="text-cyan-400">Full v2 release.</strong> v2.1 is the first stable release of the RCAN v2 line, shipping all v2.0 wire format changes (signed RURI, firmware manifests, SBOM attestation, EU AI Act authority access) together with M2M_TRUSTED fleet orchestration as a single ecosystem release. There is no separate v2.0 SDK release.
     </p>
   </div>
 
   <hr />
 
   <section id="features">
-    <h2>Planned Features</h2>
+    <h2>Features</h2>
     <ul>
       {features.map(f => <li>{f.text}</li>)}
     </ul>
@@ -121,10 +121,10 @@ const constraints = [
   <section id="sdk-compat">
     <h2>SDK Compatibility</h2>
     <ul>
-      <li><strong>rcan-py</strong> ≥ 1.1.0 (SPEC_VERSION 2.1.0) — adds <code>LevelOfAssurance.M2M_TRUSTED = 6</code>, <code>verify_m2m_trusted()</code></li>
-      <li><strong>rcan-ts</strong> ≥ 1.1.0 (SPEC_VERSION 2.1.0) — adds <code>Role.M2M_TRUSTED</code>, RRF verification helper</li>
-      <li><strong>OpenCastor</strong> ≥ 2027.2.x — adds M2M_TRUSTED handler, RRF revocation polling loop</li>
-      <li>v2.0 receivers MUST reject <code>rcan_role: "m2m_trusted"</code> tokens</li>
+      <li><strong>rcan-py</strong> 1.1.0 (SPEC_VERSION 2.1.0) — full v2.1 implementation including <code>LevelOfAssurance.M2M_TRUSTED = 6</code></li>
+      <li><strong>rcan-ts</strong> 1.1.0 (SPEC_VERSION 2.1.0) — full v2.1 implementation including <code>Role.M2M_TRUSTED</code></li>
+      <li><strong>OpenCastor</strong> ≥ 2027.1.x — firmware attestation, SBOM, AUTHORITY_ACCESS handler, M2M_TRUSTED support</li>
+      <li>v1.x SDKs are incompatible — no mixed v1.x/v2.1 fleets</li>
     </ul>
   </section>
 

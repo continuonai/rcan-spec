@@ -3,24 +3,24 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 import CodeWindow from '../../components/CodeWindow.astro';
 
 const roles = [
-  { role: 'M2M_TRUSTED', level: '6',   rateLimit: 'Unlimited', ttl: 'None',  perms: 'Fleet orchestration: RRF-issued only, cross-fleet COMMAND/INVOKE/CONFIG, no safety bypass', v21: true },
-  { role: 'CREATOR',     level: '5',   rateLimit: 'Unlimited', ttl: 'None',  perms: 'Full hardware/software control, OTA push, safety override', v21: false },
-  { role: 'M2M_PEER',    level: '4',   rateLimit: 'Unlimited', ttl: 'None',  perms: 'Robot-to-robot: authorized by ADMIN, can issue COMMAND/INVOKE to fleet peers', v21: false },
-  { role: 'ADMIN',       level: '3',   rateLimit: '1000/min',  ttl: '8 h',   perms: 'Configuration, skill installation, user management, M2M_PEER authorization', v21: false },
-  { role: 'OPERATOR',    level: '2',   rateLimit: '100/min',   ttl: '2 h',   perms: 'Operational control within allowed modes', v21: false },
-  { role: 'CONTRIBUTOR', level: '2.5', rateLimit: '200/min',   ttl: '4 h',   perms: 'Idle compute contribution scope only (CONTRIBUTE_REQUEST/RESULT/CANCEL)', v21: false },
-  { role: 'GUEST',       level: '1',   rateLimit: '10/min',    ttl: '5 min', perms: 'Status viewing, read-only telemetry, text chat', v21: false },
+  { role: 'M2M_TRUSTED', level: '6',   rateLimit: 'Unlimited', ttl: '24 h max', perms: 'Fleet orchestration: RRF-issued only, cross-fleet COMMAND/INVOKE/CONFIG, no safety bypass' },
+  { role: 'CREATOR',     level: '5',   rateLimit: 'Unlimited', ttl: 'None',     perms: 'Full hardware/software control, OTA push, safety override' },
+  { role: 'M2M_PEER',    level: '4',   rateLimit: 'Unlimited', ttl: 'None',     perms: 'Robot-to-robot: authorized by ADMIN, can issue COMMAND/INVOKE to fleet peers' },
+  { role: 'ADMIN',       level: '3',   rateLimit: '1000/min',  ttl: '8 h',      perms: 'Configuration, skill installation, user management, M2M_PEER authorization' },
+  { role: 'OPERATOR',    level: '2',   rateLimit: '100/min',   ttl: '2 h',      perms: 'Operational control within allowed modes' },
+  { role: 'CONTRIBUTOR', level: '2.5', rateLimit: '200/min',   ttl: '4 h',      perms: 'Idle compute contribution scope only (CONTRIBUTE_REQUEST/RESULT/CANCEL)' },
+  { role: 'GUEST',       level: '1',   rateLimit: '10/min',    ttl: '5 min',    perms: 'Status viewing, read-only telemetry, text chat' },
 ];
 
 const scopes = [
-  { scope: 'status',        minRole: 'GUEST',         grants: 'Read health, telemetry, sensor data', v21: false },
-  { scope: 'control',       minRole: 'OPERATOR',      grants: 'Issue commands, drive motors, run behaviors', v21: false },
-  { scope: 'contribute',    minRole: 'CONTRIBUTOR',   grants: 'Donate idle compute: CONTRIBUTE_REQUEST, CONTRIBUTE_RESULT, CONTRIBUTE_CANCEL', v21: false },
-  { scope: 'config',        minRole: 'ADMIN',         grants: 'Modify RCAN config, reload, OTA', v21: false },
-  { scope: 'training',      minRole: 'ADMIN',         grants: 'Submit episodes, trigger learner, export data', v21: false },
-  { scope: 'authority',     minRole: 'ADMIN',         grants: 'Respond to AUTHORITY_ACCESS (41) requests, FIRMWARE_ATTESTATION (43), SBOM_UPDATE (44)', v21: false },
-  { scope: 'admin',         minRole: 'CREATOR',       grants: 'Safety overrides, hardware resets, key rotation', v21: false },
-  { scope: 'fleet.trusted', minRole: 'M2M_TRUSTED',   grants: 'Cross-fleet COMMAND/INVOKE/CONFIG without per-robot CREATOR approval. RRF-issued tokens only. v2.1+', v21: true },
+  { scope: 'status',        minRole: 'GUEST',       grants: 'Read health, telemetry, sensor data' },
+  { scope: 'control',       minRole: 'OPERATOR',    grants: 'Issue commands, drive motors, run behaviors' },
+  { scope: 'contribute',    minRole: 'CONTRIBUTOR', grants: 'Donate idle compute: CONTRIBUTE_REQUEST, CONTRIBUTE_RESULT, CONTRIBUTE_CANCEL' },
+  { scope: 'config',        minRole: 'ADMIN',       grants: 'Modify RCAN config, reload, OTA' },
+  { scope: 'training',      minRole: 'ADMIN',       grants: 'Submit episodes, trigger learner, export data' },
+  { scope: 'authority',     minRole: 'ADMIN',       grants: 'Respond to AUTHORITY_ACCESS (41) requests, FIRMWARE_ATTESTATION (43), SBOM_UPDATE (44)' },
+  { scope: 'admin',         minRole: 'CREATOR',     grants: 'Safety overrides, hardware resets, key rotation' },
+  { scope: 'fleet.trusted', minRole: 'M2M_TRUSTED', grants: 'Cross-fleet COMMAND/INVOKE/CONFIG without per-robot CREATOR approval. RRF-issued tokens only.' },
 ];
 
 const gatewayRoles = [
@@ -38,7 +38,7 @@ POST /api/m2m/authorize
 # 3. The receiving robot validates the M2M token against its ADMIN's public key
 # 4. P66 safety invariant: M2M ESTOP is ALWAYS honored regardless of M2M role level`;
 
-const m2mTrustedNote = `# M2M_TRUSTED authorization flow (v2.1)
+const m2mTrustedNote = `# M2M_TRUSTED authorization flow
 # 1. CREATOR registers an orchestration system with RRF, supplying its public key
 POST https://api.rrf.rcan.dev/v2/orchestrators/register
 { "rrn": "RRN-000000000001", "orchestrator_key": "<ed25519-pubkey>", "justification": "Fleet brain" }
@@ -68,13 +68,10 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
       Status: Stable
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      RCAN v2.0
+      RCAN v2.1
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
-      §2.8 M2M roles added in v2.0
-    </span>
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
-      §2.9 M2M_TRUSTED planned v2.1
+      §2.8 M2M_PEER · §2.9 M2M_TRUSTED
     </span>
     <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       ← Back to Specification
@@ -98,7 +95,7 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
 
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> RCAN v2.0 defines a six-level role hierarchy (CONTRIBUTOR at 2.5, M2M_PEER at 4). v2.1 adds M2M_TRUSTED (level 6) for RRF-issued fleet orchestration tokens. Higher roles inherit all permissions of lower roles. Roles are embedded in JWT tokens and enforced at the protocol layer before any command reaches the driver.
+      <strong class="text-cyan-400">Overview:</strong> RCAN v2.1 defines a seven-level role hierarchy: GUEST (1), OPERATOR (2), CONTRIBUTOR (2.5), ADMIN (3), M2M_PEER (4), CREATOR (5), and M2M_TRUSTED (6). Higher roles inherit all permissions of lower roles. Roles are embedded in JWT tokens and enforced at the protocol layer before any command reaches the driver.
     </p>
   </div>
 
@@ -139,11 +136,8 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
         </thead>
         <tbody>
           {roles.map(r => (
-            <tr class={`border-b border-border/50 ${r.v21 ? 'opacity-70' : ''}`}>
-              <td class="py-3 pr-4 font-mono font-bold text-accent text-xs">
-                {r.role}
-                {r.v21 && <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">v2.1</span>}
-              </td>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono font-bold text-accent text-xs">{r.role}</td>
               <td class="py-3 pr-4 text-text">{r.level}</td>
               <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.rateLimit}</td>
               <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.ttl}</td>
@@ -178,11 +172,8 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
         </thead>
         <tbody>
           {scopes.map(s => (
-            <tr class={`border-b border-border/50 ${s.v21 ? 'opacity-70' : ''}`}>
-              <td class="py-3 pr-4 font-mono text-accent text-xs">
-                {s.scope}
-                {s.v21 && <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">v2.1</span>}
-              </td>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{s.scope}</td>
               <td class="py-3 pr-4 font-mono text-xs text-text-muted">{s.minRole}</td>
               <td class="py-3 text-text-muted text-xs">{s.grants}</td>
             </tr>
@@ -464,13 +455,7 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
   <hr />
 
   <section id="m2m-trusted">
-    <h2>2.9 M2M_TRUSTED Fleet Orchestration <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20 ml-2 align-middle">v2.1</span></h2>
-
-    <div class="not-prose bg-orange-500/5 border border-orange-500/20 rounded-xl p-6 mb-6">
-      <p class="text-sm text-orange-300/80">
-        <strong class="text-orange-400">Planned for RCAN v2.1.</strong> M2M_TRUSTED is specified here for implementors planning ahead. It MUST NOT be shipped in v2.0 implementations. The level 6 assignment is reserved; receivers MUST reject any token carrying <code>rcan_role: "m2m_trusted"</code> until they declare v2.1 conformance.
-      </p>
-    </div>
+    <h2>2.9 M2M_TRUSTED Fleet Orchestration <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.1</span></h2>
 
     <p>
       <strong>M2M_TRUSTED (level 6)</strong> is a fleet-scope machine identity that sits above CREATOR (5) in the

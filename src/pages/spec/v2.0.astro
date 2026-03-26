@@ -48,13 +48,13 @@ const conformance = [
 ];
 ---
 
-<DocsLayout title="RCAN v2.0 Snapshot" description="RCAN v2.0 specification snapshot. Documents all breaking changes, new features, role restructuring, new message types (41–44), and the L5 Supply Chain conformance level.">
+<DocsLayout title="RCAN v2.0 Snapshot (Superseded)" description="RCAN v2.0 snapshot — superseded. All v2.0 features shipped in the v2.1 release together with M2M_TRUSTED. See /spec/v2.1/ for the canonical release.">
   <div class="flex items-center gap-4 mb-4">
-    <h1 class="mb-0">RCAN v2.0 Snapshot</h1>
+    <h1 class="mb-0">RCAN v2.0 Snapshot <span class="text-text-muted font-normal text-2xl">(Superseded)</span></h1>
   </div>
   <div class="flex gap-2 mb-8 flex-wrap">
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-      Status: Upcoming — Target Q1 2027
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">
+      Status: Superseded by v2.1
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
       Breaking Changes
@@ -67,9 +67,14 @@ const conformance = [
     </a>
   </div>
 
+  <div class="not-prose bg-gray-500/5 border border-gray-500/20 rounded-xl p-6 mb-8">
+    <p class="text-sm text-gray-300/80">
+      <strong class="text-gray-400">Historical reference only.</strong> The v2.0 feature set was merged with M2M_TRUSTED and shipped as a single <strong>RCAN v2.1</strong> release. This page documents the original v2.0 planning scope. For the canonical release, see <a href="/spec/v2.1/" class="text-accent hover:underline">RCAN v2.1 Snapshot</a>.
+    </p>
+  </div>
   <div class="not-prose bg-red-500/5 border border-red-500/20 rounded-xl p-6 mb-8">
     <p class="text-sm text-red-300/80">
-      <strong class="text-red-400">No backward compatibility.</strong> v2.0 is a clean break. There is no version negotiation, no downgrade path, and no support for v1.x envelope fields in v2.0 receivers. Upgrade all robots simultaneously or run separate fleets.
+      <strong class="text-red-400">No backward compatibility.</strong> v2.1 is a clean break from v1.x. There is no version negotiation, no downgrade path, and no support for v1.x envelope fields in v2.1 receivers. Upgrade all robots simultaneously or run separate fleets.
     </p>
   </div>
 
@@ -195,10 +200,10 @@ const conformance = [
   <section id="compat">
     <h2>SDK Compatibility</h2>
     <ul>
-      <li><strong>rcan-py</strong> ≥ 1.0.0 (SPEC_VERSION 2.0.0)</li>
-      <li><strong>rcan-ts</strong> ≥ 1.0.0 (SPEC_VERSION 2.0.0)</li>
+      <li><strong>rcan-py</strong> ≥ 1.1.0 (SPEC_VERSION 2.1.0) — shipped as v2.1, not v2.0</li>
+      <li><strong>rcan-ts</strong> ≥ 1.1.0 (SPEC_VERSION 2.1.0) — shipped as v2.1, not v2.0</li>
       <li><strong>OpenCastor</strong> ≥ 2027.1.x</li>
-      <li>Minimum compatible fleet: all robots must run v2.0 SDKs — no mixed v1.x/v2.0 fleets</li>
+      <li>Minimum compatible fleet: all robots must run v2.1 SDKs — no mixed v1.x/v2.1 fleets</li>
     </ul>
   </section>
 
