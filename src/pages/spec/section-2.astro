@@ -3,26 +3,38 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 import CodeWindow from '../../components/CodeWindow.astro';
 
 const roles = [
-  { role: 'CREATOR', level: 5, rateLimit: 'Unlimited', ttl: 'None',  perms: 'Full hardware/software control, OTA push, safety override' },
-  { role: 'OWNER',   level: 4, rateLimit: '1000/min',  ttl: '8 h',   perms: 'Configuration, skill installation, user management' },
-  { role: 'LEASEE',  level: 3, rateLimit: '500/min',   ttl: '2 h',   perms: 'Time-bound operational control, cannot change ownership' },
-  { role: 'USER',    level: 2, rateLimit: '100/min',   ttl: '1 h',   perms: 'Operational control within allowed modes' },
-  { role: 'GUEST',   level: 1, rateLimit: '10/min',    ttl: '5 min', perms: 'Status viewing, read-only telemetry, text chat' },
+  { role: 'CREATOR',     level: '5',   rateLimit: 'Unlimited', ttl: 'None',  perms: 'Full hardware/software control, OTA push, safety override' },
+  { role: 'M2M_PEER',    level: '4',   rateLimit: 'Unlimited', ttl: 'None',  perms: 'Robot-to-robot: authorized by ADMIN, can issue COMMAND/INVOKE to fleet peers' },
+  { role: 'ADMIN',       level: '3',   rateLimit: '1000/min',  ttl: '8 h',   perms: 'Configuration, skill installation, user management, M2M_PEER authorization' },
+  { role: 'OPERATOR',    level: '2',   rateLimit: '100/min',   ttl: '2 h',   perms: 'Operational control within allowed modes' },
+  { role: 'CONTRIBUTOR', level: '2.5', rateLimit: '200/min',   ttl: '4 h',   perms: 'Idle compute contribution scope only (CONTRIBUTE_REQUEST/RESULT/CANCEL)' },
+  { role: 'GUEST',       level: '1',   rateLimit: '10/min',    ttl: '5 min', perms: 'Status viewing, read-only telemetry, text chat' },
 ];
 
 const scopes = [
-  { scope: 'status',   minRole: 'GUEST',   grants: 'Read health, telemetry, sensor data' },
-  { scope: 'control',  minRole: 'USER',    grants: 'Issue commands, drive motors, run behaviors' },
-  { scope: 'config',   minRole: 'OWNER',   grants: 'Modify RCAN config, reload, OTA' },
-  { scope: 'training', minRole: 'OWNER',   grants: 'Submit episodes, trigger learner, export data' },
-  { scope: 'admin',    minRole: 'CREATOR', grants: 'Safety overrides, hardware resets, key rotation' },
+  { scope: 'status',      minRole: 'GUEST',       grants: 'Read health, telemetry, sensor data' },
+  { scope: 'control',     minRole: 'OPERATOR',    grants: 'Issue commands, drive motors, run behaviors' },
+  { scope: 'contribute',  minRole: 'CONTRIBUTOR', grants: 'Donate idle compute: CONTRIBUTE_REQUEST, CONTRIBUTE_RESULT, CONTRIBUTE_CANCEL' },
+  { scope: 'config',      minRole: 'ADMIN',       grants: 'Modify RCAN config, reload, OTA' },
+  { scope: 'training',    minRole: 'ADMIN',       grants: 'Submit episodes, trigger learner, export data' },
+  { scope: 'authority',   minRole: 'ADMIN',       grants: 'Respond to AUTHORITY_ACCESS (41) requests, FIRMWARE_ATTESTATION (43), SBOM_UPDATE (44)' },
+  { scope: 'admin',       minRole: 'CREATOR',     grants: 'Safety overrides, hardware resets, key rotation' },
 ];
 
 const gatewayRoles = [
-  { gw: 'admin',    rcan: 'OWNER (4)',  scopes: 'status, control, config, training' },
-  { gw: 'operator', rcan: 'LEASEE (3)', scopes: 'status, control' },
-  { gw: 'viewer',   rcan: 'GUEST (1)',  scopes: 'status' },
+  { gw: 'admin',    rcan: 'ADMIN (3)',    scopes: 'status, control, config, training' },
+  { gw: 'operator', rcan: 'OPERATOR (2)', scopes: 'status, control' },
+  { gw: 'viewer',   rcan: 'GUEST (1)',    scopes: 'status' },
 ];
+
+const m2mNote = `# M2M_PEER authorization flow
+# 1. An ADMIN issues an M2M authorization token for a specific peer robot
+POST /api/m2m/authorize
+{ "peer_rrn": "RRN-000000000005", "scopes": ["control", "status"], "expires_at": 1800 }
+
+# 2. The peer robot carries this token in its JWT auth_token field
+# 3. The receiving robot validates the M2M token against its ADMIN's public key
+# 4. P66 safety invariant: M2M ESTOP is ALWAYS honored regardless of M2M role level`;
 ---
 
 <DocsLayout title="§2 Role-Based Access Control" description="RCAN §2 — Role-Based Access Control. Defines the five-level role hierarchy, fine-grained scopes, and gateway role mapping.">
@@ -34,10 +46,10 @@ const gatewayRoles = [
       Status: Stable
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      RCAN v1.3
+      RCAN v2.0
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
-      §2.6–2.7 added in v1.6.2
+      §2.8 M2M roles added in v2.0
     </span>
     <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       ← Back to Specification
@@ -54,14 +66,13 @@ const gatewayRoles = [
       <li><a href="#conformance"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.5</span> Conformance Requirements</a></li>
       <li><a href="#channel-scope"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.6</span> Channel-Layer Scope Assignment <span class="ml-1 text-purple-400 text-xs">v1.6.2</span></a></li>
       <li><a href="#multihop-scope"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.7</span> Multi-Hop Scope Propagation <span class="ml-1 text-purple-400 text-xs">v1.6.2</span></a></li>
+      <li><a href="#m2m-roles"            class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.8</span> M2M Authorization Roles <span class="ml-1 text-accent text-xs">v2.0</span></a></li>
     </ol>
   </div>
 
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> RCAN defines a five-level role hierarchy. Higher roles inherit
-      all permissions of lower roles. Roles are embedded in JWT tokens and enforced at the protocol layer
-      before any command reaches the driver.
+      <strong class="text-cyan-400">Overview:</strong> RCAN v2.0 defines a six-level role hierarchy (plus the CONTRIBUTOR fractional level at 2.5 and the M2M_PEER machine level at 4). Higher roles inherit all permissions of lower roles. Roles are embedded in JWT tokens and enforced at the protocol layer before any command reaches the driver.
     </p>
   </div>
 
@@ -75,9 +86,13 @@ const gatewayRoles = [
       before any message is dispatched.
     </p>
     <p>
-      Role inheritance is strict: a principal with role OWNER also has all permissions of LEASEE, USER,
-      and GUEST. Roles are not additive across tokens; the highest role in the current session's token applies.
+      Role inheritance is strict: a principal with role ADMIN also has all permissions of OPERATOR and GUEST. Roles are not additive across tokens; the highest role in the current session's token applies.
     </p>
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-yellow-300/80">
+        <strong class="text-yellow-400">v2.0 breaking change:</strong> The v1.x roles OWNER and LEASEE are removed. OWNER maps to ADMIN (3); LEASEE maps to OPERATOR (2). Update all JWT token issuers accordingly.
+      </p>
+    </div>
   </section>
 
   <hr />
@@ -183,9 +198,10 @@ const gatewayRoles = [
     <ul>
       <li>Implementations MUST enforce role-based rate limiting per source RURI.</li>
       <li>Session TTLs MUST be enforced. Expired sessions MUST be rejected with an <code>ERROR</code> response.</li>
-      <li><code>AUTHORIZE</code> messages MUST be issued by principals with OWNER (level 4) or CREATOR (level 5) role.
-          Any attempt from a lower role MUST be audited and rejected. See §16.3.</li>
+      <li>Config changes (scope: <code>config</code>) MUST be issued by principals with ADMIN (level 3) or CREATOR (level 5) role. Any attempt from a lower role MUST be audited and rejected. See §16.3.</li>
       <li>Messages with <code>Priority.SAFETY</code> MUST skip rate-limiting queues (§6).</li>
+      <li>M2M_PEER tokens MUST be issued by an ADMIN or CREATOR principal. Self-issued M2M tokens MUST be rejected.</li>
+      <li>ESTOP messages from M2M_PEER principals MUST be honored — safety invariants apply to all role levels (§6).</li>
     </ul>
   </section>
 
@@ -376,6 +392,39 @@ const gatewayRoles = [
       <p class="text-sm text-yellow-300/80">
         Actions not in the allowlist for the current scope SHALL be vetoed by the safety/guardian layer.
         See §6 Safety Invariants for enforcement layer responsibilities.
+      </p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="m2m-roles">
+    <h2>2.8 M2M Authorization Roles <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.0</span></h2>
+    <p>
+      v2.0 introduces <strong>M2M_PEER</strong> (level 4) for machine-to-machine authorization.
+      M2M_PEER allows one robot to issue <code>COMMAND</code> and <code>INVOKE</code> messages to fleet peers
+      without a human principal in the loop — enabling autonomous multi-robot coordination.
+    </p>
+
+    <h3 id="m2m-flow">2.8.1 Authorization Flow</h3>
+    <p>M2M tokens are issued by a human ADMIN or CREATOR and scoped to a specific peer RRN:</p>
+    <CodeWindow filename="M2M authorization" lang="bash" code={m2mNote} />
+
+    <h3 id="m2m-jwt">2.8.2 JWT Claims for M2M</h3>
+    <p>M2M tokens carry a <code>rcan_role: "m2m_peer"</code> claim alongside the authorized scopes:</p>
+    <pre><code>&#123;
+  "sub":       "RRN-000000000005",
+  "rcan_role": "m2m_peer",
+  "rcan_scopes": ["control", "status"],
+  "peer_rrn":  "RRN-000000000001",
+  "exp":       1800,
+  "iss":       "RRN-000000000001-admin"
+&#125;</code></pre>
+
+    <h3 id="m2m-safety">2.8.3 M2M Safety Invariants</h3>
+    <div class="not-prose bg-red-500/5 border border-red-500/20 rounded-lg p-4">
+      <p class="text-sm text-red-300/80">
+        <strong class="text-red-400">Safety invariant:</strong> <code>Priority.SAFETY</code> (ESTOP) messages from M2M_PEER principals MUST be honored immediately. M2M role level does NOT gate safety messages. An M2M robot can always stop its peer — it cannot always command it.
       </p>
     </div>
   </section>

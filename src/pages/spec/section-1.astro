@@ -12,7 +12,25 @@ rcan://acme.bot-x1.a1b2c3d4        # → rcan://local.rcan/acme/bot-x1/a1b2c3d4
 rcan://opencastor.rover.abc123/nav  # → rcan://local.rcan/opencastor/rover/abc123/nav
 
 # Special addresses
-rcan://local.rcan/discovered/192.168.1.42:8080  # mDNS-discovered device`;
+rcan://local.rcan/discovered/192.168.1.42:8080  # mDNS-discovered device
+
+# ── v2.0: Signed RURI (required at L2+) ──────────────────────
+# ?sig=<base64url> carries a detached Ed25519 signature over the RURI path
+rcan://registry.rcan.dev/manufacturer/model/version/device-id?sig=<base64url>
+
+# The signature covers the path only (not the query string):
+# sign( "registry.rcan.dev/manufacturer/model/version/device-id" )`;
+
+const ruriSignedNote = `# Signing a RURI (pseudocode)
+path  = uri.split("?")[0].replace("rcan://", "")
+sig   = ed25519_sign(private_key, path.encode("utf-8"))
+signed_ruri = uri + "?sig=" + base64url_encode(sig)
+
+# Verifying
+path  = ruri.split("?")[0].replace("rcan://", "")
+sig   = base64url_decode(ruri.query_params["sig"])
+valid = ed25519_verify(manufacturer_public_key, path.encode("utf-8"), sig)
+# On failure: emit FAULT_REPORT { fault_code: "RURI_SIGNATURE_INVALID" }`;
 
 const ruriRegex = `# Canonical RURI
 ^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\d{1,5}))?(/[a-z][a-z0-9/-]*)?$
@@ -39,7 +57,7 @@ const components = [
       Status: Stable
     </span>
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-      RCAN v1.3
+      RCAN v2.0
     </span>
     <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
       ← Back to Specification
@@ -54,6 +72,7 @@ const components = [
       <li><a href="#components"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.3</span> Components</a></li>
       <li><a href="#validation"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.4</span> Validation Patterns</a></li>
       <li><a href="#wildcards"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.5</span> Wildcard Matching</a></li>
+      <li><a href="#signed-ruri" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.6</span> Signed RURI <span class="ml-1 text-accent text-xs">v2.0</span></a></li>
     </ol>
   </div>
 
@@ -168,6 +187,45 @@ const components = [
         to validate the <code>aud</code> claim of JWT tokens. See also §2 for fleet-scoped tokens.
       </p>
     </div>
+  </section>
+
+  <hr />
+
+  <section id="signed-ruri">
+    <h2>1.6 Signed RURI <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.0</span></h2>
+    <p>
+      v2.0 introduces a signed RURI format required at <strong>L2 conformance and above</strong>.
+      The <code>?sig=</code> query parameter carries a detached Ed25519 signature over the RURI path,
+      enabling offline identity verification without a registry roundtrip.
+    </p>
+
+    <h3 id="signed-ruri-format">1.6.1 Format</h3>
+    <pre><code>rcan://registry.rcan.dev/manufacturer/model/version/device-id?sig=&lt;base64url&gt;</code></pre>
+    <p>
+      The signature is computed over the <strong>path only</strong> — not the query string.
+      This ensures the signature remains stable even if additional query parameters are added in future versions.
+    </p>
+
+    <div class="not-prose">
+      <CodeWindow filename="signed-ruri.pseudo" lang="bash" code={ruriSignedNote} />
+    </div>
+
+    <h3 id="signed-ruri-key-reg">1.6.2 Key Registration</h3>
+    <p>
+      The Ed25519 public key used to sign RURIs MUST be registered in the Robot Registry Foundation (RRF)
+      against the manufacturer namespace. Receivers verify the signature using the manufacturer's registered key.
+    </p>
+    <ul>
+      <li>L1 conformance: unsigned RURI is permitted</li>
+      <li>L2+ conformance: signed RURI is REQUIRED. Unsigned RURIs MUST be rejected at L2+.</li>
+      <li>Invalid signature: MUST emit <code>FAULT_REPORT (26)</code> with <code>fault_code: "RURI_SIGNATURE_INVALID"</code></li>
+    </ul>
+
+    <h3 id="signed-ruri-firmware">1.6.3 Relationship to firmware_hash</h3>
+    <p>
+      The signed RURI establishes <em>who</em> is sending; the <code>firmware_hash</code> envelope field (§3, field 13) establishes <em>what software</em> they are running.
+      Together they form the v2.0 sender identity proof: verified origin + verified build.
+    </p>
   </section>
 
   <hr />

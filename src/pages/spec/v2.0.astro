@@ -1,0 +1,220 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const breaking = [
+  { text: 'Message envelope: firmware_hash (field 13) and attestation_ref (field 14) are now REQUIRED in all messages. Receivers MUST reject messages missing firmware_hash.' },
+  { text: 'delegation_chain (field 15) is now REQUIRED for COMMAND and INVOKE (was optional in v1.x).' },
+  { text: 'Signed RURI required at L2+. Unsigned RURIs are rejected at L2+ conformance level. Invalid sig → FAULT_REPORT RURI_SIGNATURE_INVALID.' },
+  { text: 'Role names: OWNER (4) and LEASEE (3) removed. OWNER → ADMIN (3). LEASEE → OPERATOR (2). Update all JWT token issuers.' },
+  { text: 'rcan-ts aliases removed: FEDERATION_SYNC (was 23), ALERT (was 26), AUDIT (was 16). Use FLEET_COMMAND, FAULT_REPORT, TRANSPARENCY.' },
+  { text: 'signature:"pending" removed. Any message with signature field set to the literal string "pending" MUST be rejected.' },
+  { text: 'No backward compatibility. v2.0 is a clean break. There is no version negotiation or downgrade path.' },
+];
+
+const features = [
+  { text: 'Signed firmware manifests: every v2.0 robot publishes rcan-firmware-manifest.json at a well-known endpoint. Signed by manufacturer key in RRF.' },
+  { text: 'Supply chain attestation (SBOM): CycloneDX v1.5+ format with RCAN extensions at /.well-known/rcan-sbom.json. RRF countersigns submitted SBOMs.' },
+  { text: 'M2M_PEER role (level 4): robot-to-robot authorization. Issued by ADMIN; enables COMMAND/INVOKE without a human in the loop.' },
+  { text: 'CONTRIBUTOR role (level 2.5): formalized from the contribute scope constant. Now a proper role level in JWT tokens.' },
+  { text: 'Four new message types: AUTHORITY_ACCESS (41), AUTHORITY_RESPONSE (42), FIRMWARE_ATTESTATION (43), SBOM_UPDATE (44).' },
+  { text: 'L5 Supply Chain conformance level: L4 + firmware manifest verification, SBOM publication, AUTHORITY_ACCESS handler, EU AI Act Art. 16 compliance.' },
+  { text: 'EU AI Act Article 16 compliance: authority access protocol, audit data export, 10-year log retention requirement.' },
+  { text: 'ISO/TC 299 normative references: §6 ESTOP ↔ ISO 13482, §2 RBAC ↔ ISO 10218-2, §16 audit ↔ ISO/IEC 42001, §9 Ed25519 ↔ ISO/IEC 27001.' },
+];
+
+const roleTable = [
+  { level: '1',   name: 'GUEST',       rateLimit: '10/min',   ttl: '5 min', change: 'No change' },
+  { level: '2',   name: 'OPERATOR',    rateLimit: '100/min',  ttl: '2 h',   change: 'Replaces USER + LEASEE' },
+  { level: '2.5', name: 'CONTRIBUTOR', rateLimit: '200/min',  ttl: '4 h',   change: 'Formalized from scope constant' },
+  { level: '3',   name: 'ADMIN',       rateLimit: '1000/min', ttl: '8 h',   change: 'Replaces OWNER' },
+  { level: '4',   name: 'M2M_PEER',    rateLimit: 'Unlimited',ttl: 'None',  change: 'NEW in v2.0' },
+  { level: '5',   name: 'CREATOR',     rateLimit: 'Unlimited',ttl: 'None',  change: 'No change' },
+];
+
+const typeTable = [
+  { value: 41, name: 'AUTHORITY_ACCESS',     direction: 'authority → robot',   desc: 'Regulator requests audit data per EU AI Act Art. 16(j)' },
+  { value: 42, name: 'AUTHORITY_RESPONSE',   direction: 'robot → authority',   desc: 'Robot provides requested audit data' },
+  { value: 43, name: 'FIRMWARE_ATTESTATION', direction: 'robot → RRF',         desc: 'Robot publishes signed firmware manifest to registry' },
+  { value: 44, name: 'SBOM_UPDATE',          direction: 'robot → RRF',         desc: 'Robot publishes updated CycloneDX SBOM' },
+];
+
+const conformance = [
+  { level: 'L1', label: 'Core',         req: 'DISCOVER, STATUS, COMMAND, RURI addressing, JWT auth' },
+  { level: 'L2', label: 'Secure',       req: 'L1 + HiTL gates, Ed25519 signing, AuditChain, firmware_hash, signed RURI' },
+  { level: 'L3', label: 'Federated',    req: 'L2 + commitment chain, cross-registry discovery' },
+  { level: 'L4', label: 'Registry',     req: 'L3 + REGISTRY_REGISTER/RESOLVE roundtrip, RRN validation' },
+  { level: 'L5', label: 'Supply Chain', req: 'L4 + firmware manifest verification, SBOM publication, AUTHORITY_ACCESS handler, EU AI Act Art. 16' },
+];
+---
+
+<DocsLayout title="RCAN v2.0 Snapshot" description="RCAN v2.0 specification snapshot. Documents all breaking changes, new features, role restructuring, new message types (41–44), and the L5 Supply Chain conformance level.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">RCAN v2.0 Snapshot</h1>
+  </div>
+  <div class="flex gap-2 mb-8 flex-wrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+      Status: Upcoming — Target Q1 2027
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+      Breaking Changes
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      rcan-py ≥1.0.0 · rcan-ts ≥1.0.0 · OpenCastor ≥2027.1.x
+    </span>
+    <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← Full Specification
+    </a>
+  </div>
+
+  <div class="not-prose bg-red-500/5 border border-red-500/20 rounded-xl p-6 mb-8">
+    <p class="text-sm text-red-300/80">
+      <strong class="text-red-400">No backward compatibility.</strong> v2.0 is a clean break. There is no version negotiation, no downgrade path, and no support for v1.x envelope fields in v2.0 receivers. Upgrade all robots simultaneously or run separate fleets.
+    </p>
+  </div>
+
+  <div class="not-prose bg-bg-alt border border-white/5 rounded-xl p-6 mb-12">
+    <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Table of Contents</h3>
+    <ol class="grid md:grid-cols-2 gap-2 text-sm">
+      <li><a href="#breaking"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1</span> Breaking Changes</a></li>
+      <li><a href="#features"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2</span> New Features</a></li>
+      <li><a href="#roles"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">3</span> Role Table</a></li>
+      <li><a href="#types"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">4</span> New Message Types</a></li>
+      <li><a href="#conformance"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5</span> Conformance Levels</a></li>
+      <li><a href="#compat"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6</span> SDK Compatibility</a></li>
+    </ol>
+  </div>
+
+  <hr />
+
+  <section id="breaking">
+    <h2>Breaking Changes</h2>
+    <ul>
+      {breaking.map(b => <li>{b.text}</li>)}
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="features">
+    <h2>New Features</h2>
+    <ul>
+      {features.map(f => <li>{f.text}</li>)}
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="roles">
+    <h2>Role Table (v2.0)</h2>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Level</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Name</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Rate Limit</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Session TTL</th>
+            <th class="text-left py-3 text-text-muted font-medium">Change from v1.x</th>
+          </tr>
+        </thead>
+        <tbody>
+          {roleTable.map(r => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-text text-xs">{r.level}</td>
+              <td class={`py-3 pr-4 font-mono font-bold text-xs ${r.change === 'NEW in v2.0' ? 'text-accent' : 'text-text'}`}>{r.name}</td>
+              <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.rateLimit}</td>
+              <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.ttl}</td>
+              <td class={`py-3 text-xs ${r.change.includes('NEW') ? 'text-accent' : r.change.includes('Replaces') ? 'text-yellow-400' : 'text-text-muted'}`}>{r.change}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="types">
+    <h2>New Message Types (41–44)</h2>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Value</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Name</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Direction</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {typeTable.map(t => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{t.value}</td>
+              <td class="py-3 pr-4 font-mono font-bold text-text text-xs">{t.name}</td>
+              <td class="py-3 pr-4 text-text-muted text-xs">{t.direction}</td>
+              <td class="py-3 text-text-muted text-xs">{t.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="conformance">
+    <h2>Conformance Levels (L1–L5)</h2>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Level</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Label</th>
+            <th class="text-left py-3 text-text-muted font-medium">Key Requirements</th>
+          </tr>
+        </thead>
+        <tbody>
+          {conformance.map((c, i) => (
+            <tr class={`border-b border-border/50 ${i === 4 ? 'text-accent' : ''}`}>
+              <td class={`py-3 pr-4 font-mono font-bold text-xs ${i === 4 ? 'text-accent' : 'text-text'}`}>{c.level}</td>
+              <td class={`py-3 pr-4 font-bold text-xs ${i === 4 ? 'text-accent' : 'text-text'}`}>{c.label}</td>
+              <td class={`py-3 text-xs ${i === 4 ? 'text-accent/80' : 'text-text-muted'}`}>{c.req}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="compat">
+    <h2>SDK Compatibility</h2>
+    <ul>
+      <li><strong>rcan-py</strong> ≥ 1.0.0 (SPEC_VERSION 2.0.0)</li>
+      <li><strong>rcan-ts</strong> ≥ 1.0.0 (SPEC_VERSION 2.0.0)</li>
+      <li><strong>OpenCastor</strong> ≥ 2027.1.x</li>
+      <li>Minimum compatible fleet: all robots must run v2.0 SDKs — no mixed v1.x/v2.0 fleets</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <div class="not-prose mt-12 flex flex-wrap gap-4">
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/firmware/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      Firmware Manifests →
+    </a>
+    <a href="/spec/sbom/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      Supply Chain Attestation →
+    </a>
+    <a href="/spec/authority/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      Authority Access →
+    </a>
+    <a href="/spec/v1.8/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← v1.8 Snapshot
+    </a>
+  </div>
+</DocsLayout>
