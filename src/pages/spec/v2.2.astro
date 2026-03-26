@@ -1,0 +1,230 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const notices = [
+  { text: 'RCAN v2.2 introduces hybrid PQ signing: ML-DSA-65 (NIST FIPS 204) alongside Ed25519. Old robots verify Ed25519 only; new robots verify both.' },
+  { text: 'Q-Day revised to 2029 (Google, March 2026). All signature stacks SHOULD migrate to hybrid mode before 2027.' },
+  { text: 'dilithium-py (Python) and @noble/post-quantum (TypeScript) are the reference implementations. Both are pure-software, no native deps.' },
+  { text: 'v2.2 is backward-compatible with v2.1: pq_sig field is additive. v2.1 receivers ignore pq_sig; v2.2 receivers check both.' },
+];
+
+const conformanceLevels = [
+  { level: 'L0', label: 'Unsafe',      req: 'No authentication, no signing.' },
+  { level: 'L1', label: 'Baseline',    req: 'Ed25519 message signing (§9). HiTL gates.' },
+  { level: 'L2', label: 'Secure',      req: 'L1 + Ed25519 hybrid with ML-DSA-65 pq_sig (§7.2). Firmware hash.' },
+  { level: 'L3', label: 'Auditable',   req: 'L2 + AuditChain + signed RURI.' },
+  { level: 'L4', label: 'Federated',   req: 'L3 + M2M_PEER, RBAC, delegation chain.' },
+  { level: 'L5', label: 'Compliant',   req: 'L4 + M2M_TRUSTED, RRF registration, SBOM (RRF-countersigned), firmware manifest, authority handler, audit retention ≥10yr, EU AI Act §12/§16.' },
+];
+
+const pqTimeline = [
+  { period: '2026–2028', phase: 'Hybrid',           desc: 'Messages carry both Ed25519 (sig) and ML-DSA-65 (pq_sig). New robots generate ML-DSA-65 key at boot. Verifiers check both when available.' },
+  { period: '2028',      phase: 'ML-DSA Primary',   desc: 'ML-DSA-65 is the default signing algorithm. Ed25519 accepted for verification only (no new keys generated). RCAN v3.0 alpha.' },
+  { period: '2029',      phase: 'Ed25519 Sunset',   desc: 'Ed25519 signing removed. All robots MUST use ML-DSA-65. castor migrate --crypto rotates keys. NIST IR 8547 compliance deadline.' },
+];
+
+const newFields = [
+  { field: 'pq_sig',   type: 'object | null',  desc: 'ML-DSA-65 signature block (FIPS 204). Keys: alg ("ml-dsa-65"), kid (8-char hex), sig (base64url). Absent on pre-v2.2 messages.' },
+  { field: 'pq_alg',   type: 'string',         desc: 'Deprecated synonym for pq_sig.alg — use pq_sig.alg directly.' },
+];
+---
+
+<DocsLayout title="RCAN v2.2 Snapshot" description="RCAN v2.2 specification snapshot. PQ hybrid signing: ML-DSA-65 (FIPS 204) + Ed25519. Q-Day protection for robot boot sequences and firmware attestation.">
+
+  <h1 class="mb-0">RCAN v2.2 Specification Snapshot</h1>
+  <p class="text-muted mt-1 mb-6">Post-Quantum Hybrid Signing — ML-DSA-65 (NIST FIPS 204) + Ed25519</p>
+
+  <!-- Notices -->
+  <div class="space-y-2 mb-8">
+    {notices.map(n => (
+      <div class="bg-yellow-500/10 border border-yellow-500/30 rounded px-4 py-2 text-sm">
+        ⚠️ {n.text}
+      </div>
+    ))}
+  </div>
+
+  <!-- What's New -->
+  <h2 id="whats-new">What's New in v2.2</h2>
+  <p>
+    v2.2 is a single-focus release: post-quantum hybrid signing. All other protocol semantics
+    are identical to v2.1. The only breaking change is that v2.2 implementations MUST generate
+    an ML-DSA-65 key at boot and attach <code>pq_sig</code> to all signed messages.
+  </p>
+
+  <ul>
+    <li><strong>ML-DSA-65 key generation at boot</strong> — <code>castor/rcan/message_signing.py</code> generates <code>pq_signing.key</code> alongside <code>signing_key.pem</code></li>
+    <li><strong><code>pq_sig</code> envelope field</strong> (field 16) — ML-DSA-65 signature block added to all signed messages</li>
+    <li><strong>Hybrid firmware attestation</strong> — <code>castor attest sign</code> adds ML-DSA-65 signature to firmware manifests</li>
+    <li><strong>RRF JWT ML-DSA flag</strong> — M2M_TRUSTED tokens carry <code>pq_alg: "ml-dsa-65"</code> when issuer supports PQ</li>
+    <li><strong>rcan-py 1.2.0</strong> — <code>MLDSAKeyPair</code>, hybrid <code>sign_message()</code>, <code>verify_message(pq_trusted_keys=...)</code></li>
+    <li><strong>rcan-ts 1.2.0</strong> — <code>MLDSAKeyPair</code>, <code>addPQSignature()</code>, <code>verifyPQSignature()</code></li>
+  </ul>
+
+  <!-- Conformance Levels -->
+  <h2 id="conformance">Conformance Levels (v2.2)</h2>
+  <table class="w-full text-sm border-collapse mt-4 mb-8">
+    <thead>
+      <tr class="bg-surface-2">
+        <th class="text-left p-2 border border-border">Level</th>
+        <th class="text-left p-2 border border-border">Label</th>
+        <th class="text-left p-2 border border-border">Requirements</th>
+      </tr>
+    </thead>
+    <tbody>
+      {conformanceLevels.map(r => (
+        <tr>
+          <td class="p-2 border border-border font-mono font-bold">{r.level}</td>
+          <td class="p-2 border border-border">{r.label}</td>
+          <td class="p-2 border border-border text-muted">{r.req}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <!-- §7.2 Message Signing (PQ hybrid) -->
+  <h2 id="section-7-2">§7.2 Message Signing — Hybrid Mode</h2>
+  <p>
+    RCAN v2.2 introduces a <strong>hybrid signing period</strong>. All signed messages SHOULD carry
+    two independent signatures:
+  </p>
+  <ul>
+    <li><code>signature</code> — Ed25519 (backward-compatible with v2.1 receivers)</li>
+    <li><code>pq_sig</code> — ML-DSA-65 (NIST FIPS 204, quantum-resistant)</li>
+  </ul>
+
+  <h3>Wire Format</h3>
+  <pre class="bg-surface-2 rounded p-4 text-xs overflow-x-auto"><code>{`{
+  "rcan": "2.2.0",
+  "cmd": "move_forward",
+  "target": "rcan://rrf.rcan.dev/acme/arm/v2/unit-001",
+  "params": { "distance_m": 1.0 },
+  "timestamp": "2026-03-26T00:00:00Z",
+
+  // Ed25519 — backward-compat with v2.1
+  "signature": {
+    "alg": "ed25519",
+    "kid": "b08ef96b",
+    "sig": "<base64url Ed25519 sig>"
+  },
+
+  // ML-DSA-65 — v2.2 PQ hybrid (FIPS 204)
+  "pq_sig": {
+    "alg": "ml-dsa-65",
+    "kid": "817cd3ff",
+    "sig": "<base64url ML-DSA-65 sig, ~4412 chars>"
+  }
+}`}</code></pre>
+
+  <h3>New Envelope Fields</h3>
+  <table class="w-full text-sm border-collapse mt-4 mb-8">
+    <thead>
+      <tr class="bg-surface-2">
+        <th class="text-left p-2 border border-border">Field</th>
+        <th class="text-left p-2 border border-border">Type</th>
+        <th class="text-left p-2 border border-border">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {newFields.map(f => (
+        <tr>
+          <td class="p-2 border border-border font-mono">{f.field}</td>
+          <td class="p-2 border border-border font-mono text-xs">{f.type}</td>
+          <td class="p-2 border border-border text-muted">{f.desc}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <!-- §7.4 PQ Transition Timeline -->
+  <h2 id="section-7-4">§7.4 Post-Quantum Transition Timeline</h2>
+  <p>
+    Google revised Q-Day (a cryptographically-relevant quantum computer capable of breaking RSA/ECC)
+    to <strong>2029</strong> (March 2026). NIST finalized three PQ standards in August 2024:
+    <a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf">FIPS 204 (ML-DSA)</a>,
+    <a href="https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.205.pdf">FIPS 205 (SLH-DSA)</a>,
+    and <a href="https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.203.pdf">FIPS 203 (ML-KEM)</a>.
+    NIST IR 8547 mandates removal of quantum-vulnerable algorithms from U.S. government systems by 2035;
+    practical deadline for robot firmware attestation signatures is 2029 (store-now-decrypt-later risk).
+  </p>
+
+  <table class="w-full text-sm border-collapse mt-4 mb-8">
+    <thead>
+      <tr class="bg-surface-2">
+        <th class="text-left p-2 border border-border">Period</th>
+        <th class="text-left p-2 border border-border">Phase</th>
+        <th class="text-left p-2 border border-border">Requirements</th>
+      </tr>
+    </thead>
+    <tbody>
+      {pqTimeline.map(r => (
+        <tr>
+          <td class="p-2 border border-border font-mono font-bold">{r.period}</td>
+          <td class="p-2 border border-border">{r.phase}</td>
+          <td class="p-2 border border-border text-muted">{r.desc}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h3>Why ML-DSA-65 (not SLH-DSA)?</h3>
+  <ul>
+    <li><strong>ML-DSA-65</strong> (CRYSTALS-Dilithium, NIST security level 3): lattice-based, fast (~1ms sign/verify), 1952-byte public key. Primary choice for all RCAN signing.</li>
+    <li><strong>SLH-DSA</strong> (SPHINCS+): hash-based, no lattice assumptions, conservative backup for very long-lived keys (&gt;10yr). Larger signatures (~7–50KB). RCAN MAY support in v3.0.</li>
+    <li><strong>ML-KEM</strong> (Kyber): key encapsulation only — no RCAN use case yet (no ECDH in the wire protocol).</li>
+  </ul>
+
+  <!-- SDK -->
+  <h2 id="sdk">SDK Quick-Start</h2>
+
+  <h3>Python (rcan-py 1.2.0)</h3>
+  <pre class="bg-surface-2 rounded p-4 text-xs overflow-x-auto"><code>{`pip install "rcan[pq]"   # includes dilithium-py
+
+from rcan.signing import KeyPair, MLDSAKeyPair, sign_message, verify_message
+from rcan import RCANMessage, RobotURI
+
+# Generate key pairs once (at boot)
+ed_kp  = KeyPair.generate();   ed_kp.save_private("~/.rcan/operator.pem")
+pq_kp  = MLDSAKeyPair.generate(); pq_kp.save("~/.rcan/operator_pq.key")
+
+# Hybrid sign (v2.2)
+msg    = RCANMessage(cmd="move_forward", target=uri, params={"distance_m": 1.0})
+signed = sign_message(msg, ed_kp, pq_keypair=pq_kp)
+# → signed.signature  = { alg: "ed25519",   kid: "...", value: "..." }
+# → signed.pq_sig     = { alg: "ml-dsa-65", kid: "...", value: "..." }
+
+# Hybrid verify
+pub_ed = KeyPair.from_public_pem(ed_pub_pem)
+pub_pq = MLDSAKeyPair.from_public_bytes(pq_pub_bytes)
+verify_message(signed, [pub_ed], pq_trusted_keys=[pub_pq])   # raises on failure
+verify_message(signed, [pub_ed], require_pq=True)             # enforce PQ presence`}</code></pre>
+
+  <h3>TypeScript (rcan-ts 1.2.0)</h3>
+  <pre class="bg-surface-2 rounded p-4 text-xs overflow-x-auto"><code>{`npm install rcan @noble/post-quantum
+
+import { RCANMessage } from "rcan";
+import { MLDSAKeyPair, addPQSignature, verifyPQSignature } from "rcan";
+
+// Generate key pair once
+const pqKp = await MLDSAKeyPair.generate();
+
+// Sign (call existing Ed25519 path first, then add ML-DSA)
+const msg    = new RCANMessage({ cmd: "move_forward", target: uri, params: {} });
+const signed = await addPQSignature(msg, pqKp);
+// signed.pqSig = { alg: "ml-dsa-65", kid: "...", sig: "..." }
+
+// Verify
+const pubPq = await MLDSAKeyPair.fromPublicKey(pqPubBytes);
+await verifyPQSignature(signed, [pubPq]);           // throws on failure
+await verifyPQSignature(signed, [pubPq], true);     // requirePQ = true`}</code></pre>
+
+  <!-- References -->
+  <h2 id="references">References</h2>
+  <ul>
+    <li><a href="https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf">NIST FIPS 204 — ML-DSA (CRYSTALS-Dilithium)</a></li>
+    <li><a href="https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.205.pdf">NIST FIPS 205 — SLH-DSA (SPHINCS+)</a></li>
+    <li><a href="https://csrc.nist.gov/pubs/ir/8547/ipd">NIST IR 8547 — Transitioning to PQ Cryptography (deprecation timeline)</a></li>
+    <li><a href="https://blog.google/innovation-and-ai/technology/safety-security/cryptography-migration-timeline/">Google Q-Day 2029 announcement (March 2026)</a></li>
+    <li><a href="https://csrc.nist.gov/projects/post-quantum-cryptography">NIST PQC Project</a></li>
+  </ul>
+
+</DocsLayout>
