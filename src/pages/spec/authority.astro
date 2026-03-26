@@ -47,6 +47,30 @@ const euMapping = [
   { art: 'Art. 16(j)', req: 'Authority cooperation', rcan: 'AUTHORITY_ACCESS (41) + AUTHORITY_RESPONSE (42) provide structured audit data access' },
   { art: 'Art. 61',    req: 'Post-market monitoring', rcan: 'Continuous SBOM + firmware attestation feed post-market monitoring evidence' },
 ];
+
+const isoMapping = [
+  { standard: 'ISO 13482:2014',    tc: 'ISO/TC 299',       provision: '§6 Safety invariants',     mapping: 'RCAN ESTOP (type 7) → ISO 13482 protective stop. ESTOP MUST always be honored regardless of role level (§2).' },
+  { standard: 'ISO 10218-2:2011',  tc: 'ISO/TC 299',       provision: '§2 RBAC',                  mapping: 'RCAN role levels (GUEST–M2M_TRUSTED) satisfy ISO 10218-2 access control requirements for collaborative robots.' },
+  { standard: 'ISO/IEC 42001:2023',tc: 'ISO/IEC JTC 1/SC 42', provision: '§16 Transparency',     mapping: 'RCAN audit chain + TRANSPARENCY records (type 16) satisfy ISO/IEC 42001 AI management system evidence requirements.' },
+  { standard: 'ISO 13482:2014',    tc: 'ISO/TC 299',       provision: '§7 ConfidenceGate',        mapping: 'RCAN confidence thresholds (ABORT_THRESHOLD, CONFIRM_THRESHOLD) align with ISO 13482 risk-based decision gates.' },
+  { standard: 'ISO/IEC 27001:2022',tc: 'ISO/IEC JTC 1/SC 27', provision: '§9 Signing',           mapping: 'RCAN Ed25519 signing satisfies ISO/IEC 27001 Annex A cryptographic controls. Signed RURI required at L2+ (§2.1).' },
+  { standard: 'ISO/IEC 27001:2022',tc: 'ISO/IEC JTC 1/SC 27', provision: '§11 Firmware',         mapping: 'Signed firmware manifests (§11) satisfy ISO/IEC 27001 software integrity controls.' },
+];
+
+const discoverIsoConformance = `// DISCOVER (type 9) — optional iso_conformance block (v2.1)
+// Present when the robot can demonstrate ISO standard compliance
+{
+  "type":    9,
+  "payload": {
+    "capabilities": ["status", "control", "navigate", "contribute"],
+    "ruri":         "rcan://rrf.rcan.dev/opencastor/rpi5-hailo/bob-001?sig=...",
+    "iso_conformance": {
+      "iso_13482":  true,   // Personal care robot safety (ISO/TC 299)
+      "iso_10218_2": false, // Industrial robot safety (ISO/TC 299)
+      "iso_42001":  true    // AI management system (ISO/IEC JTC 1/SC 42)
+    }
+  }
+}`;
 ---
 
 <DocsLayout title="Authority Access — RCAN v2.1 (EU AI Act)" description="RCAN v2.1 authority access protocol. Defines how regulators request audit data from robots under EU AI Act Article 16(j) using AUTHORITY_ACCESS (41) and AUTHORITY_RESPONSE (42) message types.">
@@ -80,7 +104,9 @@ const euMapping = [
       <li><a href="#type-42"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">4</span> AUTHORITY_RESPONSE (42)</a></li>
       <li><a href="#flow"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">5</span> Request Flow</a></li>
       <li><a href="#rate-limits" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">6</span> Rate Limits &amp; Security</a></li>
-      <li><a href="#conformance" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7</span> Conformance Requirements</a></li>
+      <li><a href="#conformance"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">7</span> Conformance Requirements</a></li>
+      <li><a href="#iso-mapping"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8</span> ISO/TC 299 Normative References</a></li>
+      <li><a href="#iso-discover"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">9</span> DISCOVER iso_conformance Block</a></li>
     </ol>
   </div>
 
@@ -215,6 +241,81 @@ const euMapping = [
       <li><strong>L5 (required):</strong> All authority interactions MUST be logged to the commitment chain.</li>
       <li><strong>All levels:</strong> Unrecognized authority requests MUST be rejected with a logged error.</li>
     </ul>
+  </section>
+
+  <hr />
+
+  <section id="iso-mapping">
+    <h2>ISO/TC 299 Normative References</h2>
+    <p>
+      RCAN v2.1 provisions are normatively aligned with the following ISO standards. Implementations
+      claiming RCAN v2.1 conformance at L3+ satisfy the RCAN-level requirements; full ISO certification
+      requires independent audit against the cited standard.
+    </p>
+    <div class="not-prose overflow-x-auto mt-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Standard</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Committee</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">RCAN Provision</th>
+            <th class="text-left py-3 text-text-muted font-medium">Mapping</th>
+          </tr>
+        </thead>
+        <tbody>
+          {isoMapping.map(r => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs whitespace-nowrap">{r.standard}</td>
+              <td class="py-3 pr-4 text-text-muted text-xs whitespace-nowrap">{r.tc}</td>
+              <td class="py-3 pr-4 text-text-muted text-xs whitespace-nowrap">{r.provision}</td>
+              <td class="py-3 text-text-muted text-xs">{r.mapping}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm text-cyan-300/80">
+        <strong class="text-cyan-400">ISO/TC 299 scope:</strong> ISO/TC 299 (Robotics) is the primary standards
+        body for robot safety. ISO 13482 covers personal care robots; ISO 10218-2 covers industrial robot
+        integration. RCAN v2.1's ESTOP, confidence gate, and RBAC provisions are designed to be directly
+        traceable to these requirements.
+      </p>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="iso-discover">
+    <h2>DISCOVER <code>iso_conformance</code> Block</h2>
+    <p>
+      Robots MAY include an <code>iso_conformance</code> object in their <code>DISCOVER (9)</code> response
+      payload to self-report which ISO standards they conform to. This block is informational only — it does
+      not replace formal certification and MUST NOT be used as a substitute for independent audit.
+    </p>
+    <CodeWindow filename="discover-iso-conformance.json" lang="json" code={discoverIsoConformance} />
+
+    <h3 class="mt-6">iso_conformance Fields</h3>
+    <div class="not-prose overflow-x-auto mt-2">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Field</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Type</th>
+            <th class="text-left py-3 text-text-muted font-medium">Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-accent text-xs">iso_13482</td><td class="py-2 pr-4 text-xs text-text-muted">bool</td><td class="py-2 text-xs text-text-muted">ISO 13482:2014 — Personal care robot safety (ISO/TC 299). true if ESTOP, confidence gate, and risk assessment provisions are implemented.</td></tr>
+          <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-accent text-xs">iso_10218_2</td><td class="py-2 pr-4 text-xs text-text-muted">bool</td><td class="py-2 text-xs text-text-muted">ISO 10218-2:2011 — Industrial robot safety and integration (ISO/TC 299). true for industrial/collaborative robot applications.</td></tr>
+          <tr class="border-b border-border/50"><td class="py-2 pr-4 font-mono text-accent text-xs">iso_42001</td><td class="py-2 pr-4 text-xs text-text-muted">bool</td><td class="py-2 text-xs text-text-muted">ISO/IEC 42001:2023 — AI management system (ISO/IEC JTC 1/SC 42). true if audit chain, transparency records, and SBOM are implemented.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-4 text-sm text-text-muted">
+      Additional ISO standard fields MAY be added using reverse-domain notation keys (e.g. <code>iso.tc299.13482_ext: true</code>).
+      Unknown keys MUST be ignored by receivers.
+    </p>
   </section>
 
   <hr />

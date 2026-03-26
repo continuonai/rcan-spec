@@ -121,7 +121,7 @@ const payloadTypes = [
   { type: 'AUTH (7)',             scope: 'none',        fields: 'jwt_token, challenge, response — §5' },
   { type: 'ERROR (8)',            scope: '—',           fields: 'code, message, ref_id' },
   // Discovery & auth (9–10)
-  { type: 'DISCOVER (9)',         scope: 'none',        fields: 'capabilities[], ruri — §4' },
+  { type: 'DISCOVER (9)',         scope: 'none',        fields: 'capabilities[], ruri, iso_conformance{} (optional, v2.1) — §4' },
   { type: 'PENDING_AUTH (10)',    scope: 'none',        fields: 'pending_id, action_type, description, timeout_remaining_ms' },
   // Skill invocation (11–13)
   { type: 'INVOKE (11)',          scope: 'control',     fields: 'skill_id (str), params (obj), timeout_ms (int) — §19.2' },
