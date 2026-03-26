@@ -14,7 +14,7 @@ rcan://opencastor.rover.abc123/nav  # → rcan://local.rcan/opencastor/rover/abc
 # Special addresses
 rcan://local.rcan/discovered/192.168.1.42:8080  # mDNS-discovered device
 
-# ── v2.0: Signed RURI (required at L2+) ──────────────────────
+# ── v2.1: Signed RURI (required at L2+) ──────────────────────
 # ?sig=<base64url> carries a detached Ed25519 signature over the RURI path
 rcan://registry.rcan.dev/manufacturer/model/version/device-id?sig=<base64url>
 
@@ -72,7 +72,7 @@ const components = [
       <li><a href="#components"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.3</span> Components</a></li>
       <li><a href="#validation"  class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.4</span> Validation Patterns</a></li>
       <li><a href="#wildcards"   class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.5</span> Wildcard Matching</a></li>
-      <li><a href="#signed-ruri" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.6</span> Signed RURI <span class="ml-1 text-accent text-xs">v2.0</span></a></li>
+      <li><a href="#signed-ruri" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">1.6</span> Signed RURI <span class="ml-1 text-accent text-xs">v2.1</span></a></li>
     </ol>
   </div>
 
@@ -192,7 +192,7 @@ const components = [
   <hr />
 
   <section id="signed-ruri">
-    <h2>1.6 Signed RURI <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.0</span></h2>
+    <h2>1.6 Signed RURI <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.1</span></h2>
     <p>
       v2.1 introduces a signed RURI format required at <strong>L2 conformance and above</strong>.
       The <code>?sig=</code> query parameter carries a detached Ed25519 signature over the RURI path,

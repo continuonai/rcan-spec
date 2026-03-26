@@ -7,7 +7,7 @@ const changes = [
   { type: 'feat', text: 'REGISTRY_REGISTER (14) and REGISTRY_RESOLVE (15) — dedicated message types for robot registry operations (§21).' },
   { type: 'feat', text: 'SENSOR_DATA (29) — raw sensor payload message type for telemetry and contribute data collection.' },
   { type: 'feat', text: 'TRAINING_DATA (36) — multi-modal training data payload, moved from 34 (collision with CONTRIBUTE_RESULT) and 10 (legacy rcan-ts).' },
-  { type: 'feat', text: 'Deprecated aliases in rcan-ts: FEDERATION_SYNC → FLEET_COMMAND (23), ALERT → FAULT_REPORT (26), AUDIT → TRANSPARENCY (16). Will be removed in v2.0.' },
+  { type: 'feat', text: 'Deprecated aliases in rcan-ts: FEDERATION_SYNC → FLEET_COMMAND (23), ALERT → FAULT_REPORT (26), AUDIT → TRANSPARENCY (16). Will be removed in v2.1.' },
   { type: 'feat', text: '§3 Message Format rewritten with complete payload field reference for all 36 message types, scope requirements, and cross-references to relevant sections.' },
   { type: 'security', text: 'Cross-SDK compatibility tests verify all MessageType values match between rcan-py and rcan-ts at CI time.' },
   { type: 'chore', text: 'Compatibility: rcan-py ≥0.7.0, rcan-ts ≥0.7.0, OpenCastor ≥2026.3.20' },
@@ -119,7 +119,7 @@ const typeStyle: Record<string, string> = {
     </table>
 
     <h3 class="mt-8">Deprecated Aliases (rcan-ts only)</h3>
-    <p class="text-sm text-muted">These aliases exist for backward compatibility and will be removed in v2.0:</p>
+    <p class="text-sm text-muted">These aliases exist for backward compatibility and will be removed in v2.1:</p>
     <ul class="text-sm mt-2 space-y-1">
       <li><code>FEDERATION_SYNC</code> &rarr; use <code>FLEET_COMMAND</code> (23)</li>
       <li><code>ALERT</code> &rarr; use <code>FAULT_REPORT</code> (26)</li>

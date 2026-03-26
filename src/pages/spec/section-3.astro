@@ -16,9 +16,9 @@ const protobufCode = `message RCANMessage {
   string reply_to       = 11;  // RURI to reply to (optional)
   repeated string scope = 12;  // Required scopes for this message
 
-  // ── v2.0 required fields ─────────────────────────────────
-  string firmware_hash   = 13;  // SHA-256 of sender's firmware manifest (REQUIRED v2.0)
-  string attestation_ref = 14;  // URI to sender's /.well-known/rcan-sbom.json (REQUIRED v2.0)
+  // ── v2.1 required fields ─────────────────────────────────
+  string firmware_hash   = 13;  // SHA-256 of sender's firmware manifest (REQUIRED v2.1)
+  string attestation_ref = 14;  // URI to sender's /.well-known/rcan-sbom.json (REQUIRED v2.1)
   string delegation_chain = 15; // Serialized delegation chain (REQUIRED for COMMAND + INVOKE in v2.1)
 
   // ═══════════════════════════════════════════════════════════

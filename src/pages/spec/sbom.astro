@@ -56,7 +56,7 @@ const sbomUpdateMsg = `{
 }`;
 ---
 
-<DocsLayout title="Supply Chain Attestation (SBOM) — RCAN v2.0" description="RCAN v2.0 supply chain attestation specification. Defines the CycloneDX SBOM format with RCAN extensions, the well-known endpoint, RRF countersigning, and SBOM_UPDATE (44) message type.">
+<DocsLayout title="Supply Chain Attestation (SBOM) — RCAN v2.1" description="RCAN v2.1 supply chain attestation specification. Defines the CycloneDX SBOM format with RCAN extensions, the well-known endpoint, RRF countersigning, and SBOM_UPDATE (44) message type.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">Supply Chain Attestation (SBOM)</h1>
   </div>
@@ -89,9 +89,9 @@ const sbomUpdateMsg = `{
 
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> Every RCAN v2.0 robot MUST publish a Software Bill of Materials (SBOM)
+      <strong class="text-cyan-400">Overview:</strong> Every RCAN v2.1 robot MUST publish a Software Bill of Materials (SBOM)
       at a well-known endpoint following CycloneDX v1.5+ format with RCAN-specific extensions. The
-      <code>attestation_ref</code> field in every v2.0 message envelope (§3, field 14) points to this endpoint,
+      <code>attestation_ref</code> field in every v2.1 message envelope (§3, field 14) points to this endpoint,
       enabling any message recipient to verify the sender's full software supply chain.
     </p>
   </div>

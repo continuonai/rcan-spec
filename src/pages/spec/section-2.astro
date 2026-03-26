@@ -88,7 +88,7 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
       <li><a href="#conformance"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.5</span> Conformance Requirements</a></li>
       <li><a href="#channel-scope"        class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.6</span> Channel-Layer Scope Assignment <span class="ml-1 text-purple-400 text-xs">v1.6.2</span></a></li>
       <li><a href="#multihop-scope"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.7</span> Multi-Hop Scope Propagation <span class="ml-1 text-purple-400 text-xs">v1.6.2</span></a></li>
-      <li><a href="#m2m-roles"            class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.8</span> M2M Authorization Roles <span class="ml-1 text-accent text-xs">v2.0</span></a></li>
+      <li><a href="#m2m-roles"            class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.8</span> M2M Authorization Roles <span class="ml-1 text-accent text-xs">v2.1</span></a></li>
       <li><a href="#m2m-trusted"          class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">2.9</span> M2M_TRUSTED Fleet Orchestration <span class="ml-1 text-orange-400 text-xs">v2.1</span></a></li>
     </ol>
   </div>
@@ -113,7 +113,7 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
     </p>
     <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
       <p class="text-sm text-yellow-300/80">
-        <strong class="text-yellow-400">v2.0 breaking change:</strong> The v1.x roles OWNER and LEASEE are removed. OWNER maps to ADMIN (3); LEASEE maps to OPERATOR (2). Update all JWT token issuers accordingly.
+        <strong class="text-yellow-400">v2.1 breaking change:</strong> The v1.x roles OWNER and LEASEE are removed. OWNER maps to ADMIN (3); LEASEE maps to OPERATOR (2). Update all JWT token issuers accordingly.
       </p>
     </div>
   </section>
@@ -422,9 +422,9 @@ GET https://api.rrf.rcan.dev/v2/orchestrators/RRN-000000000001/token
   <hr />
 
   <section id="m2m-roles">
-    <h2>2.8 M2M Authorization Roles <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.0</span></h2>
+    <h2>2.8 M2M Authorization Roles <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.1</span></h2>
     <p>
-      v2.0 introduces <strong>M2M_PEER</strong> (level 4) for machine-to-machine authorization.
+      v2.1 introduces M2M_PEER</strong> (level 4) for machine-to-machine authorization.
       M2M_PEER allows one robot to issue <code>COMMAND</code> and <code>INVOKE</code> messages to fleet peers
       without a human principal in the loop — enabling autonomous multi-robot coordination.
     </p>

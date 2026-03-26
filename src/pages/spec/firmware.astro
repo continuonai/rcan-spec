@@ -44,7 +44,7 @@ if not valid:
     halt_new_connections()`;
 ---
 
-<DocsLayout title="Firmware Manifests — RCAN v2.0" description="RCAN v2.0 firmware manifest specification. Every RCAN v2.0 robot publishes a signed firmware manifest at a well-known endpoint. Defines the schema, signing requirements, and FIRMWARE_ATTESTATION (43) message type.">
+<DocsLayout title="Firmware Manifests — RCAN v2.1" description="RCAN v2.1 firmware manifest specification. Every RCAN v2.1 robot publishes a signed firmware manifest at a well-known endpoint. Defines the schema, signing requirements, and FIRMWARE_ATTESTATION (43) message type.">
   <div class="flex items-center gap-4 mb-4">
     <h1 class="mb-0">Firmware Manifests</h1>
   </div>
@@ -78,10 +78,10 @@ if not valid:
 
   <div class="not-prose bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-6 mb-10">
     <p class="text-sm text-cyan-300/80">
-      <strong class="text-cyan-400">Overview:</strong> Every RCAN v2.0 robot MUST publish a signed firmware manifest
+      <strong class="text-cyan-400">Overview:</strong> Every RCAN v2.1 robot MUST publish a signed firmware manifest
       at a well-known endpoint. The manifest proves what software is running on the robot and is signed by
       the manufacturer's key registered in the Robot Registry Foundation (RRF). The <code>firmware_hash</code>
-      field in every v2.0 message envelope (§3, field 13) references this manifest.
+      field in every v2.1 message envelope (§3, field 13) references this manifest.
     </p>
   </div>
 
@@ -89,7 +89,7 @@ if not valid:
 
   <section id="well-known">
     <h2>Well-Known Endpoint</h2>
-    <p>Every RCAN v2.0 robot MUST serve its firmware manifest at:</p>
+    <p>Every RCAN v2.1 robot MUST serve its firmware manifest at:</p>
     <pre><code>GET {'{'}ruri{'}'}/.well-known/rcan-firmware-manifest.json</code></pre>
     <p>
       The endpoint MUST return <code>Content-Type: application/json</code>.
@@ -141,7 +141,7 @@ if not valid:
 
   <section id="verification">
     <h2>Verification Flow</h2>
-    <p>On first connection and after any firmware update, a v2.0 L2+ receiver MUST verify the peer's manifest:</p>
+    <p>On first connection and after any firmware update, a v2.1 L2+ receiver MUST verify the peer's manifest:</p>
     <CodeWindow filename="verify-manifest.pseudo" lang="python" code={verifyPseudo} />
     <div class="not-prose bg-red-500/5 border border-red-500/20 rounded-lg p-4 mt-4">
       <p class="text-sm text-red-300/80">
