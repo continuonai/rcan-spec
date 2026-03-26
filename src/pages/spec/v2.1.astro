@@ -1,0 +1,144 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const features = [
+  { text: 'M2M_TRUSTED (level 6): RRF-issued fleet orchestration tokens. Enables cross-fleet COMMAND/INVOKE/CONFIG without per-robot CREATOR approval. Multi-owner consent required.' },
+  { text: 'fleet.trusted scope: new scope gated to M2M_TRUSTED only. Required for any message issued by an orchestration system.' },
+  { text: 'RRF orchestrator registry: new RRF API endpoint for registering orchestration systems, managing consent, and issuing/revoking M2M_TRUSTED tokens.' },
+  { text: 'Revocation polling protocol: receivers with active M2M_TRUSTED sessions MUST poll the RRF revocation list at ≤ 60 s intervals.' },
+  { text: 'Multi-owner consent: CONSENT_GRANT (21) / CONSENT_DENY (22) messages to RRF for fleet enrollment.' },
+];
+
+const constraints = [
+  { text: 'M2M_TRUSTED tokens are issued by RRF only — no self-issuance, no CREATOR-issuance.' },
+  { text: 'M2M_TRUSTED tokens expire in ≤ 24 h and MUST be re-issued with RRF re-validation.' },
+  { text: 'fleet_rrns MUST be an explicit list — no wildcard fleet access.' },
+  { text: 'M2M_TRUSTED MUST NOT issue further tokens to other principals.' },
+  { text: 'ESTOP (Priority.SAFETY) is ALWAYS honored regardless of role level — level 6 does not bypass safety.' },
+  { text: 'Any CREATOR can revoke consent at any time; revocation takes effect within one poll interval (≤ 60 s).' },
+  { text: 'v2.0 receivers MUST reject rcan_role: "m2m_trusted" tokens until they declare v2.1 conformance.' },
+];
+---
+
+<DocsLayout title="RCAN v2.1 Snapshot (Planned)" description="RCAN v2.1 specification snapshot. Planned features including M2M_TRUSTED (level 6) for RRF-issued fleet orchestration and the fleet.trusted scope.">
+  <div class="flex items-center gap-4 mb-4">
+    <h1 class="mb-0">RCAN v2.1 Snapshot</h1>
+  </div>
+  <div class="flex gap-2 mb-8 flex-wrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+      Status: Planned — not yet ratified
+    </span>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+      Builds on RCAN v2.0
+    </span>
+    <a href="/spec/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← Back to Specification
+    </a>
+    <a href="/spec/v2.0/" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/5 text-text-muted border border-white/10 hover:border-white/20">
+      ← v2.0 Snapshot
+    </a>
+  </div>
+
+  <div class="not-prose bg-orange-500/5 border border-orange-500/20 rounded-xl p-6 mb-10">
+    <p class="text-sm text-orange-300/80">
+      <strong class="text-orange-400">Planned, not ratified.</strong> The features on this page are finalized at the design level and reserved in the protocol (level 6 is reserved, <code>rcan_role: "m2m_trusted"</code> MUST be rejected by v2.0 receivers), but MUST NOT be implemented until this snapshot is promoted to stable. This page is provided so implementors can plan ahead.
+    </p>
+  </div>
+
+  <hr />
+
+  <section id="features">
+    <h2>Planned Features</h2>
+    <ul>
+      {features.map(f => <li>{f.text}</li>)}
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="m2m-trusted-summary">
+    <h2>M2M_TRUSTED Summary</h2>
+    <p>
+      The single major addition in v2.1 is <strong>M2M_TRUSTED (level 6)</strong> — a fleet-scope machine identity
+      issued exclusively by the Robot Registry Foundation. It solves the multi-owner fleet orchestration problem:
+      today, a cloud management plane commanding a fleet of robots owned by different CREATORs would need a
+      separate CREATOR-level token per owner. M2M_TRUSTED collapses this into a single RRF-issued token backed
+      by explicit per-owner consent.
+    </p>
+    <p>
+      Level 6 sits above CREATOR (5) not because machines should have more authority than humans in general,
+      but because cross-fleet operations require cross-owner authority that no single CREATOR can delegate.
+      The RRF acts as the trust anchor and consent aggregator, and every CREATOR retains individual veto power
+      via consent revocation.
+    </p>
+
+    <h3>Role Table (v2.1)</h3>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Level</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Name</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Session TTL</th>
+            <th class="text-left py-3 text-text-muted font-medium">Issuer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-border/50 text-orange-400">
+            <td class="py-3 pr-4 font-mono font-bold text-xs">6</td>
+            <td class="py-3 pr-4 font-mono font-bold text-xs">M2M_TRUSTED <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-500/10 border border-orange-500/20">v2.1</span></td>
+            <td class="py-3 pr-4 font-mono text-xs">24 h max</td>
+            <td class="py-3 text-xs">RRF root key only</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-text text-xs">5</td>
+            <td class="py-3 pr-4 font-mono font-bold text-text text-xs">CREATOR</td>
+            <td class="py-3 pr-4 font-mono text-text-muted text-xs">None</td>
+            <td class="py-3 text-text-muted text-xs">Self / identity provider</td>
+          </tr>
+          <tr class="border-b border-border/50">
+            <td class="py-3 pr-4 font-mono text-text text-xs">4</td>
+            <td class="py-3 pr-4 font-mono font-bold text-text text-xs">M2M_PEER</td>
+            <td class="py-3 pr-4 font-mono text-text-muted text-xs">None</td>
+            <td class="py-3 text-text-muted text-xs">ADMIN or CREATOR</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="constraints">
+    <h2>Hard Constraints</h2>
+    <ul>
+      {constraints.map(c => <li>{c.text}</li>)}
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="sdk-compat">
+    <h2>SDK Compatibility</h2>
+    <ul>
+      <li><strong>rcan-py</strong> ≥ 1.1.0 (SPEC_VERSION 2.1.0) — adds <code>LevelOfAssurance.M2M_TRUSTED = 6</code>, <code>verify_m2m_trusted()</code></li>
+      <li><strong>rcan-ts</strong> ≥ 1.1.0 (SPEC_VERSION 2.1.0) — adds <code>Role.M2M_TRUSTED</code>, RRF verification helper</li>
+      <li><strong>OpenCastor</strong> ≥ 2027.2.x — adds M2M_TRUSTED handler, RRF revocation polling loop</li>
+      <li>v2.0 receivers MUST reject <code>rcan_role: "m2m_trusted"</code> tokens</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <div class="not-prose mt-12 flex flex-wrap gap-4">
+    <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+      ← Full Specification
+    </a>
+    <a href="/spec/v2.0/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      ← v2.0 Snapshot
+    </a>
+    <a href="/spec/section-2/" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+      §2 RBAC (§2.9 M2M_TRUSTED) →
+    </a>
+  </div>
+</DocsLayout>

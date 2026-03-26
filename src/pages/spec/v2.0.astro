@@ -23,12 +23,13 @@ const features = [
 ];
 
 const roleTable = [
-  { level: '1',   name: 'GUEST',       rateLimit: '10/min',   ttl: '5 min', change: 'No change' },
-  { level: '2',   name: 'OPERATOR',    rateLimit: '100/min',  ttl: '2 h',   change: 'Replaces USER + LEASEE' },
-  { level: '2.5', name: 'CONTRIBUTOR', rateLimit: '200/min',  ttl: '4 h',   change: 'Formalized from scope constant' },
-  { level: '3',   name: 'ADMIN',       rateLimit: '1000/min', ttl: '8 h',   change: 'Replaces OWNER' },
-  { level: '4',   name: 'M2M_PEER',    rateLimit: 'Unlimited',ttl: 'None',  change: 'NEW in v2.0' },
-  { level: '5',   name: 'CREATOR',     rateLimit: 'Unlimited',ttl: 'None',  change: 'No change' },
+  { level: '1',   name: 'GUEST',        rateLimit: '10/min',   ttl: '5 min', change: 'No change',                    v21: false },
+  { level: '2',   name: 'OPERATOR',     rateLimit: '100/min',  ttl: '2 h',   change: 'Replaces USER + LEASEE',       v21: false },
+  { level: '2.5', name: 'CONTRIBUTOR',  rateLimit: '200/min',  ttl: '4 h',   change: 'Formalized from scope constant',v21: false },
+  { level: '3',   name: 'ADMIN',        rateLimit: '1000/min', ttl: '8 h',   change: 'Replaces OWNER',               v21: false },
+  { level: '4',   name: 'M2M_PEER',     rateLimit: 'Unlimited',ttl: 'None',  change: 'NEW in v2.0',                  v21: false },
+  { level: '5',   name: 'CREATOR',      rateLimit: 'Unlimited',ttl: 'None',  change: 'No change',                    v21: false },
+  { level: '6',   name: 'M2M_TRUSTED',  rateLimit: 'Unlimited',ttl: '24 h',  change: 'NEW in v2.1 — RRF-issued only',v21: true  },
 ];
 
 const typeTable = [
@@ -119,12 +120,15 @@ const conformance = [
         </thead>
         <tbody>
           {roleTable.map(r => (
-            <tr class="border-b border-border/50">
+            <tr class={`border-b border-border/50 ${r.v21 ? 'opacity-70' : ''}`}>
               <td class="py-3 pr-4 font-mono text-text text-xs">{r.level}</td>
-              <td class={`py-3 pr-4 font-mono font-bold text-xs ${r.change === 'NEW in v2.0' ? 'text-accent' : 'text-text'}`}>{r.name}</td>
+              <td class={`py-3 pr-4 font-mono font-bold text-xs ${r.v21 ? 'text-orange-400' : r.change === 'NEW in v2.0' ? 'text-accent' : 'text-text'}`}>
+                {r.name}
+                {r.v21 && <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">v2.1</span>}
+              </td>
               <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.rateLimit}</td>
               <td class="py-3 pr-4 text-text-muted font-mono text-xs">{r.ttl}</td>
-              <td class={`py-3 text-xs ${r.change.includes('NEW') ? 'text-accent' : r.change.includes('Replaces') ? 'text-yellow-400' : 'text-text-muted'}`}>{r.change}</td>
+              <td class={`py-3 text-xs ${r.v21 ? 'text-orange-400' : r.change.includes('NEW') ? 'text-accent' : r.change.includes('Replaces') ? 'text-yellow-400' : 'text-text-muted'}`}>{r.change}</td>
             </tr>
           ))}
         </tbody>
