@@ -3,10 +3,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v1.10',
-    date: '2026-03-24',
+    version: 'v2.2.0',
+    date: '2026-03-27',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'breaking', text: 'Ed25519 fully removed — ML-DSA-65 (NIST FIPS 204) is the only signing algorithm' },
+      { type: 'breaking', text: 'pq_sig field removed from wire format — signature.alg = "ml-dsa-65" is the sole signing block' },
+      { type: 'feat', text: 'ML-DSA-65 primary signing: rcan-py v1.2.1, rcan-ts v1.2.1, OpenCastor v2026.3.27.1' },
+      { type: 'feat', text: 'Dual-brain architecture: VLA (reactive, Hailo-8 NPU) + Claude opus-4 (planning)' },
+      { type: 'feat', text: 'ISO 42001 + EU AI Act self-assessment: castor iso-check command' },
+      { type: 'feat', text: 'ISO conformance block in DISCOVER payload (iso_13482, iso_10218_2, iso_42001, eu_ai_act)' },
+      { type: 'feat', text: 'New gateway endpoints: /api/attest, /api/attest/verify, /api/sbom, /api/sbom/download, /api/conformance' },
+      { type: 'feat', text: 'castor conformance now shows RCAN v2.1/v2.2 L5 checks inline (100/100 on Bob)' },
+      { type: 'docs', text: 'docs/attest.astro + docs/sbom.astro: ML-DSA-65 attestation and SBOM guides' },
+      { type: 'chore', text: 'Q-Day timeline: ML-DSA primary 2026 (NOW), Ed25519 sunset 2027, NIST deadline 2029' },
+    ],
+  },
+  {
+    version: 'v2.1.0',
+    date: '2026-03-24',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
+    changes: [
+      { type: 'feat', text: 'PQ hybrid signing: ML-DSA-65 + Ed25519 dual signatures (pq_sig field)' },
+      { type: 'feat', text: 'ML-DSA-65 as primary with require_pq=True default' },
+      { type: 'feat', text: 'M2M_TRUSTED (level 6), firmware manifests, SBOM attestation, EU AI Act §12/§16' },
+    ],
+  },
+  {
+    version: 'v1.10',
+    date: '2026-03-24',
+    tag: 'Legacy',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'feat', text: 'COMPETITION_ENTER (37) — robot announces competition entry on fleet bus' },
       { type: 'feat', text: 'COMPETITION_SCORE (38) — robot publishes verified score submission' },

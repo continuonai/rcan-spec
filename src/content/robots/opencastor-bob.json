@@ -1,5 +1,5 @@
 {
-  "rrn": "RRN-00000001",
+  "rrn": "RRN-000000000001",
   "name": "OpenCastor Bob",
   "manufacturer": "ContinuonAI",
   "model": "opencastor-rpi5",
@@ -8,12 +8,32 @@
   "production_year": 2026,
   "specs": {
     "compute": "Raspberry Pi 5 16GB + Hailo-8",
-    "sensors": ["OAK-D RGB+Depth", "Hailo-8 NPU"],
+    "sensors": [
+      "OAK-D RGB+Depth",
+      "Hailo-8 NPU"
+    ],
     "ros_version": []
   },
   "verification_status": "community",
   "ruri": "rcan://rcan.dev/continuonai/opencastor-rpi5/bob",
-  "tags": ["rpi5", "hailo", "oak-d", "rcan-swarm-safe"],
+  "tags": [
+    "rpi5",
+    "hailo",
+    "oak-d",
+    "rcan-swarm-safe"
+  ],
   "submitted_by": "craigm26",
-  "submitted_date": "2026-03-06"
+  "submitted_date": "2026-03-27",
+  "rcan_version": "2.2",
+  "signing_alg": "ml-dsa-65",
+  "pq_signing_required": true,
+  "brain_reactive": "vla/openvla-7b",
+  "brain_planning": "anthropic/claude-opus-4-6",
+  "firmware_version": "2026.3.27.1",
+  "compliance_status": "compliant",
+  "compliance_score": 100,
+  "iso_conformance": {
+    "iso_42001": true,
+    "eu_ai_act": true
+  }
 }
