@@ -1,8 +1,8 @@
 # RCAN Specification
 
-RCAN v1.6 — the open protocol for secure robot-to-robot communication.
+RCAN v2.2 — the open protocol for secure robot-to-robot communication.
 
-[![Spec Version](https://img.shields.io/badge/spec-v1.6.0-blue)](https://rcan.dev/spec/)
+[![Spec Version](https://img.shields.io/badge/spec-v2.2.0-blue)](https://rcan.dev/spec/)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
 [![CI](https://github.com/continuonai/rcan-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/continuonai/rcan-spec/actions)
 
