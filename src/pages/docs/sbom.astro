@@ -1,0 +1,120 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const generateExample = `# Generate CycloneDX SBOM
+castor sbom generate --config ~/opencastor/bob.rcan.yaml
+
+# Output:
+# ✓ SBOM generated: /tmp/opencastor-rcan-sbom.json
+#   RRN:        RRN-000000000001
+#   Components: 512
+#   Serial:     urn:uuid:579cf9da-f6b4-4d90-b27c-cb7edabe03df
+#   attestation_ref: https://api.rrf.rcan.dev/v2/robots/RRN-000000000001/sbom`;
+
+const publishExample = `# Publish to RRF (requires robot JWT token)
+castor sbom publish --token $(cat ~/.config/opencastor/bob-rrf-token.txt)
+
+# Output:
+# ✓ SBOM published and countersigned by RRF
+#   rrf_countersig: LCcgjlfXIKjuWgVWD...`;
+
+const sbomSchema = `{
+  "bomFormat":    "CycloneDX",
+  "specVersion":  "1.5",
+  "serialNumber": "urn:uuid:579cf9da-f6b4-4d90-b27c-cb7edabe03df",
+  "version":      1,
+  "metadata": {
+    "timestamp": "2026-03-27T00:50:00Z",
+    "component": {
+      "type":    "device",
+      "name":    "opencastor-rpi5-bob",
+      "version": "2026.3.27.0"
+    }
+  },
+  "components": [
+    {
+      "type":    "library",
+      "name":    "opencastor",
+      "version": "2026.3.27.0",
+      "hashes":  [{ "alg": "SHA-256", "content": "a1b2c3..." }],
+      "purl":    "pkg:pypi/opencastor@2026.3.27.0"
+    },
+    {
+      "type":    "library",
+      "name":    "rcan",
+      "version": "1.2.1",
+      "hashes":  [{ "alg": "SHA-256", "content": "d4e5f6..." }],
+      "purl":    "pkg:pypi/rcan@1.2.1"
+    }
+  ],
+  "x-rcan": {
+    "rrn":            "RRN-000000000001",
+    "spec_version":   "2.2.0",
+    "attestation_ref": "https://api.rrf.rcan.dev/v2/robots/RRN-000000000001/sbom"
+  }
+}`;
+
+const verifyExample = `# Verify RRF countersignature
+castor sbom verify
+
+# Or fetch directly from RRF
+curl https://api.rrf.rcan.dev/v2/robots/RRN-000000000001/sbom`;
+---
+
+<DocsLayout
+  title="SBOM — RCAN v2.2 Supply Chain"
+  description="CycloneDX SBOM generation and RRF publishing for RCAN v2.2 robots."
+>
+  <h1>Software Bill of Materials (SBOM)</h1>
+  <p class="lead">
+    RCAN v2.2 requires all robots to publish a <strong>CycloneDX 1.5 SBOM</strong> to the
+    Robot Registry Foundation (RRF). The RRF countersigns the SBOM, creating a verifiable
+    supply chain record for every robot.
+  </p>
+
+  <div class="rcan-callout rcan-callout--info">
+    <strong>EU AI Act Art. 13 — Transparency</strong><br/>
+    The SBOM satisfies the transparency and traceability requirements for high-risk AI systems.
+    The RRF countersignature provides third-party verification.
+  </div>
+
+  <h2>1. Generate</h2>
+  <p>
+    <code>castor sbom generate</code> scans installed Python packages and builds a CycloneDX
+    SBOM with an <code>x-rcan</code> extension block containing your robot's RRN and spec version.
+  </p>
+  <CodeWindow lang="bash" code={generateExample} />
+
+  <h2>2. Publish to RRF</h2>
+  <p>
+    <code>castor sbom publish</code> pushes the SBOM to the RRF and receives a countersignature.
+    The RRF countersig is an Ed25519 signature from the RRF root key over the SBOM SHA-256 hash.
+  </p>
+  <CodeWindow lang="bash" code={publishExample} />
+
+  <h2>3. SBOM Schema</h2>
+  <CodeWindow lang="json" code={sbomSchema} />
+
+  <h2>4. Verify</h2>
+  <p>
+    Anyone can verify your SBOM by fetching it from the RRF API and checking the countersignature
+    against the published RRF root public key.
+  </p>
+  <CodeWindow lang="bash" code={verifyExample} />
+
+  <h2>5. Gateway Endpoint</h2>
+  <p>The OpenCastor gateway exposes SBOM data directly:</p>
+  <ul>
+    <li><code>GET /api/sbom</code> — metadata (serial, component count, attestation_ref)</li>
+    <li><code>GET /api/sbom/download</code> — full CycloneDX JSON</li>
+  </ul>
+
+  <h2>Reference</h2>
+  <ul>
+    <li><a href="/spec/v2.2#section-12">RCAN spec §12 — SBOM Attestation</a></li>
+    <li><a href="/docs/attest">Firmware Attestation Guide</a></li>
+    <li><a href="https://cyclonedx.org/specification/overview/">CycloneDX Specification</a></li>
+    <li><a href="https://robot-registry-foundation.pages.dev/">Robot Registry Foundation</a></li>
+  </ul>
+</DocsLayout>

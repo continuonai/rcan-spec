@@ -1,0 +1,113 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const keygenExample = `# Generate ML-DSA-65 key pair (FIPS 204)
+castor keygen --pq
+
+# Output:
+# ✓ ML-DSA-65 key generated (FIPS 204, RCAN v2.2)
+#   private: ~/.opencastor/pq_signing.key  (4032 bytes)
+#   public:  ~/.opencastor/pq_signing.pub  (1952 bytes)
+#   key_id:  7c21bf58`;
+
+const attestExample = `# 1. Generate firmware manifest
+castor attest generate --config ~/opencastor/bob.rcan.yaml
+
+# 2. Sign with ML-DSA-65
+castor attest sign
+
+# 3. Verify
+castor attest verify
+
+# Output:
+# ✓ Firmware manifest signature (ML-DSA-65): VALID
+#   RRN:      RRN-000000000001
+#   Version:  2026.3.26.1
+#   Signed:   2026-03-27T00:49:05Z`;
+
+const manifestSchema = `{
+  "rrn":              "RRN-000000000001",
+  "firmware_version": "2026.3.26.1",
+  "build_hash":       "sha256:f072093b...",
+  "signed_at":        "2026-03-27T00:49:05Z",
+  "pq_alg":           "ml-dsa-65",
+  "signature":        "6fMv7aDw0f3HPqrbit3VC5...",
+  "components": [
+    { "name": "opencastor", "version": "2026.3.27.0", "hash": "sha256:..." },
+    { "name": "rcan",       "version": "1.2.1",       "hash": "sha256:..." }
+  ]
+}`;
+
+const apiExample = `# Gateway endpoints (RCAN v2.2)
+GET  /api/attest          → manifest metadata + signature prefix
+POST /api/attest/verify   → live ML-DSA-65 signature verification
+GET  /api/sbom            → SBOM metadata (serial, components, ref)
+GET  /api/sbom/download   → full CycloneDX JSON
+GET  /api/conformance     → v2.1/v2.2 L5 compliance report`;
+---
+
+<DocsLayout
+  title="Firmware Attestation — RCAN v2.2"
+  description="ML-DSA-65 firmware attestation and SBOM supply chain verification for RCAN v2.2 robots."
+>
+  <h1>Firmware Attestation</h1>
+  <p class="lead">
+    RCAN v2.2 requires all robots to publish a signed firmware manifest and CycloneDX SBOM
+    to the Robot Registry Foundation (RRF). Signatures use <strong>ML-DSA-65 (NIST FIPS 204)</strong> —
+    Ed25519 is deprecated and removed.
+  </p>
+
+  <div class="rcan-callout rcan-callout--info">
+    <strong>Q-Day Timeline</strong><br/>
+    ML-DSA-65 is the <strong>primary signing algorithm effective 2026</strong>.
+    Bob (RRN-000000000001) is the first robot running this stack.
+    Ed25519 sunset: 2027. NIST IR 8547 deadline: 2029.
+  </div>
+
+  <h2>1. Generate ML-DSA-65 Key Pair</h2>
+  <p>
+    Every robot needs an ML-DSA-65 key pair. Generate it once — it lives at
+    <code>~/.opencastor/pq_signing.key</code> and is auto-loaded at boot.
+  </p>
+  <CodeWindow lang="bash" code={keygenExample} />
+
+  <h2>2. Attest + Sign</h2>
+  <p>
+    Run <code>castor attest generate</code> to build the firmware manifest from installed packages,
+    then <code>castor attest sign</code> to apply the ML-DSA-65 signature.
+  </p>
+  <CodeWindow lang="bash" code={attestExample} />
+
+  <h2>3. Manifest Schema</h2>
+  <p>The signed manifest is stored at <code>/tmp/opencastor-firmware-manifest.json</code> (or <code>/run/opencastor/rcan-firmware-manifest.json</code> in production).</p>
+  <CodeWindow lang="json" code={manifestSchema} />
+
+  <h2>4. Gateway API Endpoints</h2>
+  <p>
+    All attestation data is accessible via the gateway REST API (authenticated with a JWT):
+  </p>
+  <CodeWindow lang="bash" code={apiExample} />
+
+  <h2>5. Conformance</h2>
+  <p>
+    Run <code>castor conformance</code> to see your full RCAN v2.1/v2.2 L5 compliance report inline.
+    A robot must pass all 7 checks to be <strong>compliant</strong>:
+  </p>
+  <ul>
+    <li><code>rcan_v21.firmware_manifest</code> — signed manifest present</li>
+    <li><code>rcan_v21.sbom_attestation</code> — SBOM published to RRF</li>
+    <li><code>rcan_v21.authority_handler</code> — EU AI Act Art. 16(j)</li>
+    <li><code>rcan_v21.audit_chain_retention</code> — ≥ 3650 days</li>
+    <li><code>rcan_v21.rcan_version</code> — version 2.1 or 2.2</li>
+    <li><code>rcan_v22.pq_signing_key</code> — ML-DSA-65 key present</li>
+    <li><code>rcan_v22.firmware_pq_sig</code> — manifest has ML-DSA-65 signature</li>
+  </ul>
+
+  <h2>Reference</h2>
+  <ul>
+    <li><a href="/spec/v2.2#section-11">RCAN spec §11 — Firmware Attestation</a></li>
+    <li><a href="/docs/sbom">SBOM Guide</a></li>
+    <li><a href="https://csrc.nist.gov/pubs/fips/204/final">NIST FIPS 204 (ML-DSA)</a></li>
+  </ul>
+</DocsLayout>
