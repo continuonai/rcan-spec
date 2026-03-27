@@ -18,9 +18,9 @@ const conformanceLevels = [
 ];
 
 const pqTimeline = [
-  { period: '2026–2028', phase: 'Hybrid',           desc: 'Messages carry both Ed25519 (sig) and ML-DSA-65 (pq_sig). New robots generate ML-DSA-65 key at boot. Verifiers check both when available.' },
-  { period: '2028',      phase: 'ML-DSA Primary',   desc: 'ML-DSA-65 is the default signing algorithm. Ed25519 accepted for verification only (no new keys generated). RCAN v3.0 alpha.' },
-  { period: '2029',      phase: 'Ed25519 Sunset',   desc: 'Ed25519 signing removed. All robots MUST use ML-DSA-65. castor migrate --crypto rotates keys. NIST IR 8547 compliance deadline.' },
+  { period: '2026 (NOW)', phase: 'ML-DSA-65 Primary ✅', desc: 'ML-DSA-65 is the PRIMARY signing algorithm. All new messages MUST carry pq_sig. Ed25519 (sig) retained for verify-only backward compat with pre-v2.2 receivers. Bob (RRN-000000000001) is the first robot running v2.2 primary.' },
+  { period: '2027',       phase: 'Ed25519 Sunset',       desc: 'Ed25519 signing removed from all SDKs. castor migrate --crypto rotates any remaining Ed25519-only keys. verify_message() rejects messages without pq_sig by default.' },
+  { period: '2029',       phase: 'NIST IR 8547 deadline', desc: 'NIST mandates removal of quantum-vulnerable algorithms from all systems. By this date all robots MUST be on ML-DSA-65 exclusively. Q-Day (CRQC capable of breaking RSA/ECC) estimated by Google.' },
 ];
 
 const newFields = [
@@ -46,9 +46,10 @@ const newFields = [
   <!-- What's New -->
   <h2 id="whats-new">What's New in v2.2</h2>
   <p>
-    v2.2 is a single-focus release: post-quantum hybrid signing. All other protocol semantics
-    are identical to v2.1. The only breaking change is that v2.2 implementations MUST generate
-    an ML-DSA-65 key at boot and attach <code>pq_sig</code> to all signed messages.
+    v2.2 is a single-focus release: <strong>ML-DSA-65 is the primary signing algorithm, effective immediately.</strong>
+    Ed25519 (<code>sig</code>) is retained for verify-only backward compat during the 2026–2027 transition window.
+    All v2.2 implementations MUST generate an ML-DSA-65 key at boot and attach <code>pq_sig</code> to all signed messages.
+    Bob (RRN-000000000001) is the first registered robot running v2.2.
   </p>
 
   <ul>
