@@ -207,6 +207,75 @@ rrn://[org]/[id]
 # Numeric (registry-assigned, always valid)
 RRN-000000000042
 RRN-BD-000000000042   # with manufacturer prefix`;
+
+// ── §21.2.2 Multi-Type Entity Numbering ──────────────────────────────────────
+const multiTypeIdFormats = `# RCAN v2.2 — Multi-Type Entity Identifiers
+# All prefixes follow the same 12-digit zero-padded sequential format.
+# IDs are registry-assigned; they are globally unique within the issuing registry.
+
+RRN-000000000001   # Robot Registration Number     — whole robot assembly
+RCN-000000000001   # Robot Component Number        — hardware component (NPU, camera, etc.)
+RMN-000000000001   # Robot Model Number            — AI model (VLA, LLM, JEPA, embedding…)
+RHN-000000000001   # Robot Harness Number          — AI harness / agent definition
+
+# Format rule:  {PREFIX}-{000000000001..999999999999}
+# Prefix chars: RRN | RCN | RMN | RHN (case-sensitive, always uppercase)
+# Sequence:     12-digit zero-padded decimal, monotonically increasing per type`;
+
+const multiTypeRegistrationExamples = `# Register a whole robot → receive RRN
+POST /v2/robots/register
+{
+  "name": "Bob",
+  "manufacturer": "ContinuonAI",
+  "model": "OpenCastor Pi5",
+  "firmware_version": "v2026.3.27.1",
+  "rcan_version": "2.2",
+  "pq_signing_pub": "Mi3A...",    // ML-DSA-65 public key (base64)
+  "pq_kid": "7c21bf58"
+}
+→ { "rrn": "RRN-000000000001", "registered_at": "…" }
+
+# Register a hardware component → receive RCN
+POST /v2/components/register
+{
+  "parent_rrn": "RRN-000000000001",
+  "type": "npu",
+  "model": "Hailo-8",
+  "manufacturer": "Hailo Technologies",
+  "capabilities": ["hailo8", "inference", "tops:26"]
+}
+→ { "rcn": "RCN-000000000001", "parent_rrn": "RRN-000000000001", "registered_at": "…" }
+
+# Register an AI model → receive RMN
+POST /v2/models/register
+{
+  "name": "LeWorldModel",
+  "version": "0.1.0",
+  "model_family": "world_model",
+  "architecture": "jepa",
+  "parameter_count_b": 0.015,
+  "license": "apache-2.0",
+  "rcan_compatible": true
+}
+→ { "rmn": "RMN-000000000001", "registered_at": "…" }
+
+# Register an AI harness → receive RHN
+POST /v2/harnesses/register
+{
+  "name": "OpenCastor Dual-Brain",
+  "version": "2026.3.27",
+  "harness_type": "hybrid",
+  "rcan_version": "2.2",
+  "model_ids": ["RMN-000000000001"],
+  "open_source": true,
+  "repo_url": "https://github.com/craigm26/OpenCastor"
+}
+→ { "rhn": "RHN-000000000001", "registered_at": "…" }
+
+# Unified registry listing
+GET /v2/registry?type=robot
+GET /v2/registry?type=model&limit=20
+GET /v2/registry              # all entity types`;
 ---
 
 <DocsLayout title="§21 Robot Registry Integration" description="RCAN §21 — Robot Registry Integration. Defines RRN↔RURI canonical mapping, ownership proof via Ed25519 challenge-response, REGISTRY_REGISTER and REGISTRY_RESOLVE message types, and Conformance Level L4.">
@@ -234,6 +303,7 @@ RRN-BD-000000000042   # with manufacturer prefix`;
       <li><a href="#overview"             class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.1</span> Overview</a></li>
       <li><a href="#rrn-ruri-mapping"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.2</span> RRN ↔ RURI Mapping</a></li>
       <li class="pl-4"><a href="#rrn-structured-format" class="hover:text-accent flex items-center gap-2 text-sm text-text-muted"><span class="text-accent/40">21.2.1</span> Structured URI RRN Format</a></li>
+      <li class="pl-4"><a href="#multi-type-numbering" class="hover:text-accent flex items-center gap-2 text-sm text-text-muted"><span class="text-accent/40">21.2.2</span> Multi-Type Entity Numbering (RRN/RCN/RMN/RHN)</a></li>
       <li><a href="#ownership-proof"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.3</span> Ownership Proof</a></li>
       <li><a href="#registry-register"    class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.4</span> REGISTRY_REGISTER Message</a></li>
       <li><a href="#registry-resolve"     class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">21.5</span> REGISTRY_RESOLVE Message</a></li>
@@ -406,6 +476,64 @@ RRN-BD-000000000042   # with manufacturer prefix`;
         are both valid in §21. Registries MUST accept either form. The numeric format is appropriate for
         central registry assignment; the URI format is better suited for distributed registries and
         self-describing embedded systems that announce their own RRN at boot.
+      </p>
+    </div>
+
+    <!-- §21.2.2 Multi-Type Entity Numbering -->
+    <h3 id="multi-type-numbering" class="mt-10">21.2.2 Multi-Type Entity Numbering <span class="text-xs font-normal text-accent/70 ml-2">(v2.2)</span></h3>
+    <p>
+      RCAN v2.2 extends the registry to track four distinct entity types, each with its own
+      prefixed sequential identifier. All identifiers share the same 12-digit zero-padded
+      format and are globally unique within the issuing registry.
+    </p>
+
+    <table class="mt-4">
+      <thead>
+        <tr><th>Prefix</th><th>Entity Type</th><th>Description</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="text-accent font-bold">RRN</code></td>
+          <td><strong>Whole Robot</strong></td>
+          <td>A fully assembled robot unit with its own identity, key pair, and RURI.</td>
+          <td><code>RRN-000000000001</code></td>
+        </tr>
+        <tr>
+          <td><code class="text-cyan-400 font-bold">RCN</code></td>
+          <td><strong>Component</strong></td>
+          <td>Individual hardware piece (NPU, camera, sensor, motor controller). Linked to a parent RRN.</td>
+          <td><code>RCN-000000000001</code></td>
+        </tr>
+        <tr>
+          <td><code class="text-purple-400 font-bold">RMN</code></td>
+          <td><strong>AI Model</strong></td>
+          <td>A registered AI model (VLA, LLM, world model, embedding model, etc.) with provenance and license metadata.</td>
+          <td><code>RMN-000000000001</code></td>
+        </tr>
+        <tr>
+          <td><code class="text-yellow-400 font-bold">RHN</code></td>
+          <td><strong>AI Harness</strong></td>
+          <td>A registered agent/harness definition — the pipeline that orchestrates models for a robot task. References RMN IDs.</td>
+          <td><code>RHN-000000000001</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose mt-6">
+      <CodeWindow code={multiTypeIdFormats} language="bash" title="RCAN v2.2 entity identifier formats" />
+    </div>
+
+    <h4 class="mt-8">Registration Endpoints (RRF v2)</h4>
+    <p>The Robot Registry Foundation (RRF) exposes a <code>/v2/</code> API for registering all entity types:</p>
+    <div class="not-prose mt-4">
+      <CodeWindow code={multiTypeRegistrationExamples} language="json" title="Multi-type registration — all four entity types" />
+    </div>
+
+    <div class="not-prose bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-4">
+      <p class="text-sm">
+        <strong class="text-yellow-400">Provenance chain:</strong> A complete robot deployment can be described as:
+        <code>RHN → [RMN, RMN, …]</code> (harness uses models) + <code>RRN → [RCN, RCN, …]</code> (robot has components).
+        EU AI Act Art. 11 technical documentation SHOULD include all four IDs for each deployment.
       </p>
     </div>
   </section>
