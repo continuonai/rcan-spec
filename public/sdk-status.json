@@ -1,26 +1,16 @@
 {
-  "updated": "2026-03-27T03:24:57Z",
-  "spec_version": "2.2.0",
+  "updated": "2026-03-27T03:25:20Z",
+  "spec_version": "1.3",
   "sdks": {
     "rcan-py": {
-      "version": "1.2.1",
-      "spec_version": "2.2.0",
+      "version": "1.1.0",
       "status": "pass",
-      "pypi": "https://pypi.org/project/rcan/",
-      "signing": "ml-dsa-65"
+      "pypi": "https://pypi.org/project/rcan/"
     },
     "rcan-ts": {
       "version": "1.2.1",
-      "spec_version": "2.2.0",
       "status": "pass",
-      "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts",
-      "signing": "ml-dsa-65"
-    },
-    "opencastor": {
-      "version": "2026.3.27.1",
-      "spec_version": "2.2.0",
-      "status": "pass",
-      "pypi": "https://pypi.org/project/opencastor/"
+      "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts"
     }
   }
 }
