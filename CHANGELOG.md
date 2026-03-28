@@ -1,5 +1,13 @@
 # RCAN Spec Changelog
 
+## [2.2.1] - 2026-03-28
+
+### Added
+- §21.2.2 Multi-Type Entity Numbering — formal specification of RRN/RCN/RMN/RHN
+  numbering scheme; all use `{PREFIX}-{000000000001..999999999999}` format;
+  sequential, registry-assigned, globally unique across all entity types
+
+
 ## [1.9.0] - 2026-03-21
 ### Added
 - Castor Credits protocol — full reference for CONTRIBUTE scope (credit grants, badge tiers, payout schema)
