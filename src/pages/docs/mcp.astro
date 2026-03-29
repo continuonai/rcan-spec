@@ -61,6 +61,20 @@ robot_command(scope="control")  → requires LoA ≥ min_loa_for_control
 robot_command(scope="system")   → requires LoA 1 minimum
 harness_set(...)                → requires LoA 3`;
 
+const delegationExample = `# Human-configured MCP client — no delegation_chain needed
+mcp_clients:
+  - name: "claude-code-laptop"
+    token_hash: "sha256:abc..."
+    loa: 1   # LoA 1 = human-authorized operator
+
+# Robot-to-robot MCP (fleet) — delegation_chain REQUIRED
+# delegation_chain:
+#   - robot_rrn: "RRN-000000000001"
+#     scope: "control"
+#     issued_at: "2026-03-29T22:00:00Z"
+#     expires_at: "2026-03-30T22:00:00Z"
+#     sig: "<ml-dsa-65 signature>"`;
+
 const art11Example = `# Reconstruct full Art. 11 provenance chain via MCP
 compliance_report("RRN-000000000001")   # system identity + safety controls
 rrf_lookup("RRN-000000000001")          # robot identity, manufacturer, firmware_hash
@@ -155,5 +169,20 @@ rrf_lookup("RHN-000000000001")          # dual-brain harness, rcan_version: 2.2
       <li>Honour ESTOP regardless of client LoA.</li>
       <li>Expose all 14 tools in the standard catalogue (§22.3).</li>
     </ul>
+
+    <h2>§22.9 Delegation</h2>
+    <p>
+      MCP tokens function as pre-authorized human delegates. The LoA level declared in
+      <code>mcp_clients:</code> constitutes proof of human authorization — no
+      <code>delegation_chain</code> is required for direct human-configured MCP clients.
+    </p>
+    <p>
+      <strong>Exception — fleet/robot-to-robot MCP:</strong> If one robot uses MCP to
+      command another robot (fleet coordination), the command MUST include a
+      <code>delegation_chain</code> with at least one <code>DelegationHop</code> proving
+      human authorization. Maximum depth is 3 hops (RCAN
+      <a href="/docs/delegation/">§delegation</a>).
+    </p>
+    <CodeWindow code={delegationExample} lang="yaml" />
   </div>
 </DocsLayout>
