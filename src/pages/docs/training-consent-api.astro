@@ -1,0 +1,161 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const r2ramExample = `# R2RAM scope hierarchy (ascending privilege)
+discover < status < training < chat < control < safety < creator
+
+# training scope — allows requesting and collecting training data consent
+# Required for: GET /api/training-data/consent/*
+#                POST /api/training-data/consent (create)
+#                DELETE /api/training-data/consent/* (right-to-erasure)`;
+
+const getConsentExample = `# GET /api/training-data/consent/{subject_id}
+# Authorization: Bearer <token with training scope>
+
+# Response 200 — consent record found
+{
+  "subject_id": "usr_abc123",
+  "consent_id": "tc_20260329_001",
+  "granted_at": "2026-03-29T10:00:00Z",
+  "status": "active",
+  "eu_ai_act_basis": "Article 10 — training data governance",
+  "robot_rrn": "RRN-000000000001"
+}
+
+# Response 404 — subject not found
+{"detail": "No training consent record found for subject_id: usr_abc123"}`;
+
+const deleteConsentExample = `# DELETE /api/training-data/consent/{subject_id}
+# Authorization: Bearer <token with training scope>
+# GDPR Art. 17 — right to erasure. Cascades to all training data records.
+
+# Response 200
+{"deleted_records": 3, "subject_id": "usr_abc123", "audit_ref": "del_20260329_001"}`;
+
+const listConsentExample = `# GET /api/training-data/consent
+# Authorization: Bearer <token with system scope>
+# Admin-only. Returns paginated array of all consent records.
+
+[
+  {
+    "subject_id": "usr_abc123",
+    "consent_id": "tc_20260329_001",
+    "granted_at": "2026-03-29T10:00:00Z",
+    "status": "active",
+    "robot_rrn": "RRN-000000000001"
+  },
+  {
+    "subject_id": "usr_def456",
+    "consent_id": "tc_20260328_002",
+    "granted_at": "2026-03-28T08:30:00Z",
+    "status": "revoked",
+    "robot_rrn": "RRN-000000000002"
+  }
+]`;
+
+const auditExample = `# Audit log entry — deletion event
+{
+  "event": "training_consent_deleted",
+  "timestamp": "2026-03-29T22:00:00Z",
+  "requestor_rrn": "RRN-000000000001",
+  "subject_id": "usr_abc123",
+  "record_count_deleted": 3,
+  "audit_ref": "del_20260329_001"
+}
+# Audit logs MUST be retained for minimum 7 years (EU AI Act Art. 12)`;
+---
+
+<DocsLayout
+  title="§23 Training Data Governance API"
+  description="Programmatic access to training consent records. Implements RCAN training scope and EU AI Act Article 10 data governance."
+  section="docs"
+>
+  <div class="prose max-w-none">
+    <h1>§23 Training Data Governance API</h1>
+
+    <p>
+      The Training Data Governance API provides programmatic access to training consent
+      records collected by RCAN-compliant robots. It implements the <strong>training
+      scope</strong> from the R2RAM hierarchy and fulfills the data governance requirements
+      of <strong>EU AI Act Article 10</strong> and <strong>GDPR Article 17</strong>
+      (right to erasure).
+    </p>
+
+    <h2>§23.1 Training Scope in R2RAM</h2>
+    <p>
+      R2RAM (Robot Role and Access Model) defines a strict privilege hierarchy for robot
+      access scopes. The <code>training</code> scope sits above <code>status</code> and
+      below <code>chat</code>, allowing a token holder to request and manage training
+      data consent records without requiring elevated operational control.
+    </p>
+    <CodeWindow code={r2ramExample} lang="bash" />
+    <p>
+      A token bearing the <code>training</code> scope may read, create, and delete consent
+      records for subjects associated with the robot identified by the token's audience
+      claim. Admin-level listing (§23.4) additionally requires the <code>system</code> scope.
+    </p>
+
+    <h2>§23.2 GET /api/training-data/consent/&#123;subject_id&#125;</h2>
+    <p>
+      Retrieve the current training consent record for a specific subject. Returns the
+      consent status, the EU AI Act legal basis, and the robot RRN under which the consent
+      was collected.
+    </p>
+    <CodeWindow code={getConsentExample} lang="json" />
+
+    <h2>§23.3 DELETE /api/training-data/consent/&#123;subject_id&#125;</h2>
+    <p>
+      Exercise the <strong>GDPR Article 17 right to erasure</strong> for a subject's
+      training data. This operation cascades to all training data records associated with
+      the subject — not only the consent record itself. Deletion is <strong>irreversible</strong>
+      and MUST be logged (see §23.5).
+    </p>
+    <CodeWindow code={deleteConsentExample} lang="json" />
+
+    <h2>§23.4 GET /api/training-data/consent (admin)</h2>
+    <p>
+      List all training consent records across all subjects. This endpoint requires a
+      <code>system</code>-scope token and is intended for compliance audits and data
+      governance dashboards. Results are paginated; use <code>?page=</code> and
+      <code>?limit=</code> query parameters to navigate.
+    </p>
+    <CodeWindow code={listConsentExample} lang="json" />
+
+    <h2>§23.5 Audit Requirements</h2>
+    <p>
+      All deletion events MUST produce a structured audit log entry containing:
+    </p>
+    <ul>
+      <li><code>timestamp</code> — ISO 8601 UTC timestamp of the deletion</li>
+      <li><code>requestor_rrn</code> — RRN of the robot or system that performed the deletion</li>
+      <li><code>subject_id</code> — identifier of the subject whose records were deleted</li>
+      <li><code>record_count_deleted</code> — total number of records removed</li>
+    </ul>
+    <CodeWindow code={auditExample} lang="json" />
+    <p>
+      Audit logs MUST be retained for a minimum of <strong>7 years</strong> in accordance
+      with EU AI Act Article 12 (record-keeping obligations for high-risk AI systems).
+      Audit records themselves are exempt from the right-to-erasure cascade.
+    </p>
+
+    <h2>§23.6 EU AI Act Art. 10 Compliance</h2>
+    <p>
+      OpenCastor's Training Data Governance API implements the data governance requirements
+      of <strong>EU AI Act Article 10</strong>, which mandates appropriate data governance
+      and management practices for training, validation, and testing data used by high-risk
+      AI systems. The API ensures that:
+    </p>
+    <ul>
+      <li>Subjects can exercise their GDPR rights (access, erasure) for training data collected by robots.</li>
+      <li>Every consent grant and revocation is traceable to a specific robot RRN and timestamp.</li>
+      <li>Deletion cascades prevent orphaned training records from persisting after a consent withdrawal.</li>
+      <li>Audit trails satisfy the Art. 12 record-keeping obligation for the full retention period.</li>
+    </ul>
+    <p>
+      Implementors deploying OpenCastor in EU jurisdictions MUST enable audit logging and
+      configure a compliant retention backend before collecting any training data from
+      human subjects.
+    </p>
+  </div>
+</DocsLayout>
