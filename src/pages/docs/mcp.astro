@@ -1,0 +1,159 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const installExample = `# Install with MCP support
+pip install "opencastor[mcp]"
+
+# Generate a client token
+castor mcp token --name "my-agent" --loa 1
+
+# Start the MCP server
+export CASTOR_MCP_TOKEN=<token>
+castor mcp
+
+# Register with Claude Code (one command)
+castor mcp install --client claude --token $CASTOR_MCP_TOKEN
+
+# Dev mode (LoA 3, no token required, local only)
+CASTOR_MCP_DEV=1 castor mcp`;
+
+const configExample = `# bob.rcan.yaml — mcp_clients block
+mcp_clients:
+  - name: "claude-code-laptop"
+    token_hash: "sha256:abc123..."   # sha256 of the raw token
+    loa: 3                           # admin access
+  - name: "gemini-monitor"
+    token_hash: "sha256:def456..."
+    loa: 0                           # read-only
+  - name: "codex-research"
+    token_hash: "sha256:ghi789..."
+    loa: 1                           # operate`;
+
+const toolsExample = `# LoA 0 — any authenticated client
+robot_ping(rrn?)              → gateway reachability + latency
+robot_status(rrn?)            → brain state, active model, uptime
+robot_telemetry(rrn?)         → full system snapshot
+fleet_list()                  → all robots with compliance + LoA level
+rrf_lookup(entity_id)         → provenance chain (RRN/RCN/RMN/RHN)
+compliance_report(rrn?)       → EU AI Act Art. 11 status report
+
+# LoA 1 — named operate token
+robot_command(instruction, scope, rrn?, reason?)
+harness_get(rrn?)             → current harness config + flow graph
+research_run(rrn?)            → trigger OHB-1 benchmark
+contribute_toggle(enabled, rrn?)
+components_list(rrn?)         → registered hardware components
+
+# LoA 3 — admin token
+harness_set(layers, flow_graph?, rrn?)
+system_upgrade(version?, rrn?)
+loa_enable(min_loa?, rrn?)`;
+
+const loaMapExample = `# LoA → RCAN trust level mapping
+LoA 0  →  unauthenticated read     (M2M_PEER, read-only scope)
+LoA 1  →  standard agent operate   (M2M_PEER, chat/control scope)
+LoA 3  →  admin / trusted system   (M2M_TRUSTED, system scope)
+
+# Scope enforcement
+robot_command(scope="safety")   → bypasses replay check (ESTOP always honored)
+robot_command(scope="control")  → requires LoA ≥ min_loa_for_control
+robot_command(scope="system")   → requires LoA 1 minimum
+harness_set(...)                → requires LoA 3`;
+
+const art11Example = `# Reconstruct full Art. 11 provenance chain via MCP
+compliance_report("RRN-000000000001")   # system identity + safety controls
+rrf_lookup("RRN-000000000001")          # robot identity, manufacturer, firmware_hash
+rrf_lookup("RCN-000000000002")          # Hailo-8 NPU, 26 TOPS, parent: RRN-1
+rrf_lookup("RMN-000000000002")          # OpenVLA 7b, apache-2.0, local
+rrf_lookup("RHN-000000000001")          # dual-brain harness, rcan_version: 2.2
+
+# → Full Art. 11 record in 5 tool calls, from any AI provider`;
+---
+
+<DocsLayout
+  title="§22 MCP Server Integration"
+  description="Expose the RCAN robot runtime as Model Context Protocol tools. Any AI agent — Claude Code, Codex, Gemini CLI, cron jobs — can command and observe robots through a standard interface with LoA-enforced access control."
+  section="docs"
+>
+  <div class="prose max-w-none">
+    <h1>§22 MCP Server Integration</h1>
+
+    <p>
+      OpenCastor exposes a <a href="https://modelcontextprotocol.io" target="_blank">Model Context Protocol</a> (MCP)
+      server that wraps the RCAN robot runtime as discoverable tools. Any MCP-capable AI agent — regardless
+      of provider or model — can use these tools to observe and command robots through a single, standardised interface.
+    </p>
+
+    <p>
+      Auth is provider-agnostic: access level is determined by the <strong>token</strong>, not the model.
+      A Gemini agent and a Claude Code session with identical tokens have identical access.
+    </p>
+
+    <h2>§22.1 Installation and startup</h2>
+    <CodeWindow code={installExample} lang="bash" />
+
+    <h2>§22.2 Client configuration</h2>
+    <p>
+      MCP clients are registered in the robot's RCAN config under <code>mcp_clients:</code>.
+      Tokens are stored as <code>sha256:</code> hashes — never raw values.
+    </p>
+    <CodeWindow code={configExample} lang="yaml" />
+
+    <h2>§22.3 Tool catalogue</h2>
+    <p>
+      14 tools across three Level-of-Assurance tiers. Every mutating tool routes through
+      <code>/api/command</code> — the same RCAN-signed path the bridge uses.
+    </p>
+    <CodeWindow code={toolsExample} lang="bash" />
+
+    <h2>§22.4 LoA → RCAN trust level mapping</h2>
+    <p>
+      MCP LoA tiers map to RCAN v2.2 trust roles and command scopes.
+      The ESTOP safety invariant is always honoured regardless of LoA.
+    </p>
+    <CodeWindow code={loaMapExample} lang="bash" />
+
+    <h2>§22.5 EU AI Act compliance via MCP</h2>
+    <p>
+      The <code>rrf_lookup</code> and <code>compliance_report</code> tools make
+      EU AI Act Article 11 technical documentation machine-readable. Any authorised
+      agent can reconstruct the full provenance chain programmatically:
+    </p>
+    <CodeWindow code={art11Example} lang="bash" />
+
+    <h2>§22.6 Transport</h2>
+    <ul>
+      <li>
+        <strong>Phase 1 (current): stdio</strong> — works with any local MCP client today.
+        One client per process; token set at startup.
+      </li>
+      <li>
+        <strong>Phase 2 (roadmap): HTTP/SSE</strong> — remote clients, multiple concurrent
+        agents, live telemetry subscription. Tracked in
+        <a href="https://github.com/craigm26/OpenCastor/issues/775">#775</a>.
+      </li>
+    </ul>
+
+    <h2>§22.7 Security model</h2>
+    <ul>
+      <li>Token hashes use SHA-256; raw tokens are never stored or logged.</li>
+      <li>LoA enforcement is server-side — not bypassable at the application layer.</li>
+      <li>Every mutating call routes through RCAN-signed <code>/api/command</code>.</li>
+      <li>Tokens are revoked by removing the entry from <code>mcp_clients:</code> and restarting the server.</li>
+      <li>Dev mode (<code>CASTOR_MCP_DEV=1</code>) must never be exposed on a network interface.</li>
+    </ul>
+
+    <h2>§22.8 Conformance</h2>
+    <p>
+      A conformant MCP server implementation MUST:
+    </p>
+    <ul>
+      <li>Enforce LoA gating before any tool execution.</li>
+      <li>Store client tokens as <code>sha256:</code> hashes only.</li>
+      <li>Route all mutating tool calls through the RCAN-signed command path.</li>
+      <li>Honour ESTOP regardless of client LoA.</li>
+      <li>Expose all 14 tools in the standard catalogue (§22.3).</li>
+    </ul>
+  </div>
+</DocsLayout>
