@@ -69,6 +69,33 @@ function parseRRN(
   return null;
 }
 
+/** Mirrors parsePqcHybridSig — parses "pqc-hybrid-v1.<ed25519_b64url>.<ml_dsa_b64url>" */
+function parsePqcHybridSig(sig: string): { ed25519: string; ml_dsa: string } | null {
+  if (!sig.startsWith("pqc-hybrid-v1.")) return null;
+  const rest = sig.slice("pqc-hybrid-v1.".length);
+  const dotIdx = rest.indexOf(".");
+  if (dotIdx < 1) return null;
+  const ed25519Part = rest.slice(0, dotIdx);
+  const mlDsaPart   = rest.slice(dotIdx + 1);
+  if (!ed25519Part || !mlDsaPart) return null;
+  // must not contain any further dots (would indicate extra segments)
+  if (mlDsaPart.includes(".")) return null;
+  return { ed25519: ed25519Part, ml_dsa: mlDsaPart };
+}
+
+/** Mirrors parsePqcV1Sig — parses "pqc-v1.<ml_dsa_b64url>" */
+function parsePqcV1Sig(sig: string): { ml_dsa: string } | null {
+  if (!sig.startsWith("pqc-v1.")) return null;
+  const mlDsaPart = sig.slice("pqc-v1.".length);
+  if (!mlDsaPart || mlDsaPart.includes(".")) return null;
+  return { ml_dsa: mlDsaPart };
+}
+
+/** Returns whether a string is a valid base64url token (no padding, URL-safe chars) */
+function isBase64url(s: string): boolean {
+  return s.length > 0 && /^[A-Za-z0-9_-]+$/.test(s);
+}
+
 /** Mirrors formatRRN from functions/api/v1/robots/index.ts */
 function formatRRN(id: number): string {
   return `RRN-${String(id).padStart(12, "0")}`;
@@ -944,5 +971,139 @@ describe("§20 Telemetry — frame structure validation", () => {
 
   it("timestamp_ms must be a number (not a string)", () => {
     expect(validateTelemetryFrame({ ...validFrame, timestamp_ms: "1710000000000" })).toBe(false);
+  });
+});
+
+// ── PQC Hybrid v1 Cryptographic Profile (issue #188) ─────────────────────────
+
+describe("pqc-hybrid-v1 signature format", () => {
+  const FAKE_ED25519  = "A".repeat(86);   // 86 base64url chars = 64 bytes (Ed25519 sig size)
+  const FAKE_ML_DSA   = "B".repeat(4412); // 4412 base64url chars = 3309 bytes (ML-DSA-65 sig size)
+  const validHybrid   = `pqc-hybrid-v1.${FAKE_ED25519}.${FAKE_ML_DSA}`;
+
+  it("parses a well-formed pqc-hybrid-v1 signature", () => {
+    const result = parsePqcHybridSig(validHybrid);
+    expect(result).not.toBeNull();
+    expect(result!.ed25519).toBe(FAKE_ED25519);
+    expect(result!.ml_dsa).toBe(FAKE_ML_DSA);
+  });
+
+  it("both components are valid base64url tokens", () => {
+    const result = parsePqcHybridSig(validHybrid)!;
+    expect(isBase64url(result.ed25519)).toBe(true);
+    expect(isBase64url(result.ml_dsa)).toBe(true);
+  });
+
+  it("rejects a bare Ed25519 sig (no prefix)", () => {
+    expect(parsePqcHybridSig(FAKE_ED25519)).toBeNull();
+  });
+
+  it("rejects a single-half sig (Ed25519 half only, no ml-dsa component)", () => {
+    expect(parsePqcHybridSig(`pqc-hybrid-v1.${FAKE_ED25519}`)).toBeNull();
+  });
+
+  it("rejects a single-half sig (empty ml-dsa component)", () => {
+    expect(parsePqcHybridSig(`pqc-hybrid-v1.${FAKE_ED25519}.`)).toBeNull();
+  });
+
+  it("rejects a single-half sig (empty ed25519 component)", () => {
+    expect(parsePqcHybridSig(`pqc-hybrid-v1..${FAKE_ML_DSA}`)).toBeNull();
+  });
+
+  it("rejects an empty string", () => {
+    expect(parsePqcHybridSig("")).toBeNull();
+  });
+
+  it("rejects wrong prefix", () => {
+    expect(parsePqcHybridSig(`pqc-v1.${FAKE_ED25519}.${FAKE_ML_DSA}`)).toBeNull();
+    expect(parsePqcHybridSig(`hybrid.${FAKE_ED25519}.${FAKE_ML_DSA}`)).toBeNull();
+  });
+
+  it("rejects extra segments (three dots = four parts)", () => {
+    expect(parsePqcHybridSig(`pqc-hybrid-v1.${FAKE_ED25519}.${FAKE_ML_DSA}.extra`)).toBeNull();
+  });
+
+  it("Ed25519 half has correct byte-size representation (86 base64url chars = 64 bytes)", () => {
+    const result = parsePqcHybridSig(validHybrid)!;
+    // base64url without padding: ceil(64 * 4 / 3) = 86 chars
+    expect(result.ed25519.length).toBe(86);
+  });
+
+  it("ML-DSA-65 half has correct byte-size representation (4412 base64url chars = 3309 bytes)", () => {
+    const result = parsePqcHybridSig(validHybrid)!;
+    // base64url without padding: ceil(3309 * 4 / 3) = 4412 chars
+    expect(result.ml_dsa.length).toBe(4412);
+  });
+});
+
+describe("pqc-v1 signature format (post-2028)", () => {
+  const FAKE_ML_DSA = "C".repeat(4412);
+  const validPqcV1  = `pqc-v1.${FAKE_ML_DSA}`;
+
+  it("parses a well-formed pqc-v1 signature", () => {
+    const result = parsePqcV1Sig(validPqcV1);
+    expect(result).not.toBeNull();
+    expect(result!.ml_dsa).toBe(FAKE_ML_DSA);
+  });
+
+  it("rejects an empty ml-dsa component", () => {
+    expect(parsePqcV1Sig("pqc-v1.")).toBeNull();
+  });
+
+  it("rejects two-component input (pqc-hybrid-v1 sig fed to pqc-v1 parser)", () => {
+    const FAKE_ED = "A".repeat(86);
+    expect(parsePqcV1Sig(`pqc-v1.${FAKE_ED}.${FAKE_ML_DSA}`)).toBeNull();
+  });
+
+  it("rejects wrong prefix", () => {
+    expect(parsePqcV1Sig(`pqc-hybrid-v1.${FAKE_ML_DSA}`)).toBeNull();
+  });
+
+  it("rejects an empty string", () => {
+    expect(parsePqcV1Sig("")).toBeNull();
+  });
+});
+
+describe("rcan-node.json manifest — PQC fields (issue #188)", () => {
+  // Mirror the updated manifest from functions/.well-known/rcan-node.json.ts
+  const manifest = {
+    rcan_node_version: "1.0",
+    node_type: "root",
+    operator: "Robot Registry Foundation",
+    namespace_prefix: "RRN",
+    public_key: null,
+    crypto_profile: "pqc-hybrid-v1",
+    pqc_public_key: null,
+    ed25519_public_key: null,
+    api_base: "https://rcan.dev/api/v1",
+    registry_ui: "https://rcan.dev/registry/",
+    spec_version: "2.3",
+    capabilities: ["register", "resolve", "verify", "delegate"],
+    sync_endpoint: "https://rcan.dev/api/v1/sync",
+    last_sync: new Date().toISOString(),
+    ttl_seconds: 3600,
+    contact: "registry@rcan.dev",
+    governance: "https://rcan.dev/governance/",
+    federation_protocol: "https://rcan.dev/federation/",
+  };
+
+  it("has crypto_profile field", () => {
+    expect(manifest).toHaveProperty("crypto_profile");
+  });
+
+  it("crypto_profile is pqc-hybrid-v1", () => {
+    expect(manifest.crypto_profile).toBe("pqc-hybrid-v1");
+  });
+
+  it("has pqc_public_key field", () => {
+    expect(manifest).toHaveProperty("pqc_public_key");
+  });
+
+  it("has ed25519_public_key field", () => {
+    expect(manifest).toHaveProperty("ed25519_public_key");
+  });
+
+  it("spec_version is 2.3", () => {
+    expect(manifest.spec_version).toBe("2.3");
   });
 });

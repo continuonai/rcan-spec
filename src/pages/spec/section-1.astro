@@ -32,6 +32,22 @@ sig   = base64url_decode(ruri.query_params["sig"])
 valid = ed25519_verify(manufacturer_public_key, path.encode("utf-8"), sig)
 # On failure: emit FAULT_REPORT { fault_code: "RURI_SIGNATURE_INVALID" }`;
 
+const pqcHybridSigNote = `# Signing a RURI with pqc-hybrid-v1 (pseudocode, v2.3+)
+path     = ruri.split("?")[0].replace("rcan://", "")
+ed_sig   = ed25519_sign(ed25519_private_key, path.encode("utf-8"))
+pq_sig   = ml_dsa_65_sign(ml_dsa_private_key, path.encode("utf-8"))
+combined = "pqc-hybrid-v1." + base64url(ed_sig) + "." + base64url(pq_sig)
+signed_ruri = ruri + "?sig=" + combined
+
+# Verifying (v2.3+ receiver)
+parts = sig.split(".")
+# parts[0]=="pqc-hybrid-v1", parts[1]==ed25519 half, parts[2]==ml-dsa half
+assert len(parts) == 3, "Not a pqc-hybrid-v1 sig"
+ed_ok = ed25519_verify(ed25519_pubkey, path.encode("utf-8"), base64url_decode(parts[1]))
+pq_ok = ml_dsa_65_verify(pqc_pubkey,   path.encode("utf-8"), base64url_decode(parts[2]))
+# BOTH must pass — single-half sigs MUST be rejected
+assert ed_ok and pq_ok, "RURI_SIGNATURE_INVALID"`;
+
 const ruriRegex = `# Canonical RURI
 ^rcan://([a-z0-9][a-z0-9.-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([a-z0-9][a-z0-9-]*[a-z0-9])/([0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)(?::(\d{1,5}))?(/[a-z][a-z0-9/-]*)?$
 
@@ -225,6 +241,26 @@ const components = [
     <p>
       The signed RURI establishes <em>who</em> is sending; the <code>firmware_hash</code> envelope field (§3, field 13) establishes <em>what software</em> they are running.
       Together they form the v2.1 sender identity proof: verified origin + verified build.
+    </p>
+
+    <h3 id="signed-ruri-pqc">1.6.4 PQC Hybrid Signing <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 ml-2 align-middle">v2.3</span></h3>
+    <p>
+      When a node advertises <code>crypto_profile: "pqc-hybrid-v1"</code> in its
+      <code>/.well-known/rcan-node.json</code>, the <code>?sig=</code> parameter MUST use the combined
+      Ed25519 + ML-DSA-65 encoding:
+    </p>
+    <pre><code>rcan://registry.rcan.dev/manufacturer/model/version/device-id?sig=pqc-hybrid-v1.&lt;ed25519_b64url&gt;.&lt;ml_dsa_b64url&gt;</code></pre>
+    <ul>
+      <li>Both halves are REQUIRED; a signature missing either half MUST be rejected.</li>
+      <li>Receivers MUST verify both halves independently; either failure rejects the message.</li>
+      <li>Legacy Ed25519-only (<code>?sig=&lt;bare_b64url&gt;</code>) is still accepted by receivers that do not require <code>pqc-hybrid-v1</code>.</li>
+      <li>On failure: emit <code>FAULT_REPORT (26)</code> with <code>fault_code: "RURI_SIGNATURE_INVALID"</code></li>
+    </ul>
+    <div class="not-prose">
+      <CodeWindow code={pqcHybridSigNote} language="python" title="pqc-hybrid-ruri.pseudo" />
+    </div>
+    <p class="text-sm text-text-muted mt-3">
+      See <a href="/docs/crypto/pqc-profile" class="text-accent hover:underline">Cryptographic Profiles</a> for key sizes, migration timeline, and reference implementations.
     </p>
   </section>
 
