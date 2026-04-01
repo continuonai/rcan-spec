@@ -12,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="mb-16">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Protocol v1.10 · March 2026
+        Protocol v2.3 · March 2026
       </div>
       <h1 class="text-4xl md:text-5xl font-bold text-text mb-6 leading-tight">
         The open protocol for<br/>
@@ -123,8 +123,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           { version: "v1.6", status: "archived", label: "Archived", desc: "4 deferred gaps closed: federated consent protocol (FEDERATION_SYNC, cross-registry JWT trust, 3-tier registry hierarchy), bandwidth-constrained transports (32-byte RCAN-Minimal for LoRa, RCAN-Compact CBOR, BLE L2CAP), multi-modal payloads (media_chunks SHA-256 audit trail, streaming), human identity LoA 1/2/3 (FIDO2, min_loa_for_control). All 22 original audit gaps addressed. rcan-py v0.6.0, rcan-ts v0.6.0." },
           { version: "v1.10", status: "live", label: "Current", desc: "Competition protocol: COMPETITION_ENTER (37), COMPETITION_SCORE (38), SEASON_STANDING (39) for fleet competition events. PERSONAL_RESEARCH_RESULT (40) for private local research runs. Canonical MessageType table extended to 40 entries." },
           { version: "v2.1", status: "stable", label: "Stable", desc: "M2M_TRUSTED (level 6), signed firmware manifests, SBOM attestation, EU AI Act §12/§16. OpenCastor v2026.3.21.2." },
-          { version: "v2.2", status: "current", label: "Latest", desc: "ML-DSA-65 primary signing (FIPS 204), Ed25519 deprecated, dual-brain VLA+Claude architecture, ISO 42001 + EU AI Act compliance. OpenCastor v2026.3.27.1." },
-          { version: "v2.2", status: "upcoming", label: "PQ Hybrid", desc: "ML-DSA-65 + Ed25519 hybrid signing (NIST FIPS 204). Q-Day protection for boot sequence and firmware attestation. Target: 2027." },
+          { version: "v2.2", status: "stable", label: "Stable", desc: "ML-DSA-65 primary signing (FIPS 204), Ed25519 deprecated, dual-brain VLA+Claude architecture, ISO 42001 + EU AI Act compliance. OpenCastor v2026.3.27.1." },
+          { version: "v2.3", status: "current", label: "Latest", desc: "pqc-hybrid-v1 cryptographic profile: Ed25519 + ML-DSA-65 (NIST FIPS 204) dual signatures. Both halves required. /.well-known/rcan-node.json extended with crypto_profile, pqc_public_key, ed25519_public_key. §1.6.4 RURI combined sig format." },
         ].map(item => (
           <div class="flex gap-6 mb-8 relative pl-10">
             <div class={`absolute left-2.5 top-1.5 w-3 h-3 rounded-full border-2 ${item.status === 'live' ? 'bg-accent border-accent' : item.status === 'planned' ? 'bg-bg border-accent/50' : 'bg-bg border-white/20'}`}></div>

@@ -1,5 +1,14 @@
 # RCAN Spec Changelog
 
+## [2.3.0] - 2026-03-31
+
+### Added
+- `pqc-hybrid-v1` cryptographic profile: Ed25519 + ML-DSA-65/Dilithium3 (NIST FIPS 204) dual-signature scheme. Both halves required; single-half sigs MUST be rejected.
+- `pqc-v1` profile defined (future, post-2028): ML-DSA-65 only.
+- `/.well-known/rcan-node.json` extended with `crypto_profile`, `pqc_public_key` (base64url), `ed25519_public_key` (base64url) fields.
+- §1.6.4: `?sig=pqc-hybrid-v1.<ed25519_b64url>.<ml_dsa_b64url>` combined encoding for signed RURIs.
+- `docs/crypto/pqc-profile.md`: canonical spec for encoding, key sizes, migration timeline, reference implementations.
+
 ## [2.2.1] - 2026-03-28
 
 ### Added

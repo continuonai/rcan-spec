@@ -1,0 +1,122 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const notices = [
+  { text: 'RCAN v2.3 defines the pqc-hybrid-v1 cryptographic profile: Ed25519 + ML-DSA-65 (NIST FIPS 204). Both signature halves are required; single-half sigs MUST be rejected.' },
+  { text: '/.well-known/rcan-node.json gains three new fields: crypto_profile, pqc_public_key (base64url, ML-DSA-65), ed25519_public_key (base64url, Ed25519).' },
+  { text: '?sig= RURI parameter extended to accept pqc-hybrid-v1.<ed25519_b64url>.<ml_dsa_b64url> combined encoding (§1.6.4).' },
+  { text: 'pqc-v1 profile (ML-DSA-65 only) defined for post-2028 migration after Ed25519 sunset.' },
+];
+
+const conformanceLevels = [
+  { level: 'L0', label: 'Unsafe',      req: 'No authentication, no signing.' },
+  { level: 'L1', label: 'Baseline',    req: 'Ed25519 message signing (§9). HiTL gates.' },
+  { level: 'L2', label: 'Secure',      req: 'L1 + pqc-hybrid-v1: Ed25519 + ML-DSA-65 (§7.2, §1.6.4). Firmware hash.' },
+  { level: 'L3', label: 'Auditable',   req: 'L2 + AuditChain + signed RURI (pqc-hybrid-v1 format).' },
+  { level: 'L4', label: 'Federated',   req: 'L3 + M2M_PEER, RBAC, delegation chain.' },
+  { level: 'L5', label: 'Compliant',   req: 'L4 + M2M_TRUSTED, RRF registration, SBOM, firmware manifest, authority handler, audit retention ≥10yr, EU AI Act §12/§16.' },
+];
+
+const newFields = [
+  { field: 'crypto_profile',    type: 'string',        desc: 'Active cryptographic profile. "pqc-hybrid-v1" (recommended) or "pqc-v1" (post-2028). Absent on pre-v2.3 nodes.' },
+  { field: 'pqc_public_key',    type: 'string | null', desc: 'base64url-encoded ML-DSA-65 public key (1952 bytes). Null in demo deployments.' },
+  { field: 'ed25519_public_key',type: 'string | null', desc: 'base64url-encoded Ed25519 public key (32 bytes). Null in demo deployments; absent for pqc-v1 nodes.' },
+];
+---
+
+<DocsLayout title="RCAN v2.3 — PQC Hybrid Profile" description="RCAN v2.3 defines the pqc-hybrid-v1 cryptographic profile: dual Ed25519 + ML-DSA-65 signatures for quantum-resistant robot communication.">
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-text-muted mb-6">
+      <a href="/spec/" class="hover:text-accent transition-colors">Specification</a>
+      <span class="mx-2 opacity-40">/</span>
+      <span class="text-text">v2.3</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-4 mb-8">
+      <div>
+        <h1 class="mb-2">RCAN v2.3</h1>
+        <p class="text-text-muted text-lg">PQC Hybrid Cryptographic Profile</p>
+      </div>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/15 text-accent border border-accent/30 whitespace-nowrap mt-2">
+        Current
+      </span>
+    </div>
+
+    <!-- What's new -->
+    <section class="mb-10">
+      <h2>What's New in v2.3</h2>
+      <ul class="space-y-2 mt-4">
+        {notices.map(n => (
+          <li class="flex gap-3 text-sm text-text-muted">
+            <span class="text-accent mt-0.5 shrink-0">→</span>
+            <span>{n.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- New /.well-known fields -->
+    <section class="mb-10">
+      <h2>New /.well-known/rcan-node.json Fields</h2>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text font-semibold">Field</th>
+              <th class="text-left py-2 pr-4 text-text font-semibold">Type</th>
+              <th class="text-left py-2 text-text font-semibold">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {newFields.map(f => (
+              <tr class="border-b border-border/50">
+                <td class="py-2 pr-4 font-mono text-accent text-xs">{f.field}</td>
+                <td class="py-2 pr-4 text-text-muted">{f.type}</td>
+                <td class="py-2 text-text-muted">{f.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Conformance -->
+    <section class="mb-10">
+      <h2>Conformance Levels</h2>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text font-semibold">Level</th>
+              <th class="text-left py-2 pr-4 text-text font-semibold">Label</th>
+              <th class="text-left py-2 text-text font-semibold">Requirements</th>
+            </tr>
+          </thead>
+          <tbody>
+            {conformanceLevels.map(c => (
+              <tr class="border-b border-border/50">
+                <td class="py-2 pr-4 font-mono font-bold text-accent">{c.level}</td>
+                <td class="py-2 pr-4 text-text">{c.label}</td>
+                <td class="py-2 text-text-muted">{c.req}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Back -->
+    <div class="mt-12 flex flex-wrap gap-4">
+      <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+        ← Full Specification
+      </a>
+      <a href="/spec/v2.2" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+        ← v2.2
+      </a>
+    </div>
+
+  </div>
+</DocsLayout>

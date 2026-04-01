@@ -3,10 +3,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v2.2.0',
-    date: '2026-03-27',
+    version: 'v2.3.0',
+    date: '2026-03-31',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'feat', text: 'pqc-hybrid-v1 profile: "pqc-hybrid-v1.<ed25519_b64url>.<ml_dsa_b64url>" — both halves required, single-half sigs MUST be rejected' },
+      { type: 'feat', text: 'pqc-v1 profile: "pqc-v1.<ml_dsa_b64url>" — ML-DSA-65 only, for use post-2028 after Ed25519 sunset' },
+      { type: 'feat', text: '/.well-known/rcan-node.json: new fields crypto_profile, pqc_public_key, ed25519_public_key' },
+      { type: 'feat', text: '§1.6.4: pqc-hybrid-v1 combined sig format for RURI ?sig= parameter' },
+      { type: 'docs', text: 'docs/crypto/pqc-profile.md: encoding, key sizes (Ed25519 64B sig / ML-DSA-65 3309B sig), migration timeline 2026→2028+, reference implementations' },
+    ],
+  },
+  {
+    version: 'v2.2.0',
+    date: '2026-03-27',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'breaking', text: 'Ed25519 fully removed — ML-DSA-65 (NIST FIPS 204) is the only signing algorithm' },
       { type: 'breaking', text: 'pq_sig field removed from wire format — signature.alg = "ml-dsa-65" is the sole signing block' },

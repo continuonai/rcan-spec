@@ -7,9 +7,13 @@ export const onRequest = () => {
     // In production, set this to your robot node's actual Ed25519 public key (e.g. "ed25519:<base58-encoded-key>").
     // For demo/reference deployments this is left null. Configure via environment variable or deployment config.
     public_key: null,
+    // PQC profile fields (RCAN v2.3+)
+    crypto_profile: "pqc-hybrid-v1",
+    pqc_public_key: null,      // base64url-encoded ML-DSA-65 public key (1952 bytes). Null in demo deployments.
+    ed25519_public_key: null,  // base64url-encoded Ed25519 public key (32 bytes). Null in demo deployments.
     api_base: "https://rcan.dev/api/v1",
     registry_ui: "https://rcan.dev/registry/",
-    spec_version: "1.3",
+    spec_version: "2.3",
     capabilities: ["register", "resolve", "verify", "delegate"],
     sync_endpoint: "https://rcan.dev/api/v1/sync",
     last_sync: new Date().toISOString(),
