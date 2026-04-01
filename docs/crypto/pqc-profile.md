@@ -120,7 +120,8 @@ pqc-v1.<ml_dsa_base64url>
 
 ### Conformance Requirements
 
-- Do NOT deploy before 2028; use `pqc-hybrid-v1` in the 2026–2027 transition period.
+- **General rule:** Prefer `pqc-hybrid-v1` during 2026–2027 for maximum interoperability with receivers that may not yet support ML-DSA verification.
+- **Exception — operator-owned deployments:** A robot operator who controls both the issuing node and all verifiers in the deployment MAY use `pqc-v1` at any time, including before 2028. This is appropriate for closed fleets where the operator owns both sides of the trust chain.
 - A node advertising `crypto_profile: "pqc-v1"` MUST reject legacy Ed25519-only messages.
 - The `ed25519_public_key` field is absent or null when using `pqc-v1`.
 
@@ -130,9 +131,10 @@ pqc-v1.<ml_dsa_base64url>
 
 | Period | Profile | Notes |
 |--------|---------|-------|
-| 2026 – 2027 | `pqc-hybrid-v1` | Both halves required. Old receivers still verify Ed25519. |
-| 2027 | Ed25519 sunset | SDKs stop signing with Ed25519; `pqc-hybrid-v1` generators set Ed25519 half to zeros or drop it per compat mode. |
-| 2028+ | `pqc-v1` | ML-DSA-65 only. Ed25519 verification code removed. |
+| 2026 – 2027 | `pqc-hybrid-v1` | Default for interop. Both halves required. Old receivers still verify Ed25519. |
+| 2026+ | `pqc-v1` | **Operator-owned/closed deployments only.** ML-DSA-65 only when operator controls all verifiers. |
+| 2027 | Ed25519 sunset | SDKs stop signing with Ed25519; `pqc-hybrid-v1` generators may set Ed25519 half to zeros per compat mode. |
+| 2028+ | `pqc-v1` | General availability. ML-DSA-65 only. Ed25519 verification code removed. |
 
 ---
 
