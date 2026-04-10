@@ -274,6 +274,152 @@ const onTimeoutBehaviors = [
 
   <hr />
 
+<!-- §16.5 AI Output Watermarking -->
+<div class="mt-12">
+  <div class="flex items-center gap-3 mb-4">
+    <h2 class="text-2xl font-bold text-text" id="section-16-5">§16.5 — AI Output Watermarking</h2>
+    <span class="text-xs px-2 py-1 rounded-full border font-mono bg-accent/15 text-accent border-accent/30">v1.7</span>
+    <span class="text-xs px-2 py-1 rounded-full border font-mono bg-green-500/10 text-green-400 border-green-500/20">Stable</span>
+  </div>
+
+  <p class="text-text-muted mb-4">
+    EU AI Act Art. 50 requires that AI-generated content be machine-detectable. §16.5 specifies a
+    cryptographic watermark token embedded in every AI-generated <code class="text-accent font-mono">COMMAND</code> payload
+    and its corresponding audit record.
+  </p>
+
+  <h3 class="text-lg font-semibold text-text mt-6 mb-3">Token Format</h3>
+  <p class="text-text-muted mb-4">
+    Watermark tokens use the prefix <code class="text-accent font-mono">rcan-wm-v1:</code> followed by 32 lowercase hex characters
+    (16 bytes of HMAC-SHA256 output). The format is machine-detectable by regex:
+    <code class="text-accent font-mono">^rcan-wm-v1:[0-9a-f]&#123;32&#125;$</code>
+  </p>
+
+  <CodeWindow
+    language="python"
+    title="Token computation"
+    code={`import hashlib, hmac
+
+def compute_watermark_token(rrn, thought_id, timestamp_iso, ml_dsa_private_bytes):
+    message = f"{rrn}:{thought_id}:{timestamp_iso}".encode()
+    digest = hmac.new(ml_dsa_private_bytes, message, hashlib.sha256).digest()
+    return f"rcan-wm-v1:{digest[:16].hex()}"
+
+# Example output:
+# "rcan-wm-v1:a3f9c1d2b8e47f20a3f9c1d2b8e47f20"`}
+  />
+
+  <h3 class="text-lg font-semibold text-text mt-6 mb-3">HMAC Key</h3>
+  <p class="text-text-muted mb-4">
+    The HMAC secret is the robot's ML-DSA-65 private key bytes (§9, 4032 bytes). This key is already
+    present at runtime for message signing — no additional key material is required. The token proves
+    the command originated from a robot with a specific identity; verification requires the robot's
+    public verification endpoint (see below).
+  </p>
+
+  <h3 class="text-lg font-semibold text-text mt-6 mb-3">Required Fields</h3>
+  <p class="text-text-muted mb-2">
+    Implementations at conformance level L2+ <strong>MUST</strong> include <code class="text-accent font-mono">watermark_token</code>
+    in:
+  </p>
+  <ul class="list-disc list-inside text-text-muted mb-4 space-y-1 ml-4">
+    <li>The <code class="text-accent font-mono">COMMAND</code> message payload (§3)</li>
+    <li>The corresponding audit record (§16.1)</li>
+  </ul>
+
+  <CodeWindow
+    language="json"
+    title="COMMAND payload with watermark_token"
+    code={`{
+  "type": "COMMAND",
+  "source": "rcan://robot.local:8000/bob",
+  "payload": {
+    "action": "move",
+    "linear": 0.3,
+    "angular": 0.0,
+    "watermark_token": "rcan-wm-v1:a3f9c1d2b8e47f20a3f9c1d2b8e47f20"
+  },
+  "sig": { "alg": "ml-dsa-65", "kid": "a3f9c1d2", "value": "..." }
+}`}
+  />
+
+  <h3 class="text-lg font-semibold text-text mt-6 mb-3">Verification Endpoint</h3>
+  <p class="text-text-muted mb-4">
+    Implementations <strong>MUST</strong> expose a public (no authentication required) verification endpoint.
+    The endpoint looks up the token in the tamper-evident audit log and returns the full audit entry,
+    proving both token validity and that the command was logged.
+  </p>
+
+  <CodeWindow
+    language="yaml"
+    title="GET /api/v1/watermark/verify"
+    code={`# Request
+GET /api/v1/watermark/verify?token=rcan-wm-v1:a3f9c1d2b8e47f20a3f9c1d2b8e47f20&rrn=RRN-000000000001
+
+# Response 200 — token found in audit log
+{
+  "valid": true,
+  "rrn": "RRN-000000000001",
+  "watermark_token": "rcan-wm-v1:a3f9c1d2b8e47f20a3f9c1d2b8e47f20",
+  "audit_entry": {
+    "ts": "2026-04-10T14:32:01.123456",
+    "event": "motor_command",
+    "source": "brain",
+    "watermark_token": "rcan-wm-v1:a3f9c1d2b8e47f20a3f9c1d2b8e47f20",
+    "ai": { "thought_id": "thought-abc123", "confidence": 0.91, "model": "claude-sonnet-4-6" },
+    "action": { "type": "move", "linear": 0.3, "angular": 0.0 },
+    "sig": { "alg": "ml-dsa-65", "kid": "a3f9c1d2", "value": "..." }
+  }
+}
+
+# Response 404 — token not in audit log
+{ "error": "Watermark token not found in audit log", "code": "HTTP_404" }
+
+# Response 400 — malformed token format
+{ "error": "Invalid watermark token format", "code": "HTTP_400" }`}
+  />
+
+  <h3 class="text-lg font-semibold text-text mt-6 mb-3">EU AI Act Art. 50 Compliance</h3>
+  <div class="bg-accent/10 border border-accent/20 rounded-lg p-4 mb-4">
+    <p class="text-text-muted text-sm">
+      RCAN §16.5 satisfies the machine-detectability requirement for AI-generated content in robot command
+      pipelines (EU AI Act Art. 50(2)). The <code class="text-accent font-mono">rcan-wm-v1:</code> prefix is detectable by
+      regex without cryptographic operations. Full verification via the public endpoint proves both origin
+      and audit chain membership, satisfying Art. 12 record-keeping requirements simultaneously.
+    </p>
+  </div>
+
+  <h3 class="text-lg font-semibold text-text mt-6 mb-3">Conformance</h3>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm border border-border rounded-lg overflow-hidden">
+      <thead class="bg-bg-alt">
+        <tr>
+          <th class="text-left p-3 text-text font-semibold border-b border-border">Level</th>
+          <th class="text-left p-3 text-text font-semibold border-b border-border">Requirement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-border">
+          <td class="p-3 font-mono text-text-muted">L1 Core</td>
+          <td class="p-3 text-text-muted">Not required</td>
+        </tr>
+        <tr class="border-b border-border bg-bg-alt/30">
+          <td class="p-3 font-mono text-text-muted">L2 Secure</td>
+          <td class="p-3 text-text-muted"><strong>MUST</strong> embed token in COMMAND payload and audit record; <strong>MUST</strong> expose verify endpoint</td>
+        </tr>
+        <tr class="border-b border-border">
+          <td class="p-3 font-mono text-text-muted">L3 Federated</td>
+          <td class="p-3 text-text-muted">L2 requirements + token preserved in forwarded COMMAND across delegation chain</td>
+        </tr>
+        <tr>
+          <td class="p-3 font-mono text-text-muted">L4 Registry</td>
+          <td class="p-3 text-text-muted">L3 requirements + RRF registry MAY cache verify results for cross-robot auditability</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
   <div class="not-prose mt-12 flex flex-wrap gap-4">
     <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
       ← Full Specification
