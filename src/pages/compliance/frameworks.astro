@@ -1,0 +1,233 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Regulatory Framework Coverage — RCAN Protocol"
+  description="RCAN protocol provisions mapped to EU AI Act, NIST AI RMF, ISO 10218-1, IEC 62443, GDPR, HIPAA, and ISO 42001. Article-level coverage classification for physical robot AI systems."
+>
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-6 pt-20 pb-12 border-b border-white/5">
+    <p class="text-sm font-mono uppercase tracking-widest text-accent mb-4">Regulatory Coverage</p>
+    <h1 class="text-4xl md:text-5xl font-bold mb-6">Framework Coverage Index</h1>
+    <p class="text-xl text-text-muted max-w-3xl leading-relaxed">
+      RCAN protocol provisions mapped to applicable regulatory frameworks for physical robot AI systems. Coverage classifications refer to protocol-layer technical controls only. Organizational, procedural, and regulatory obligations remain the responsibility of the provider and deployer.
+    </p>
+    <div class="flex flex-wrap gap-3 mt-8">
+      <a href="/safety" class="px-4 py-2 bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg hover:bg-accent/20 transition-colors">Safety architecture →</a>
+      <a href="/conformance/" class="px-4 py-2 bg-white/5 border border-white/10 text-text-muted text-sm rounded-lg hover:bg-white/10 transition-colors">Conformance levels →</a>
+    </div>
+  </section>
+
+  <!-- Coverage legend -->
+  <section class="max-w-5xl mx-auto px-6 pt-12 pb-6">
+    <div class="flex flex-wrap gap-4 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 shrink-0"></span>
+        <span class="text-text-muted"><strong class="text-text">Full (technical layer)</strong> — RCAN provides a complete protocol-level implementation of the requirement</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-amber-400 shrink-0"></span>
+        <span class="text-text-muted"><strong class="text-text">Substantial</strong> — RCAN addresses the core requirement; supplementary organizational measures needed</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-blue-400 shrink-0"></span>
+        <span class="text-text-muted"><strong class="text-text">Partial</strong> — RCAN provides relevant technical controls; significant organizational scope remains</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- EU AI Act -->
+  <section class="max-w-5xl mx-auto px-6 py-12 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-8">
+      <div class="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-lg shrink-0">🇪🇺</div>
+      <div>
+        <h2 class="text-2xl font-bold">EU AI Act (2024/1689)</h2>
+        <p class="text-text-muted text-sm mt-1">Applies to high-risk AI systems — Annex III, Category 3(a): safety components of machinery. Application date: 2 August 2026.</p>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium w-32">Article</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Requirement</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">RCAN Provisions</th>
+            <th class="text-left py-3 text-text-muted font-medium w-36">Coverage</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 9</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Risk management system — identify and mitigate known and foreseeable risks across the system lifecycle</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§16.2 confidence gates (per-scope thresholds); §7 ConfidenceGate; <code class="text-accent/80 font-mono text-xs">castor fria generate</code> FRIA artifact (<a href="https://github.com/craigm26/OpenCastor/issues/858" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">OpenCastor#858</a>)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Substantial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 12</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Record keeping — automatic logging of operational events enabling post-deployment reconstruction</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§6 AuditChain (HMAC-SHA256 append-only, chained); §16.1 AI block (model identity, confidence, latency, thought_id); QuantumLink-Sim commitment chain</td>
+            <td class="py-4 align-top"><span class="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Full (technical)</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 13</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Transparency — deployers must be able to interpret outputs and understand system limitations</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§16.4 thought log (<code class="text-accent/80 font-mono text-xs">GET /api/thoughts/&lt;id&gt;</code>, OWNER-gated); robot-memory.md structured operational history (<a href="https://github.com/continuonai/rcan-spec/issues/191" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">rcan-spec#191</a>)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Substantial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 14</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Human oversight — effective oversight during operation; ability to intervene, override, or halt</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§16.3 HiTL gates (structural PENDING_AUTH → AUTHORIZE flow; cannot be bypassed by AI agent); §2 RBAC OWNER role enforcement; ESTOP protocol</td>
+            <td class="py-4 align-top"><span class="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Full (technical)</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 17</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Quality management — documented methodology, testing, performance monitoring, change management</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§16.2 confidence gate thresholds (performance floor); §16.1 inference_latency_ms in every audit record; robot-memory.md confidence decay (systematic degradation monitoring)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 26</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Deployer obligations — use system as instructed, maintain human oversight, report incidents</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§2 RBAC LEASEE role (deployer authority boundary enforced at protocol layer; scope violations structurally impossible)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">Art. 50</td>
+            <td class="py-4 pr-4 text-text-muted align-top">AI-generated content marking — AI-generated outputs must be machine-detectable as AI-generated</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§16.5 AI output watermarking — HMAC watermark token on every AI-generated COMMAND message; verification endpoint (<a href="https://github.com/continuonai/rcan-spec/issues/194" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">rcan-spec#194</a>, in progress)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">In progress</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-text-muted text-xs mt-4">
+      Detailed article-level mapping: <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/compliance/eu-ai-act-mapping.md" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">docs/compliance/eu-ai-act-mapping.md</a> — includes conformity assessment citation guidance.
+    </p>
+  </section>
+
+  <!-- NIST AI RMF -->
+  <section class="max-w-5xl mx-auto px-6 py-12 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-8">
+      <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-lg shrink-0">🇺🇸</div>
+      <div>
+        <h2 class="text-2xl font-bold">NIST AI Risk Management Framework 1.0</h2>
+        <p class="text-text-muted text-sm mt-1">Voluntary framework for US federal agencies and government procurement. Relevant for DoD and GSA-schedule robotics contracts.</p>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium w-32">Function</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Core Requirement</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">RCAN Provisions</th>
+            <th class="text-left py-3 text-text-muted font-medium w-36">Coverage</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">GOVERN</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Organizational accountability, policies, and workforce capability for AI risk</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§2 RBAC (role-scoped authority); §16 AI accountability provisions; L1–L4 conformance as measurable governance target</td>
+            <td class="py-4 align-top"><span class="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Substantial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">MAP</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Identify and characterize AI risks in deployment context</td>
+            <td class="py-4 pr-4 text-text-muted align-top">FRIA protocol §19 (risk entries from conformance gaps + robot-memory hardware observations); <a href="https://github.com/continuonai/rcan-spec/issues/195" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">rcan-spec#195</a></td>
+            <td class="py-4 align-top"><span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">MEASURE</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Analyze and assess AI risks using quantitative and qualitative methods</td>
+            <td class="py-4 pr-4 text-text-muted align-top">L1–L4 conformance test suite (quantitative pass/fail per requirement); confidence gate rejection rates; audit chain integrity verification; safety benchmarks (<a href="https://github.com/craigm26/OpenCastor/issues/859" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">OpenCastor#859</a>)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Substantial</span></td>
+          </tr>
+          <tr>
+            <td class="py-4 pr-4 font-mono text-accent text-xs align-top">MANAGE</td>
+            <td class="py-4 pr-4 text-text-muted align-top">Prioritize and address risks; communicate residual risks to stakeholders</td>
+            <td class="py-4 pr-4 text-text-muted align-top">§16.2–16.3 gating (risk prevention); §16.4 thought log (decision transparency); AuditChain (residual risk evidence); FRIA artifact (stakeholder communication)</td>
+            <td class="py-4 align-top"><span class="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Substantial</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-text-muted text-xs mt-4">
+      Detailed alignment: <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/compliance/nist-ai-rmf-alignment.md" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">docs/compliance/nist-ai-rmf-alignment.md</a>
+    </p>
+  </section>
+
+  <!-- Other frameworks -->
+  <section class="max-w-5xl mx-auto px-6 py-12 border-b border-white/5">
+    <h2 class="text-2xl font-bold mb-8">Additional Frameworks</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">ISO 10218-1:2025</h3>
+          <span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed mb-3">Safety requirements for industrial robots. RCAN provisions: Protocol 66 safety rules (15 rules across motion, force, workspace, human, thermal, electrical, software, emergency, property, privacy domains); geofencing with dead-reckoning odometry; emergency stop with callback chain.</p>
+        <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/compliance/iso-10218-alignment.md" rel="noopener noreferrer" target="_blank" class="text-accent text-xs hover:underline">Full alignment doc →</a>
+      </div>
+
+      <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">IEC 62443</h3>
+          <span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed mb-3">Industrial automation and control system cybersecurity. RCAN provisions: ML-DSA-65 + Ed25519 message signing; RBAC with rate limiting and session timeouts; JWT authentication; mDNS discovery with peer verification.</p>
+        <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/compliance/iec-62443-alignment.md" rel="noopener noreferrer" target="_blank" class="text-accent text-xs hover:underline">Full alignment doc →</a>
+      </div>
+
+      <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">GDPR Article 22</h3>
+          <span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed">Automated individual decision-making. RCAN provisions: §16.3 HiTL gates (human in the decision loop); §16.4 thought log (decision explainability); privacy-by-default sensor policy in OpenCastor (camera, microphone scope controls).</p>
+      </div>
+
+      <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">HIPAA</h3>
+          <span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed">Applicable to medical robotics (surgical, clinical support, care pathway automation). RCAN provisions: role-gated audit record access (OWNER required for reasoning field); tamper-evident chain for PHI-adjacent action logs; air-gap capable (no external network required).</p>
+      </div>
+
+      <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">ISO 42001</h3>
+          <span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed">AI management systems — organizational requirements. RCAN provisions: L1–L4 conformance levels provide measurable quality benchmarks for an AI management system's technical controls; audit chain supports post-market monitoring data infrastructure.</p>
+      </div>
+
+      <div class="bg-bg-alt/50 border border-white/5 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold">SIL/PLe (IEC 62061 / ISO 13849)</h3>
+          <span class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Partial</span>
+        </div>
+        <p class="text-text-muted text-sm leading-relaxed">Functional safety for machinery. RCAN provisions: safety stop integration (<code class="text-accent/80 font-mono text-xs">agent.safety_stop</code> flag); latency budget constraint (<code class="text-accent/80 font-mono text-xs">latency_budget_ms</code>); Protocol 66 safety invariants provide evidence for safety function documentation.</p>
+        <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/compliance/sil-ple-declarations.md" rel="noopener noreferrer" target="_blank" class="text-accent text-xs hover:underline">Declaration template →</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Out of scope note -->
+  <section class="max-w-5xl mx-auto px-6 py-12">
+    <div class="bg-white/3 border border-white/8 rounded-2xl p-8">
+      <h3 class="font-bold mb-3">What RCAN does not address</h3>
+      <p class="text-text-muted text-sm leading-relaxed mb-4">
+        RCAN is a protocol specification. The following compliance requirements are organizational, procedural, or regulatory in nature and are outside the scope of any protocol: EU AI Act Art. 43 conformity assessment and CE marking; Art. 49 registration in the EU AI public database; Art. 72 post-market monitoring organizational process; Art. 9(4) human-led risk estimation for unintended uses.
+      </p>
+      <p class="text-text-muted text-sm leading-relaxed">
+        RCAN provides the technical controls and audit infrastructure that support these obligations — it does not constitute the organizational process itself. For conformity assessment template guidance, see <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/compliance/conformity-assessment-template.md" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">docs/compliance/conformity-assessment-template.md</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
