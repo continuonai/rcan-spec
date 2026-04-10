@@ -185,6 +185,31 @@ const tsBadge = sdkBadge('rcan-ts');
     </div>
   </section>
 
+  <!-- Why open protocol section -->
+  <section class="py-24 border-b border-white/5">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="mb-10">
+        <p class="text-sm font-mono uppercase tracking-widest text-accent mb-4">Architecture</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">Why an open protocol beats a bolt-on layer</h2>
+      </div>
+      <div class="space-y-6 text-text-muted leading-relaxed">
+        <p>
+          A safety layer that wraps a model's output sits outside the execution boundary — it observes what the model generates but cannot constrain what it attempts or when dispatch occurs. For text applications, this trade-off is acceptable. For physical robots, the failure mode is different: a command that clears a post-generation safety filter but targets the wrong actuator causes physical harm before any check can intervene. Protocol-level enforcement closes this gap. RCAN's confidence thresholds and HiTL gates are structural constraints on the message transport — not filters — enforced before any command reaches an actuator.
+        </p>
+        <p>
+          Auditability is similarly structural in RCAN. The ML-DSA-65 signed audit chain records every command with principal identity, model confidence, thought provenance, and delegation path at dispatch time — not reconstructed afterward. Each record is cryptographically chained to the previous; any modification breaks chain verification. This is the record-keeping architecture EU AI Act Article 12 requires, built into the protocol layer rather than added as a compliance reporting feature.
+        </p>
+        <p>
+          RCAN is an open specification under CC BY 4.0. Every claim in this documentation can be verified against the <a href="/spec/" class="text-accent hover:underline">spec</a>, the <a href="https://github.com/craigm26/OpenCastor" rel="noopener noreferrer" target="_blank" class="text-accent hover:underline">reference implementation</a>, and the <a href="/conformance/" class="text-accent hover:underline">conformance test suite</a>. Conformance levels L1–L4 define what "compliant" means concretely — not as a self-certification, but as a pass/fail test suite any implementation can run.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-4 mt-10">
+        <a href="/safety" class="px-5 py-2.5 bg-accent/10 border border-accent/20 text-accent text-sm font-medium rounded-lg hover:bg-accent/20 transition-colors">Safety architecture →</a>
+        <a href="/compliance/frameworks" class="px-5 py-2.5 bg-white/5 border border-white/10 text-text-muted text-sm font-medium rounded-lg hover:bg-white/10 transition-colors">Regulatory coverage →</a>
+      </div>
+    </div>
+  </section>
+
   <!-- SDKs Section -->
   <section class="py-24 border-b border-white/5">
     <div class="max-w-7xl mx-auto px-6">
