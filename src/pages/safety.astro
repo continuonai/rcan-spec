@@ -1,0 +1,253 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeWindow from '../components/CodeWindow.astro';
+
+const confidenceGateConfig = `agent:
+  confidence_gates:
+    NAVIGATE: 0.85
+    MANIPULATE: 0.90
+    CAMERA_STREAM: 0.70
+    ESTOP: 0.50     # lower threshold — emergency actions always considered`;
+
+const hitlConfig = `agent:
+  hitl_gates:
+    - scope: MANIPULATE
+      reason: "Physical contact with environment — human confirmation required"
+    - scope: NAVIGATE
+      location_class: human_proximate
+      reason: "Shared-space navigation above 0.5m/s"`;
+
+const auditRecord = `{
+  "msg_id": "cmd_a3f9c1d2",
+  "type": "COMMAND",
+  "ruri": "rcan://lab.local/acme/bot-x1/00000001",
+  "principal": "operator@acme.com",
+  "scope": "NAVIGATE",
+  "timestamp_ms": 1744329600000,
+  "outcome": "ok",
+  "ai_block": {
+    "model_provider": "openai",
+    "model_id": "gpt-4o",
+    "inference_confidence": 0.91,
+    "inference_latency_ms": 312,
+    "thought_id": "thought_b4e87f23",
+    "escalated": false,
+    "watermark_token": "rcan-wm-v1:a3f9c1d2b4e87f23"
+  },
+  "delegation_chain": [],
+  "chain_prev": "sha256:9f3a...",
+  "chain_hash": "sha256:2c7d..."
+}`;
+
+const delegationExample = `{
+  "type": "COMMAND",
+  "scope": "MANIPULATE",
+  "delegation_chain": [
+    {
+      "issuer_ruri": "rcan://lab.local/acme/bot-alpha/00000002",
+      "human_subject": "operator@acme.com",
+      "timestamp_ms": 1744329600000,
+      "scope": "MANIPULATE",
+      "signature": "mldsa65:3f9a..."
+    }
+  ]
+}`;
+
+const memoryEntry = `schema_version: "1.0"
+rrn: RRN-000000000001
+last_updated: 2026-04-10T02:00:00Z
+entries:
+  - id: mem-a3f9c1d2
+    type: hardware_observation
+    text: "Left wheel encoder intermittent under sustained load — prefer ≤0.3m/s"
+    confidence: 0.92        # decays 0.05/day if not reinforced by log evidence
+    first_seen: 2026-03-28T14:00:00Z
+    last_reinforced: 2026-04-10T02:00:00Z
+    observation_count: 14
+    tags: [wheel, encoder, navigation]`;
+---
+
+<BaseLayout
+  title="Physical AI Safety Architecture — RCAN Protocol"
+  description="How RCAN enforces safety at the protocol layer for autonomous robot systems: confidence gating, HiTL gates, ML-DSA-65 signed audit chains, multi-robot delegation, and structured operational memory with EU AI Act alignment."
+>
+  <!-- Hero -->
+  <section class="max-w-4xl mx-auto px-6 pt-20 pb-12 border-b border-white/5">
+    <p class="text-sm font-mono uppercase tracking-widest text-accent mb-4">Safety Architecture</p>
+    <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+      Physical AI Safety.<br/>
+      <span class="text-text-muted">At the protocol layer.</span>
+    </h1>
+    <p class="text-xl text-text-muted max-w-2xl leading-relaxed">
+      In systems where incorrect decisions have physical consequences, safety constraints must be structural — not filters applied after generation. RCAN enforces safety at the protocol layer: before dispatch, at the transport boundary, in the audit record.
+    </p>
+    <div class="flex flex-wrap gap-3 mt-8">
+      <a href="/spec/" class="px-4 py-2 bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg hover:bg-accent/20 transition-colors">Read the spec →</a>
+      <a href="/compliance/frameworks" class="px-4 py-2 bg-white/5 border border-white/10 text-text-muted text-sm rounded-lg hover:bg-white/10 transition-colors">Regulatory coverage →</a>
+      <a href="/conformance/" class="px-4 py-2 bg-white/5 border border-white/10 text-text-muted text-sm rounded-lg hover:bg-white/10 transition-colors">Conformance levels →</a>
+    </div>
+  </section>
+
+  <!-- Section 1: Protocol constraint -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <h2 class="text-2xl font-bold mb-4">Safety is a protocol constraint, not an application concern</h2>
+    <p class="text-text-muted leading-relaxed mb-4">
+      A safety layer that wraps a model's output sits outside the execution boundary — it observes outputs but cannot constrain what the model attempts or when dispatch occurs. For text applications, this is an acceptable trade-off. For physical robots, the failure mode is different: a command that clears a post-generation filter but targets the wrong actuator causes physical harm before any check can intervene.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-4">
+      RCAN addresses this by making safety constraints structural at the message transport layer. Confidence thresholds and human authorization gates are declared in the robot's RCAN configuration and enforced at dispatch time — not as application-layer checks the AI agent reasons around, but as protocol invariants the transport enforces before a command reaches any actuator.
+    </p>
+    <p class="text-text-muted leading-relaxed">
+      The reference implementation is <a href="https://github.com/craigm26/OpenCastor" class="text-accent hover:underline">OpenCastor</a>, an open-source robot runtime that implements RCAN on production hardware (Raspberry Pi 5, Hailo-8, OAK-D). The safety mechanisms described here are not theoretical — they are running on physical robots.
+    </p>
+  </section>
+
+  <!-- Section 2: Confidence gating -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">§16.2</span>
+      <h2 class="text-2xl font-bold">Confidence gating</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      Every RCAN action scope has a configurable minimum confidence threshold declared in the robot's config. If the AI model's reported confidence for a proposed action falls below that threshold, the protocol rejects dispatch and emits a <code class="text-accent font-mono text-sm">CONFIDENCE_GATE_BLOCKED</code> audit record. The threshold is per-scope, so fine-grained control (higher threshold for physical manipulation, lower for camera streaming) is expressed in configuration rather than code.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-6">
+      This gate fires before the command reaches the transport layer. There is no path through which a model can dispatch a low-confidence MANIPULATE command — not by rephrasing, not through a different code path, not through a tool call that bypasses the gate.
+    </p>
+    <CodeWindow code={confidenceGateConfig} language="yaml" title="rcan-config.yaml — confidence gate configuration" />
+  </section>
+
+  <!-- Section 3: HiTL -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">§16.3</span>
+      <h2 class="text-2xl font-bold">Human-in-the-Loop gates</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      Action types declared as requiring human authorization in the RCAN config cannot be dispatched by any means without a signed <code class="text-accent font-mono text-sm">AUTHORIZE</code> message from a principal holding <code class="text-accent font-mono text-sm">OWNER</code> or higher role. When a gated action is attempted, the protocol emits <code class="text-accent font-mono text-sm">PENDING_AUTH</code> status and the command waits. The AI agent cannot proceed, cannot re-issue the command, and cannot escalate its own role.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-4">
+      This satisfies EU AI Act Article 14 (human oversight) at the protocol layer: the human-machine interface is the <code class="text-accent font-mono text-sm">PENDING_AUTH → AUTHORIZE</code> flow, and the gate is a structural constraint on the transport, not a UI affordance that can be bypassed.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-6">
+      HiTL gate configuration supports scope-based and context-based conditions (e.g., require authorization for NAVIGATE only when operating in a <code class="text-accent font-mono text-sm">human_proximate</code> location class).
+    </p>
+    <CodeWindow code={hitlConfig} language="yaml" title="rcan-config.yaml — HiTL gate configuration" />
+  </section>
+
+  <!-- Section 4: Audit chain -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">§16.1</span>
+      <h2 class="text-2xl font-bold">Tamper-evident audit chain</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      Every RCAN command is recorded in an HMAC-SHA256 append-only audit chain at dispatch time — not reconstructed after the fact. Each record includes: principal identity, RURI, timestamp (millisecond precision), message_id, outcome, model provider, model identifier, inference confidence, inference latency, thought_id, escalation flag, and (from §16.5) a watermark token for EU AI Act Art. 50 compliance.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-4">
+      Records are chained: each entry includes the SHA-256 hash of the previous record. Any modification to any record in the chain — by any party, including the operator — breaks all subsequent hashes and is detectable on verification. The chain is the authoritative record-keeping artifact for EU AI Act Article 12 compliance.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-6">
+      Messages are signed with the robot's ML-DSA-65 identity key (see post-quantum identity below). The combination of HMAC chaining and per-message signing means the chain is both tamper-evident and attributable.
+    </p>
+    <CodeWindow code={auditRecord} language="json" title="Audit chain record — COMMAND with AI block" />
+  </section>
+
+  <!-- Section 5: Post-quantum -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">§9 / §1.6</span>
+      <h2 class="text-2xl font-bold">Post-quantum identity (ML-DSA-65)</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      RCAN v1.6+ binds each Robot Registry Number (RRN) to an ML-DSA-65 public key (CRYSTALS-Dilithium, NIST FIPS 204, standardised August 2024). Every RCAN message is signed with the robot's identity key. Verification requires only the robot's public key — no central server, no network connectivity.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-4">
+      ML-DSA-65 provides security against quantum adversaries. Classical HMAC-SHA256 is used for per-record chaining within audit sessions (fast, symmetric); ML-DSA-65 is used for per-message attribution (asymmetric, forward-secure, quantum-resistant). The combination is appropriate for systems with lifetimes measured in years operating in environments where key material may be exposed to future quantum attack.
+    </p>
+    <p class="text-text-muted leading-relaxed">
+      The OpenCastor reference implementation uses the <code class="text-accent font-mono text-sm">dilithium-py</code> binding. Key generation, signing, and verification are implemented in <code class="text-accent font-mono text-sm">castor/rcan/pqc.py</code>.
+    </p>
+  </section>
+
+  <!-- Section 6: Delegation chain -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">§12 / rcan-spec#GAP-01</span>
+      <h2 class="text-2xl font-bold">Multi-robot delegation chain</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      When Robot B executes a command at the direction of Human A, routed through Robot A, the human provenance must be preserved in the audit record. RCAN's <code class="text-accent font-mono text-sm">delegation_chain</code> array carries a signed record for each hop: issuer RURI, human subject, timestamp, scope, and ML-DSA-65 signature. The receiving robot verifies each signature in the chain before dispatch.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-4">
+      The chain is limited to 4 hops maximum. Commands exceeding this limit are rejected with <code class="text-accent font-mono text-sm">DELEGATION_CHAIN_EXCEEDED</code>. The audit record serializes the full chain, giving auditors complete provenance from actuator back to originating human principal.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-6">
+      This matters for multi-robot deployments in regulated environments: a compromised Robot A cannot issue arbitrary commands to Robot B without the human subject in the delegation chain holding the required scope on Robot B's RBAC configuration.
+    </p>
+    <CodeWindow code={delegationExample} language="json" title="COMMAND message with delegation_chain" />
+  </section>
+
+  <!-- Section 7: Physical presence -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">§PHYSICAL_PRESENCE</span>
+      <h2 class="text-2xl font-bold">Physical presence verification</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      RCAN's <code class="text-accent font-mono text-sm">PHYSICAL_PRESENCE</code> message type enables a robot to cryptographically attest that a human operator is physically proximate at the time of authorization — using on-device sensor data (camera, proximity sensor, or external beacon) combined with a signed timestamp. This attestation can be required as a precondition for certain HiTL gate approvals.
+    </p>
+    <p class="text-text-muted leading-relaxed">
+      Physical presence verification is specific to embodied systems. It has no analogue in text AI safety architectures. For regulated environments where certain actions require in-person oversight (operating theatre robotics, industrial manipulation in human-shared zones), this mechanism provides a machine-verifiable record that the oversight requirement was met.
+    </p>
+  </section>
+
+  <!-- Section 8: Robot memory -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="flex items-start gap-4 mb-6">
+      <span class="text-xs font-mono bg-accent/10 border border-accent/20 text-accent px-2 py-1 rounded mt-1 shrink-0">rcan-spec#191</span>
+      <h2 class="text-2xl font-bold">Operational memory with confidence decay</h2>
+    </div>
+    <p class="text-text-muted leading-relaxed mb-4">
+      <code class="text-accent font-mono text-sm">robot-memory.md</code> is a structured YAML-fronted file maintained by OpenCastor's nightly analysis loop (autoDream). Each entry is an operational observation — hardware degradation, environmental conditions, learned behaviour adjustments — with a confidence score that decays at 0.05/day if not reinforced by new log evidence.
+    </p>
+    <p class="text-text-muted leading-relaxed mb-4">
+      Entries with confidence below 0.30 are excluded from context injection; entries below 0.10 are pruned on the next write cycle. This produces a self-maintaining operational history that reflects current system state rather than accumulating stale observations. The schema is designed for EU AI Act Article 13 (transparency) and Article 17 (quality management) alignment: the confidence decay mechanism directly maps to Art. 17's requirement for systematic monitoring of system performance over time.
+    </p>
+    <CodeWindow code={memoryEntry} language="yaml" title="robot-memory.md — operational memory entry" />
+    <p class="text-text-muted text-sm mt-4">
+      Schema specification: <a href="https://github.com/continuonai/rcan-spec/blob/master/docs/robot-memory-schema.md" class="text-accent hover:underline">continuonai/rcan-spec — robot-memory-schema.md</a>
+    </p>
+  </section>
+
+  <!-- Benchmarks callout -->
+  <section class="max-w-4xl mx-auto px-6 py-16 border-b border-white/5">
+    <div class="bg-bg-alt/60 border border-white/10 rounded-2xl p-8">
+      <h2 class="text-xl font-bold mb-3">Safety subsystem benchmarks</h2>
+      <p class="text-text-muted text-sm leading-relaxed mb-4">
+        Performance measurements for confidence gate rejection rates, HiTL gate round-trip latency, audit chain write latency (p50/p95/p99), and ML-DSA-65 signing overhead on production hardware (Raspberry Pi 5, Hailo-8) are in progress.
+      </p>
+      <p class="text-text-muted text-sm">
+        Tracking: <a href="https://github.com/craigm26/OpenCastor/issues/859" class="text-accent hover:underline">craigm26/OpenCastor#859</a> — results will be published to <code class="text-accent font-mono">docs/safety-benchmarks.md</code> in the OpenCastor reference implementation.
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer nav -->
+  <section class="max-w-4xl mx-auto px-6 py-12">
+    <div class="flex flex-col sm:flex-row gap-4 justify-between">
+      <div>
+        <p class="text-text-muted text-sm mb-3">Regulatory framework coverage</p>
+        <a href="/compliance/frameworks" class="text-accent hover:underline text-sm">See all supported frameworks →</a>
+      </div>
+      <div>
+        <p class="text-text-muted text-sm mb-3">Conformance levels L1–L4</p>
+        <a href="/conformance/" class="text-accent hover:underline text-sm">Conformance test suite →</a>
+      </div>
+      <div>
+        <p class="text-text-muted text-sm mb-3">Reference implementation</p>
+        <a href="https://github.com/craigm26/OpenCastor" class="text-accent hover:underline text-sm">OpenCastor on GitHub →</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
