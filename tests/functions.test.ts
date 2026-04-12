@@ -11,7 +11,17 @@
  * Uses a lightweight in-memory D1 mock — no Cloudflare runtime required.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
+import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
+import {
+  sortedJsonStringify,
+  base64urlToBytes,
+  bytesToBase64url,
+  verifyMlDsa65Signature,
+  handlePost,
+  handleGet,
+} from "../functions/api/v1/robots/[rrn]/fria.js";
+import { deriveComplianceStatus, handleCompliance } from "../functions/api/v1/robots/[rrn]/compliance.js";
 
 // ── D1 mock ───────────────────────────────────────────────────────────────────
 
@@ -1105,5 +1115,129 @@ describe("rcan-node.json manifest — PQC fields (issue #188)", () => {
 
   it("spec_version is 2.3", () => {
     expect(manifest.spec_version).toBe("2.3");
+  });
+});
+
+// ── Pure helpers from fria.ts ─────────────────────────────────────────────────
+
+describe("sortedJsonStringify", () => {
+  it("sorts top-level keys alphabetically", () => {
+    const result = sortedJsonStringify({ z: 1, a: 2, m: 3 });
+    expect(result).toBe('{"a":2,"m":3,"z":1}');
+  });
+
+  it("sorts nested object keys recursively", () => {
+    const result = sortedJsonStringify({ b: { y: 1, x: 2 }, a: 3 });
+    expect(result).toBe('{"a":3,"b":{"x":2,"y":1}}');
+  });
+
+  it("preserves arrays without sorting elements", () => {
+    const result = sortedJsonStringify({ arr: [3, 1, 2] });
+    expect(result).toBe('{"arr":[3,1,2]}');
+  });
+
+  it("handles null values", () => {
+    const result = sortedJsonStringify({ a: null });
+    expect(result).toBe('{"a":null}');
+  });
+
+  it("handles primitives", () => {
+    expect(sortedJsonStringify(42)).toBe("42");
+    expect(sortedJsonStringify("hello")).toBe('"hello"');
+    expect(sortedJsonStringify(true)).toBe("true");
+  });
+});
+
+describe("base64urlToBytes / bytesToBase64url", () => {
+  it("round-trips arbitrary bytes", () => {
+    const original = new Uint8Array([1, 2, 3, 255, 0, 128]);
+    const encoded = bytesToBase64url(original);
+    const decoded = base64urlToBytes(encoded);
+    expect(decoded).toEqual(original);
+  });
+
+  it("uses URL-safe characters (no + or /)", () => {
+    const bytes = new Uint8Array(64).fill(255);
+    const encoded = bytesToBase64url(bytes);
+    expect(encoded).not.toContain("+");
+    expect(encoded).not.toContain("/");
+  });
+});
+
+describe("verifyMlDsa65Signature", () => {
+  let publicKeyB64: string;
+  let validSigB64: string;
+  let testDoc: Record<string, unknown>;
+
+  beforeAll(async () => {
+    const keys = ml_dsa65.keygen();
+    publicKeyB64 = bytesToBase64url(keys.publicKey);
+
+    testDoc = {
+      schema: "rcan-fria-v1",
+      generated_at: "2026-04-11T09:00:00.000Z",
+      system: { rrn: "RRN-000000000001", robot_name: "test-bot" },
+      deployment: { annex_iii_basis: "safety_component", prerequisite_waived: false },
+    };
+
+    const { sig: _, ...docWithoutSig } = testDoc;
+    const canonical = sortedJsonStringify(docWithoutSig);
+    const message = new TextEncoder().encode(canonical);
+    const sigBytes = ml_dsa65.sign(message, keys.secretKey);
+    validSigB64 = bytesToBase64url(sigBytes);
+  });
+
+  it("returns true for a valid ML-DSA-65 signature", async () => {
+    const result = await verifyMlDsa65Signature(testDoc, validSigB64, publicKeyB64);
+    expect(result).toBe(true);
+  });
+
+  it("returns false for a tampered document", async () => {
+    const tampered = { ...testDoc, deployment: { annex_iii_basis: "biometric" } };
+    const result = await verifyMlDsa65Signature(tampered, validSigB64, publicKeyB64);
+    expect(result).toBe(false);
+  });
+
+  it("returns false for an invalid signature string", async () => {
+    const result = await verifyMlDsa65Signature(testDoc, "aW52YWxpZA", publicKeyB64);
+    expect(result).toBe(false);
+  });
+
+  it("returns false for a wrong public key", async () => {
+    const otherKeys = ml_dsa65.keygen();
+    const otherPubB64 = bytesToBase64url(otherKeys.publicKey);
+    const result = await verifyMlDsa65Signature(testDoc, validSigB64, otherPubB64);
+    expect(result).toBe(false);
+  });
+
+  it("excludes the sig field from canonical form", async () => {
+    const docWithSig = {
+      ...testDoc,
+      sig: { alg: "ml-dsa-65", kid: "key-001", value: validSigB64 },
+    };
+    const result = await verifyMlDsa65Signature(docWithSig, validSigB64, publicKeyB64);
+    expect(result).toBe(true);
+  });
+});
+
+describe("deriveComplianceStatus", () => {
+  it("returns no_fria when fria is null", () => {
+    expect(deriveComplianceStatus(null)).toBe("no_fria");
+  });
+
+  it("returns compliant when overall_pass and not waived", () => {
+    expect(deriveComplianceStatus({ overall_pass: 1, prerequisite_waived: 0 })).toBe("compliant");
+  });
+
+  it("returns provisional when overall_pass but waived", () => {
+    expect(deriveComplianceStatus({ overall_pass: 1, prerequisite_waived: 1 })).toBe("provisional");
+  });
+
+  it("returns non_compliant when overall_pass is 0", () => {
+    expect(deriveComplianceStatus({ overall_pass: 0, prerequisite_waived: 0 })).toBe("non_compliant");
+  });
+
+  it("returns non_compliant even if waived when overall_pass is 0", () => {
+    expect(deriveComplianceStatus({ overall_pass: 0, prerequisite_waived: 1 })).toBe("non_compliant");
   });
 });
