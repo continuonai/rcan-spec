@@ -89,7 +89,7 @@ jobs:
           cat > public/sdk-status.json << JSONEOF
           {
             "updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "spec_version": "1.3",
+            "spec_version": "3.0",
             "sdks": {
               "rcan-py": {
                 "version": "${{ needs.smoke-py.outputs.version }}",
