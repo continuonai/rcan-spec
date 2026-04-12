@@ -1248,8 +1248,6 @@ describe("deriveComplianceStatus", () => {
 
 // ── POST /robots/:rrn/fria handler tests ──────────────────────────────────────
 
-declare const D1Database: unknown;
-
 // Inline sha256 for test auth setup (mirrors fria.ts)
 async function sha256ForTest(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -1389,5 +1387,6 @@ describe("POST /robots/:rrn/fria — validation", () => {
     const body = await res.json() as { id: number; sig_verified: boolean; overall_pass: boolean };
     expect(body.sig_verified).toBe(true);
     expect(body.overall_pass).toBe(true);
+    expect(body.id).toBe(42);
   });
 });
