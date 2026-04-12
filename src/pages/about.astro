@@ -12,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="mb-16">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Protocol v2.3 · March 2026
+        Protocol v3.0 · April 2026
       </div>
       <h1 class="text-4xl md:text-5xl font-bold text-text mb-6 leading-tight">
         The open protocol for<br/>
@@ -124,7 +124,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           { version: "v1.10", status: "live", label: "Current", desc: "Competition protocol: COMPETITION_ENTER (37), COMPETITION_SCORE (38), SEASON_STANDING (39) for fleet competition events. PERSONAL_RESEARCH_RESULT (40) for private local research runs. Canonical MessageType table extended to 40 entries." },
           { version: "v2.1", status: "stable", label: "Stable", desc: "M2M_TRUSTED (level 6), signed firmware manifests, SBOM attestation, EU AI Act §12/§16. OpenCastor v2026.3.21.2." },
           { version: "v2.2", status: "stable", label: "Stable", desc: "ML-DSA-65 primary signing (FIPS 204), Ed25519 deprecated, dual-brain VLA+Claude architecture, ISO 42001 + EU AI Act compliance. OpenCastor v2026.3.27.1." },
-          { version: "v2.3", status: "current", label: "Latest", desc: "pqc-hybrid-v1 cryptographic profile: Ed25519 + ML-DSA-65 (NIST FIPS 204) dual signatures. Both halves required. /.well-known/rcan-node.json extended with crypto_profile, pqc_public_key, ed25519_public_key. §1.6.4 RURI combined sig format." },
+          { version: "v2.3", status: "stable", label: "Stable", desc: "pqc-hybrid-v1 cryptographic profile: Ed25519 + ML-DSA-65 (NIST FIPS 204) dual signatures. Both halves required. /.well-known/rcan-node.json extended with crypto_profile, pqc_public_key, ed25519_public_key. §1.6.4 RURI combined sig format." },
+          { version: "v3.0", status: "current", label: "Latest", desc: "EU AI Act compliance schemas as first-class protocol citizens. §23–§26 added. Three breaking changes: mandatory ML-DSA-65/pqc-hybrid-v1 signatures, Ed25519-only profiles rejected, Annex III REGISTRY_REGISTER requires fria_ref. §23 Safety Benchmark Protocol, §24 Instructions for Use, §25 Post-Market Monitoring, §26 EU Register Submission." },
         ].map(item => (
           <div class="flex gap-6 mb-8 relative pl-10">
             <div class={`absolute left-2.5 top-1.5 w-3 h-3 rounded-full border-2 ${item.status === 'live' ? 'bg-accent border-accent' : item.status === 'planned' ? 'bg-bg border-accent/50' : 'bg-bg border-white/20'}`}></div>

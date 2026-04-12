@@ -3,10 +3,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v2.3.0',
-    date: '2026-03-31',
+    version: 'v3.0.0',
+    date: '2026-04-11',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'breaking', text: 'All RCAN messages must carry a valid ML-DSA-65 or pqc-hybrid-v1 signature in the sig field' },
+      { type: 'breaking', text: 'Ed25519-only profiles rejected; pqc-hybrid-v1 or ML-DSA-65-only required' },
+      { type: 'breaking', text: 'REGISTRY_REGISTER for Annex III systems requires metadata.compliance.fria_ref' },
+      { type: 'added', text: '§23 Safety Benchmark Protocol (rcan-safety-benchmark-v1)' },
+      { type: 'added', text: '§24 Instructions for Use (rcan-ifu-v1)' },
+      { type: 'added', text: '§25 Post-Market Monitoring / Incidents (rcan-incidents-v1)' },
+      { type: 'added', text: '§26 EU Register Submission (rcan-eu-register-v1)' },
+      { type: 'updated', text: '§22 FRIA: safety_benchmarks block, compliance package table, Annex III prerequisite' },
+    ],
+  },
+  {
+    version: 'v2.3.0',
+    date: '2026-03-31',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'feat', text: 'pqc-hybrid-v1 profile: "pqc-hybrid-v1.<ed25519_b64url>.<ml_dsa_b64url>" — both halves required, single-half sigs MUST be rejected' },
       { type: 'feat', text: 'pqc-v1 profile: "pqc-v1.<ml_dsa_b64url>" — ML-DSA-65 only, for use post-2028 after Ed25519 sunset' },
@@ -135,9 +151,12 @@ const versions = [
 ];
 
 const typeStyle: Record<string, string> = {
-  feat:  'bg-accent/10 text-accent border-accent/20',
-  fix:   'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  chore: 'bg-white/5 text-text-muted/60 border-white/10',
+  feat:     'bg-accent/10 text-accent border-accent/20',
+  added:    'bg-accent/10 text-accent border-accent/20',
+  fix:      'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  breaking: 'bg-red-500/10 text-red-400 border-red-500/20',
+  updated:  'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  chore:    'bg-white/5 text-text-muted/60 border-white/10',
 };
 ---
 
