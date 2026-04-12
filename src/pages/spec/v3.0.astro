@@ -11,7 +11,7 @@ const newSections = [
   { section: '§23', title: 'Safety Benchmark Protocol', href: '/spec/section-23', desc: 'Defines benchmark harness, metrics, pass/fail thresholds, and reporting format for RCAN-compliant safety benchmarks.' },
   { section: '§24', title: 'Instructions for Use', href: '/spec/section-24', desc: 'Mandates machine-readable Instructions for Use (IFU) documents for high-risk robots, including required fields and delivery endpoints.' },
   { section: '§25', title: 'Post-Market Monitoring', href: '/spec/section-25', desc: 'Defines the post-market monitoring protocol: incident reporting, anomaly thresholds, and feedback loop to the EU Register.' },
-  { section: '§26', title: 'EU Register Submission', href: '/spec/section-26', desc: 'Specifies the submission schema, signing requirements, and automated pipeline for EU AI Act Article 60 register entries.' },
+  { section: '§26', title: 'EU Register Submission', href: '/spec/section-26', desc: 'Specifies the submission schema, signing requirements, and automated pipeline for EU AI Act Art. 49 register entries.' },
 ];
 
 const sections = [
@@ -116,7 +116,7 @@ const sections = [
         </li>
         <li class="flex gap-3 text-sm text-text-muted">
           <span class="text-accent mt-0.5 shrink-0">→</span>
-          <span>FRIA validation integrated into the L5 conformance level checklist. Nodes missing <code class="font-mono text-accent text-xs">fria_ref</code> are downgraded to L4 pending submission.</span>
+          <span>FRIA validation enforced at L4 conformance. Annex III nodes missing <code class="font-mono text-accent text-xs">fria_ref</code> cannot complete <code class="font-mono text-accent text-xs">REGISTRY_REGISTER</code> and are held pending submission.</span>
         </li>
         <li class="flex gap-3 text-sm text-text-muted">
           <span class="text-accent mt-0.5 shrink-0">→</span>
