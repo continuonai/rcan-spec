@@ -1226,18 +1226,22 @@ describe("deriveComplianceStatus", () => {
   });
 
   it("returns compliant when overall_pass and not waived", () => {
-    expect(deriveComplianceStatus({ overall_pass: 1, prerequisite_waived: 0 })).toBe("compliant");
+    expect(deriveComplianceStatus({ sig_verified: 1, overall_pass: 1, prerequisite_waived: 0 })).toBe("compliant");
   });
 
   it("returns provisional when overall_pass but waived", () => {
-    expect(deriveComplianceStatus({ overall_pass: 1, prerequisite_waived: 1 })).toBe("provisional");
+    expect(deriveComplianceStatus({ sig_verified: 1, overall_pass: 1, prerequisite_waived: 1 })).toBe("provisional");
   });
 
   it("returns non_compliant when overall_pass is 0", () => {
-    expect(deriveComplianceStatus({ overall_pass: 0, prerequisite_waived: 0 })).toBe("non_compliant");
+    expect(deriveComplianceStatus({ sig_verified: 1, overall_pass: 0, prerequisite_waived: 0 })).toBe("non_compliant");
   });
 
   it("returns non_compliant even if waived when overall_pass is 0", () => {
-    expect(deriveComplianceStatus({ overall_pass: 0, prerequisite_waived: 1 })).toBe("non_compliant");
+    expect(deriveComplianceStatus({ sig_verified: 1, overall_pass: 0, prerequisite_waived: 1 })).toBe("non_compliant");
+  });
+
+  it("returns non_compliant when sig_verified is 0 even if overall_pass is 1", () => {
+    expect(deriveComplianceStatus({ sig_verified: 0, overall_pass: 1, prerequisite_waived: 0 })).toBe("non_compliant");
   });
 });

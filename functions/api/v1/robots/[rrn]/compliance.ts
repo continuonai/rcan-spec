@@ -41,10 +41,10 @@ function cors(): Response {
 }
 
 export function deriveComplianceStatus(
-  fria: { overall_pass: number; prerequisite_waived: number } | null
+  fria: { sig_verified: number; overall_pass: number; prerequisite_waived: number } | null
 ): ComplianceStatus {
   if (!fria) return "no_fria";
-  if (!fria.overall_pass) return "non_compliant";
+  if (!fria.overall_pass || !fria.sig_verified) return "non_compliant";
   if (fria.prerequisite_waived) return "provisional";
   return "compliant";
 }
