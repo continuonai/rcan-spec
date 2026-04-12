@@ -32,3 +32,5 @@ npm-debug.log*
 .wrangler/
 package-lock.json
 .worktrees/
+
+docs/superpowers/
