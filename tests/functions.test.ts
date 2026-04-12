@@ -1459,7 +1459,7 @@ describe("GET /robots/:rrn/fria — handler", () => {
     expect(res.status).toBe(200);
     const body = await res.json() as { count: number; fria_documents: { document?: unknown }[] };
     expect(body.count).toBe(1);
-    expect(body.fria_documents[0]!.document).toBeUndefined();
+    expect("document" in body.fria_documents[0]!).toBe(false);
   });
 
   it("returns 404 for ?all=true when no FRIA exists", async () => {
