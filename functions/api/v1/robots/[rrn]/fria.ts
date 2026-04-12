@@ -130,8 +130,9 @@ async function sha256(text: string): Promise<string> {
 // ── DB schema (applied lazily) ────────────────────────────────────────────────
 
 async function ensureSchema(db: D1Database): Promise<void> {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS fria_documents (
+  // D1 exec() requires single statements — split into two calls.
+  await db.exec(
+    `CREATE TABLE IF NOT EXISTS fria_documents (
       id                  INTEGER PRIMARY KEY AUTOINCREMENT,
       rrn                 TEXT    NOT NULL,
       submitted_at        TEXT    NOT NULL,
@@ -141,10 +142,12 @@ async function ensureSchema(db: D1Database): Promise<void> {
       prerequisite_waived INTEGER NOT NULL,
       sig_verified        INTEGER NOT NULL,
       document            TEXT    NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_fria_rrn_submitted
-      ON fria_documents (rrn, submitted_at DESC);
-  `);
+    )`
+  );
+  await db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_fria_rrn_submitted
+       ON fria_documents (rrn, submitted_at DESC)`
+  );
 }
 
 // ── Handlers (exported for testing) ──────────────────────────────────────────
