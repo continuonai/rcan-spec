@@ -1245,3 +1245,149 @@ describe("deriveComplianceStatus", () => {
     expect(deriveComplianceStatus({ sig_verified: 0, overall_pass: 1, prerequisite_waived: 0 })).toBe("non_compliant");
   });
 });
+
+// ── POST /robots/:rrn/fria handler tests ──────────────────────────────────────
+
+declare const D1Database: unknown;
+
+// Inline sha256 for test auth setup (mirrors fria.ts)
+async function sha256ForTest(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+describe("POST /robots/:rrn/fria — validation", () => {
+  const TEST_RRN = "RRN-000000000001";
+  const TEST_TOKEN = "test-api-key";
+  const TEST_SALT = "rcan-dev";
+
+  let validApiKeyHash: string;
+  let validPublicKeyB64: string;
+  let validSigB64: string;
+  let validDoc: Record<string, unknown>;
+
+  beforeAll(async () => {
+    validApiKeyHash = await sha256ForTest(TEST_TOKEN + TEST_SALT);
+
+    const keys = ml_dsa65.keygen();
+    validPublicKeyB64 = bytesToBase64url(keys.publicKey);
+
+    validDoc = {
+      schema: "rcan-fria-v1",
+      generated_at: "2026-04-11T09:00:00.000Z",
+      system: { rrn: TEST_RRN, robot_name: "test-bot", rcan_version: "3.0" },
+      deployment: { annex_iii_basis: "safety_component", prerequisite_waived: false },
+      conformance: { score: 90, pass: 24, warn: 0, fail: 0 },
+      signing_key: { alg: "ml-dsa-65", kid: "key-001", public_key: validPublicKeyB64 },
+    };
+
+    const { sig: _, ...docWithoutSig } = validDoc;
+    const canonical = sortedJsonStringify(docWithoutSig);
+    const message = new TextEncoder().encode(canonical);
+    const sigBytes = ml_dsa65.sign(message, keys.secretKey);
+    validSigB64 = bytesToBase64url(sigBytes);
+
+    // Add sig field to validDoc
+    validDoc.sig = { alg: "ml-dsa-65", kid: "key-001", value: validSigB64 };
+  });
+
+  function makeRequest(body: unknown, token?: string): Request {
+    return new Request("https://rcan.dev/api/v1/robots/RRN-000000000001/fria", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  function makeEnv(robotRow: { id: number; api_key_hash: string } | null) {
+    return {
+      DB: {
+        exec: async (_sql: string) => {},
+        prepare: (sql: string) => {
+          const stmt = {
+            _args: [] as unknown[],
+            bind: (...args: unknown[]) => { stmt._args = args; return stmt; },
+            first: async () => {
+              if (sql.includes("FROM robots")) return robotRow;
+              if (sql.includes("FROM fria_documents")) return null;
+              return null;
+            },
+            all: async () => ({ results: [] }),
+            run: async () => ({ success: true, meta: { last_row_id: 42 } }),
+          };
+          return stmt;
+        },
+      } as unknown as D1Database,
+      RCAN_API_KEY_SALT: TEST_SALT,
+    };
+  }
+
+  it("returns 401 when no Authorization header", async () => {
+    const req = makeRequest(validDoc);
+    const env = makeEnv({ id: 1, api_key_hash: validApiKeyHash });
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 404 when robot not found", async () => {
+    const req = makeRequest(validDoc, TEST_TOKEN);
+    const env = makeEnv(null);
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 401 when API key does not match", async () => {
+    const req = makeRequest(validDoc, "wrong-key");
+    const env = makeEnv({ id: 1, api_key_hash: validApiKeyHash });
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 when schema is wrong", async () => {
+    const req = makeRequest({ ...validDoc, schema: "wrong-schema" }, TEST_TOKEN);
+    const env = makeEnv({ id: 1, api_key_hash: validApiKeyHash });
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(400);
+    const body = await res.json() as { error: string };
+    expect(body.error).toContain("INVALID_SCHEMA");
+  });
+
+  it("returns 400 when sig.value is missing", async () => {
+    const docNoSig = { ...validDoc, sig: { alg: "ml-dsa-65" } };
+    const req = makeRequest(docNoSig, TEST_TOKEN);
+    const env = makeEnv({ id: 1, api_key_hash: validApiKeyHash });
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(400);
+    const body = await res.json() as { error: string };
+    expect(body.error).toContain("MISSING_FIELDS");
+    expect(body.error).toContain("sig.value");
+  });
+
+  it("returns 400 for invalid ML-DSA-65 signature", async () => {
+    const badSigDoc = {
+      ...validDoc,
+      sig: { alg: "ml-dsa-65", kid: "key-001", value: "aW52YWxpZA" },
+    };
+    const req = makeRequest(badSigDoc, TEST_TOKEN);
+    const env = makeEnv({ id: 1, api_key_hash: validApiKeyHash });
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(400);
+    const body = await res.json() as { error: string };
+    expect(body.error).toContain("INVALID_SIGNATURE");
+  });
+
+  it("returns 201 for a valid FRIA submission", async () => {
+    const req = makeRequest(validDoc, TEST_TOKEN);
+    const env = makeEnv({ id: 1, api_key_hash: validApiKeyHash });
+    const res = await handlePost(TEST_RRN, req, env);
+    expect(res.status).toBe(201);
+    const body = await res.json() as { id: number; sig_verified: boolean; overall_pass: boolean };
+    expect(body.sig_verified).toBe(true);
+    expect(body.overall_pass).toBe(true);
+  });
+});
