@@ -1390,3 +1390,82 @@ describe("POST /robots/:rrn/fria — validation", () => {
     expect(body.id).toBe(42);
   });
 });
+
+describe("GET /robots/:rrn/fria — handler", () => {
+  const TEST_RRN = "RRN-000000000001";
+
+  const friaRow = {
+    id: 42,
+    rrn: TEST_RRN,
+    submitted_at: "2026-04-11T09:00:00.000Z",
+    annex_iii_basis: "safety_component",
+    overall_pass: 1,
+    sig_verified: 1,
+    document: JSON.stringify({ schema: "rcan-fria-v1", deployment: { annex_iii_basis: "safety_component" } }),
+  };
+
+  function makeGetEnv(rows: typeof friaRow[] | null) {
+    return {
+      DB: {
+        exec: async (_sql: string) => {},
+        prepare: (sql: string) => {
+          const stmt = {
+            _args: [] as unknown[],
+            bind: (...args: unknown[]) => { stmt._args = args; return stmt; },
+            first: async () => rows && rows.length > 0 ? rows[0] : null,
+            all: async () => {
+              // Strip document field when the SELECT list doesn't include it (the ?all=true path).
+              // The table name "fria_documents" always appears, so check for ", document" or "SELECT document".
+              const selectsDocCol = /SELECT\s[^)]*\bdocument\b/.test(sql) || sql.includes(", document");
+              const stripped = (rows ?? []).map((r) => {
+                if (!selectsDocCol) {
+                  const { document: _doc, ...rest } = r;
+                  return rest;
+                }
+                return r;
+              });
+              return { results: stripped };
+            },
+            run: async () => ({ success: true, meta: { last_row_id: 1 } }),
+          };
+          return stmt;
+        },
+      } as unknown as D1Database,
+    };
+  }
+
+  it("returns 404 when no FRIA exists (latest)", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/fria`);
+    const env = makeGetEnv(null);
+    const res = await handleGet(TEST_RRN, req, env);
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 200 with document blob for latest", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/fria`);
+    const env = makeGetEnv([friaRow]);
+    const res = await handleGet(TEST_RRN, req, env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { id: number; sig_verified: boolean; document: unknown };
+    expect(body.id).toBe(42);
+    expect(body.sig_verified).toBe(true);
+    expect(body.document).toBeDefined();
+  });
+
+  it("returns 200 with array and no document blobs for ?all=true", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/fria?all=true`);
+    const env = makeGetEnv([friaRow]);
+    const res = await handleGet(TEST_RRN, req, env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { count: number; fria_documents: { document?: unknown }[] };
+    expect(body.count).toBe(1);
+    expect(body.fria_documents[0]!.document).toBeUndefined();
+  });
+
+  it("returns 404 for ?all=true when no FRIA exists", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/fria?all=true`);
+    const env = makeGetEnv([]);
+    const res = await handleGet(TEST_RRN, req, env);
+    expect(res.status).toBe(404);
+  });
+});
