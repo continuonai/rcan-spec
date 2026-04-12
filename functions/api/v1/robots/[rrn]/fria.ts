@@ -13,6 +13,17 @@ interface Env {
   RCAN_API_KEY_SALT?: string;
 }
 
+// ── Constant-time comparison helper ──────────────────────────────────────────
+
+function constantTimeEqual(a: string, b: string): boolean {
+  const ae = new TextEncoder().encode(a);
+  const be = new TextEncoder().encode(b);
+  if (ae.length !== be.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ae.length; i++) diff |= ae[i]! ^ be[i]!;
+  return diff === 0;
+}
+
 // ── Pure helpers (exported for testing) ───────────────────────────────────────
 
 /** Recursively stringify with sorted keys — matches Python json.dumps(sort_keys=True) */
@@ -151,7 +162,7 @@ export async function handlePost(rrn: string, req: Request, env: Env): Promise<R
     .first<{ id: number; api_key_hash: string }>();
 
   if (!robot) return err(`Robot not found: ${rrn}`, 404);
-  if (robot.api_key_hash !== keyHash) return err("Invalid API key", 401);
+  if (!constantTimeEqual(robot.api_key_hash as string, keyHash)) return err("Invalid API key", 401);
 
   // 2. Parse body
   let doc: Record<string, unknown>;
@@ -187,7 +198,7 @@ export async function handlePost(rrn: string, req: Request, env: Env): Promise<R
 
   // 6. Derive overall_pass from conformance block
   const conformance = doc.conformance as Record<string, unknown> | undefined;
-  const overallPass = Number(conformance?.fail ?? 1) === 0 ? 1 : 0;
+  const overallPass = conformance?.fail === 0 ? 1 : 0;
   const prerequisiteWaived = deployment!.prerequisite_waived ? 1 : 0;
   const annexIiiBasis = String(deployment!.annex_iii_basis);
 
