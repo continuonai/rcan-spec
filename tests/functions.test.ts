@@ -1469,3 +1469,88 @@ describe("GET /robots/:rrn/fria — handler", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("GET /robots/:rrn/compliance — handler", () => {
+  const TEST_RRN = "RRN-000000000001";
+
+  const robotRow = {
+    rrn: TEST_RRN,
+    robot_name: "test-bot",
+    verification_tier: "verified",
+    rcan_version: "3.0",
+  };
+
+  const friaRow = {
+    submitted_at: "2026-04-11T09:00:00.000Z",
+    sig_verified: 1,
+    annex_iii_basis: "safety_component",
+    overall_pass: 1,
+    prerequisite_waived: 0,
+  };
+
+  function makeComplianceEnv(
+    robot: typeof robotRow | null,
+    fria: typeof friaRow | null
+  ) {
+    return {
+      DB: {
+        prepare: (sql: string) => {
+          const stmt = {
+            _args: [] as unknown[],
+            bind: (...args: unknown[]) => { stmt._args = args; return stmt; },
+            first: async () => {
+              if (sql.includes("FROM robots")) return robot;
+              if (sql.includes("FROM fria_documents")) return fria;
+              return null;
+            },
+            all: async () => ({ results: [] }),
+            run: async () => ({ success: true }),
+          };
+          return stmt;
+        },
+      } as unknown as D1Database,
+    };
+  }
+
+  it("returns 404 when robot not found", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/compliance`);
+    const env = makeComplianceEnv(null, null);
+    const res = await handleCompliance(TEST_RRN, req, env);
+    expect(res.status).toBe(404);
+  });
+
+  it("returns compliant when FRIA passes with no waiver", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/compliance`);
+    const env = makeComplianceEnv(robotRow, friaRow);
+    const res = await handleCompliance(TEST_RRN, req, env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { compliance_status: string; fria: unknown };
+    expect(body.compliance_status).toBe("compliant");
+    expect(body.fria).not.toBeNull();
+  });
+
+  it("returns provisional when prerequisite_waived is true", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/compliance`);
+    const env = makeComplianceEnv(robotRow, { ...friaRow, prerequisite_waived: 1 });
+    const res = await handleCompliance(TEST_RRN, req, env);
+    const body = await res.json() as { compliance_status: string };
+    expect(body.compliance_status).toBe("provisional");
+  });
+
+  it("returns non_compliant when overall_pass is 0", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/compliance`);
+    const env = makeComplianceEnv(robotRow, { ...friaRow, overall_pass: 0 });
+    const res = await handleCompliance(TEST_RRN, req, env);
+    const body = await res.json() as { compliance_status: string };
+    expect(body.compliance_status).toBe("non_compliant");
+  });
+
+  it("returns no_fria when no FRIA submitted", async () => {
+    const req = new Request(`https://rcan.dev/api/v1/robots/${TEST_RRN}/compliance`);
+    const env = makeComplianceEnv(robotRow, null);
+    const res = await handleCompliance(TEST_RRN, req, env);
+    const body = await res.json() as { compliance_status: string; fria: unknown };
+    expect(body.compliance_status).toBe("no_fria");
+    expect(body.fria).toBeNull();
+  });
+});
