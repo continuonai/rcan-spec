@@ -1,0 +1,164 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const breakingChanges = [
+  { text: 'Signatures are now mandatory for all messages at L2+. Single-half Ed25519-only signatures MUST be rejected when operating under the pqc-hybrid-v1 profile (§9).' },
+  { text: 'Ed25519-only profile is sunset for new deployments. Nodes advertising only an ed25519_public_key without a pqc_public_key MUST be rejected at L2+ conformance level.' },
+  { text: 'fria_ref is required for all Annex III high-risk systems. Nodes subject to EU AI Act Annex III that omit fria_ref in /.well-known/rcan-node.json MUST be rejected during registration (§22).' },
+];
+
+const newSections = [
+  { section: '§23', title: 'Safety Benchmark Protocol', href: '/spec/section-23', desc: 'Defines benchmark harness, metrics, pass/fail thresholds, and reporting format for RCAN-compliant safety benchmarks.' },
+  { section: '§24', title: 'Instructions for Use', href: '/spec/section-24', desc: 'Mandates machine-readable Instructions for Use (IFU) documents for high-risk robots, including required fields and delivery endpoints.' },
+  { section: '§25', title: 'Post-Market Monitoring', href: '/spec/section-25', desc: 'Defines the post-market monitoring protocol: incident reporting, anomaly thresholds, and feedback loop to the EU Register.' },
+  { section: '§26', title: 'EU Register Submission', href: '/spec/section-26', desc: 'Specifies the submission schema, signing requirements, and automated pipeline for EU AI Act Article 60 register entries.' },
+];
+
+const sections = [
+  { section: '§1',  title: 'Robot URI (RURI)',                          href: '/spec/section-1' },
+  { section: '§2',  title: 'Role-Based Access Control',                 href: '/spec/section-2' },
+  { section: '§3',  title: 'Message Format',                            href: '/spec/section-3' },
+  { section: '§4',  title: 'Discovery (mDNS)',                          href: '/spec/section-4' },
+  { section: '§5',  title: 'Authentication',                            href: '/spec/section-5' },
+  { section: '§6',  title: 'Safety Invariants',                         href: '/spec/section-6' },
+  { section: '§7',  title: 'Federation',                                href: '/spec/section-7' },
+  { section: '§8',  title: 'Robot Config (RCAN File)',                  href: '/spec/section-8' },
+  { section: '§9',  title: 'Capabilities',                              href: '/spec/section-9' },
+  { section: '§10', title: 'Autonomous Navigation',                     href: '/spec/section-10' },
+  { section: '§11', title: 'Behavior Scripts',                          href: '/spec/section-11' },
+  { section: '§12', title: 'Depth & Sensing',                           href: '/spec/section-12' },
+  { section: '§13', title: 'Telemetry Streaming',                       href: '/spec/section-13' },
+  { section: '§14', title: 'Provider Management',                       href: '/spec/section-14' },
+  { section: '§15', title: 'Swarm Coordination',                        href: '/spec/section-15' },
+  { section: '§16', title: 'AI Accountability',                         href: '/spec/section-16' },
+  { section: '§17', title: 'Distributed Registry Node Protocol',        href: '/spec/section-17' },
+  { section: '§18', title: 'Capability Advertisement Protocol',         href: '/spec/section-18' },
+  { section: '§19', title: 'Behavior/Skill Invocation Protocol',        href: '/spec/section-19' },
+  { section: '§20', title: 'Telemetry Field Registry',                  href: '/spec/section-20' },
+  { section: '§21', title: 'Robot Registry Integration',                href: '/spec/section-21' },
+  { section: '§22', title: 'FRIA Protocol',                             href: '/spec/section-22' },
+  { section: '§23', title: 'Safety Benchmark Protocol',                 href: '/spec/section-23' },
+  { section: '§24', title: 'Instructions for Use',                      href: '/spec/section-24' },
+  { section: '§25', title: 'Post-Market Monitoring',                    href: '/spec/section-25' },
+  { section: '§26', title: 'EU Register Submission',                    href: '/spec/section-26' },
+];
+---
+
+<DocsLayout title="RCAN v3.0 — EU AI Act Compliance & Safety Benchmarks" description="RCAN v3.0 introduces mandatory signatures, Ed25519-only rejection, FRIA fria_ref enforcement, and four new sections (§23–§26) covering safety benchmarks, instructions for use, post-market monitoring, and EU Register submission.">
+  <div class="max-w-3xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-text-muted mb-6">
+      <a href="/spec/" class="hover:text-accent transition-colors">Specification</a>
+      <span class="mx-2 opacity-40">/</span>
+      <span class="text-text">v3.0</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-4 mb-8">
+      <div>
+        <h1 class="mb-2">RCAN v3.0</h1>
+        <p class="text-text-muted text-lg">EU AI Act Compliance &amp; Safety Benchmarks</p>
+        <p class="text-text-faint text-sm mt-1">Released 2026-04-11</p>
+      </div>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/15 text-accent border border-accent/30 whitespace-nowrap mt-2">
+        Latest
+      </span>
+    </div>
+
+    <!-- Breaking Changes -->
+    <section class="mb-10">
+      <h2>Breaking Changes</h2>
+      <ul class="space-y-2 mt-4">
+        {breakingChanges.map(n => (
+          <li class="flex gap-3 text-sm text-text-muted">
+            <span class="text-red-400 mt-0.5 shrink-0">!</span>
+            <span>{n.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- New Sections -->
+    <section class="mb-10">
+      <h2>New Sections in v3.0</h2>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text font-semibold">Section</th>
+              <th class="text-left py-2 pr-4 text-text font-semibold">Title</th>
+              <th class="text-left py-2 text-text font-semibold">Summary</th>
+            </tr>
+          </thead>
+          <tbody>
+            {newSections.map(s => (
+              <tr class="border-b border-border/50">
+                <td class="py-2 pr-4 font-mono font-bold text-accent">{s.section}</td>
+                <td class="py-2 pr-4 text-text whitespace-nowrap">
+                  <a href={s.href} class="hover:text-accent transition-colors">{s.title}</a>
+                </td>
+                <td class="py-2 text-text-muted">{s.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- §22 FRIA Updates -->
+    <section class="mb-10">
+      <h2>§22 FRIA Updates</h2>
+      <ul class="space-y-2 mt-4">
+        <li class="flex gap-3 text-sm text-text-muted">
+          <span class="text-accent mt-0.5 shrink-0">→</span>
+          <span><code class="font-mono text-accent text-xs">fria_ref</code> field added to <code class="font-mono text-accent text-xs">/.well-known/rcan-node.json</code>. Required for all Annex III high-risk deployments; MUST reference a valid FRIA document URI.</span>
+        </li>
+        <li class="flex gap-3 text-sm text-text-muted">
+          <span class="text-accent mt-0.5 shrink-0">→</span>
+          <span>FRIA validation integrated into the L5 conformance level checklist. Nodes missing <code class="font-mono text-accent text-xs">fria_ref</code> are downgraded to L4 pending submission.</span>
+        </li>
+        <li class="flex gap-3 text-sm text-text-muted">
+          <span class="text-accent mt-0.5 shrink-0">→</span>
+          <span>FRIA documents must be signed with the node's pqc-hybrid-v1 key pair and include a <code class="font-mono text-accent text-xs">fria_version</code> field matching the spec revision.</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- All Sections -->
+    <section class="mb-10">
+      <h2>All 26 Sections</h2>
+      <div class="overflow-x-auto mt-4">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 pr-4 text-text font-semibold">Section</th>
+              <th class="text-left py-2 text-text font-semibold">Title</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sections.map(s => (
+              <tr class="border-b border-border/50">
+                <td class="py-2 pr-4 font-mono font-bold text-accent">{s.section}</td>
+                <td class="py-2 text-text-muted">
+                  <a href={s.href} class="hover:text-accent transition-colors">{s.title}</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Back -->
+    <div class="mt-12 flex flex-wrap gap-4">
+      <a href="/spec/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-bg font-bold rounded-lg hover:bg-accent-hover transition-colors">
+        ← Full Specification
+      </a>
+      <a href="/spec/v2.3" class="inline-flex items-center gap-2 px-6 py-3 bg-bg-alt text-text border border-white/10 font-bold rounded-lg hover:border-white/20 transition-colors">
+        ← v2.3
+      </a>
+    </div>
+
+  </div>
+</DocsLayout>
