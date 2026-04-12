@@ -1,0 +1,172 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeWindow from '../../components/CodeWindow.astro';
+
+const ifuSchema = `{
+  "schema": "rcan-ifu-v1",
+  "generated_at": "2026-04-11T09:00:00.000Z",
+  "art13_coverage": [
+    "provider_identity", "intended_purpose", "capabilities_and_limitations",
+    "accuracy_and_performance", "human_oversight_measures",
+    "known_risks_and_misuse", "expected_lifetime", "maintenance_requirements"
+  ],
+  "provider_identity": {
+    "rrn": "RRN-000000000001",
+    "rrn_uri": "rrn://org/robot/model/id",
+    "robot_name": "my-robot",
+    "provider_name": "Example Corp",
+    "provider_contact": "safety@example.com",
+    "rcan_version": "3.0",
+    "agent_provider": "anthropic",
+    "agent_model": "claude-sonnet-4-6"
+  },
+  "intended_purpose": {
+    "description": "Indoor autonomous navigation for warehouse logistics",
+    "annex_iii_basis": "safety_component",
+    "deployment_context": "High-risk AI system under EU AI Act Annex III"
+  },
+  "capabilities_and_limitations": {
+    "summary": "Universal robot runtime connecting LLM AI providers to physical hardware.",
+    "known_limitations": [
+      "AI provider responses subject to model confidence thresholds",
+      "Physical limits enforced by BoundsChecker configuration",
+      "HiTL authorization required for high-risk actions"
+    ]
+  },
+  "accuracy_and_performance": {
+    "note": "Quantified evidence via castor safety benchmark. Safety path P95: ESTOP 100ms, BoundsCheck 5ms, ConfidenceGate 2ms, FullPipeline 50ms."
+  },
+  "human_oversight_measures": {
+    "hitl_gates": "HiTL authorization gates (§8) prevent autonomous high-risk actions",
+    "estop": "Emergency stop halts all motion; P95 latency ≤ 100ms",
+    "confidence_gates": "AI commands below confidence threshold are blocked",
+    "override": "Operators can halt the system at any time via ESTOP"
+  },
+  "known_risks_and_misuse": {
+    "foreseeable_misuse": [
+      "Deployment outside declared intended use",
+      "Operating beyond configured physical bounds",
+      "Disabling HiTL gates without risk assessment"
+    ],
+    "mitigations": [
+      "BoundsChecker enforces hard physical limits",
+      "Conformance checks detect disabled safety features"
+    ]
+  },
+  "expected_lifetime": {
+    "software_support": "Subject to OpenCastor release lifecycle (YYYY.MM.DD versioning)",
+    "hardware_dependent": true,
+    "note": "Deployer is responsible for post-market monitoring per Art. 72 and §25"
+  },
+  "maintenance_requirements": {
+    "software_updates": "Run castor upgrade for runtime updates",
+    "conformance_checks": "Run castor validate before each deployment",
+    "incident_logging": "Run castor incidents record for safety-relevant events"
+  }
+}`;
+
+const cliExample = `castor ifu generate \\
+  --config bob.rcan.yaml \\
+  --annex-iii-basis safety_component \\
+  --intended-use "Indoor autonomous navigation" \\
+  --output ifu-bob-2026.json`;
+
+const art13Fields = [
+  { field: 'provider_identity',           article: 'Art. 13(3)(a)', desc: 'Provider identity: RRN, robot name, contact, RCAN version, AI model.' },
+  { field: 'intended_purpose',            article: 'Art. 13(3)(b)', desc: 'Intended purpose: deployment description and Annex III basis.' },
+  { field: 'capabilities_and_limitations',article: 'Art. 13(3)(c)', desc: 'What the system can and cannot do; known limitations.' },
+  { field: 'accuracy_and_performance',    article: 'Art. 13(3)(d)', desc: 'Performance evidence — links to §23 benchmark results.' },
+  { field: 'human_oversight_measures',    article: 'Art. 13(3)(e)', desc: 'HiTL gates, ESTOP, confidence gates, operator override.' },
+  { field: 'known_risks_and_misuse',      article: 'Art. 13(3)(f)', desc: 'Foreseeable misuse scenarios and mitigations.' },
+  { field: 'expected_lifetime',           article: 'Art. 13(3)(g)', desc: 'Software support lifecycle and hardware dependency.' },
+  { field: 'maintenance_requirements',    article: 'Art. 13(3)(h)', desc: 'Update cadence, conformance checks, incident logging.' },
+];
+---
+
+<DocsLayout
+  title="§24 Instructions for Use — rcan.dev"
+  description="RCAN §24 — Instructions for Use Protocol. Defines rcan-ifu-v1, the Art. 13(3) structured IFU document for EU AI Act compliance."
+>
+  <div class="max-w-3xl mx-auto">
+
+    <nav class="flex items-center gap-2 text-sm text-text-muted mb-6">
+      <a href="/spec" class="hover:text-accent">Specification</a>
+      <span>/</span>
+      <span class="text-text">§24 Instructions for Use</span>
+    </nav>
+
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="text-sm font-mono text-text-muted">§24</span>
+        <span class="text-xs px-2 py-0.5 rounded-full border font-medium bg-green-500/10 text-green-400 border-green-500/20">
+          v3.0
+        </span>
+      </div>
+      <h1 class="text-3xl font-bold text-text mb-3">Instructions for Use</h1>
+      <p class="text-text-muted text-lg leading-relaxed">
+        Defines the <code class="text-accent">rcan-ifu-v1</code> schema — a structured Instructions for Use
+        document covering all eight fields required by EU AI Act Art. 13(3) for high-risk AI systems.
+      </p>
+    </div>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-text mb-3">Overview</h2>
+      <p class="text-text-muted leading-relaxed mb-4">
+        EU AI Act Art. 13 requires providers of high-risk AI systems to accompany each system with
+        clear and adequate instructions for use. Art. 13(3) specifies eight mandatory information
+        categories. RCAN §24 defines a machine-readable IFU document that can be auto-generated
+        from the RCAN config and deployment context, then provided to deployers alongside the FRIA.
+      </p>
+      <p class="text-text-muted leading-relaxed mb-4">
+        The <code class="text-accent">annex_iii_basis</code> must be one of the ten valid Annex III
+        categories (see §22). An invalid value causes generation to fail immediately.
+      </p>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-text mb-3">Art. 13(3) Field Coverage</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border border-border rounded-lg overflow-hidden">
+          <thead>
+            <tr class="bg-bg-alt">
+              <th class="text-left p-3 text-text font-semibold border-b border-border">Field</th>
+              <th class="text-left p-3 text-text font-semibold border-b border-border">Article</th>
+              <th class="text-left p-3 text-text font-semibold border-b border-border">Content</th>
+            </tr>
+          </thead>
+          <tbody>
+            {art13Fields.map((f, i) => (
+              <tr class={i % 2 === 0 ? 'bg-bg' : 'bg-bg-alt'}>
+                <td class="p-3 font-mono text-accent text-xs border-b border-border">{f.field}</td>
+                <td class="p-3 text-text-muted text-xs border-b border-border font-medium">{f.article}</td>
+                <td class="p-3 text-text-muted text-xs border-b border-border">{f.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-text mb-3">Schema</h2>
+      <CodeWindow code={ifuSchema} language="json" title="rcan-ifu-v1" />
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold text-text mb-3">CLI Reference</h2>
+      <CodeWindow code={cliExample} language="bash" title="castor ifu generate" />
+    </section>
+
+    <div class="flex justify-between items-center mt-12 pt-6 border-t border-border">
+      <a href="/spec/section-23" class="flex items-center gap-2 text-text-muted hover:text-accent transition-colors">
+        <span>&larr;</span>
+        <span class="text-sm">&sect;23 Safety Benchmark Protocol</span>
+      </a>
+      <a href="/spec/section-25" class="flex items-center gap-2 text-text-muted hover:text-accent transition-colors">
+        <span class="text-sm">&sect;25 Post-Market Monitoring</span>
+        <span>&rarr;</span>
+      </a>
+    </div>
+
+  </div>
+</DocsLayout>
