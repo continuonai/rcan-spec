@@ -6,7 +6,7 @@
 
 The official specification for the RCAN (Robot Communication and Autonomy Network) protocol. Published at **rcan.dev** via Cloudflare Pages. Astro-based static site.
 
-**Current version**: v1.6.1 | **Repo**: continuonai/rcan-spec | **Branch**: master
+**Current version**: v3.0 | **Repo**: continuonai/rcan-spec | **Branch**: master
 
 Version format: `vMAJOR.MINOR.PATCH` — this is the primary compliance reference for all ecosystem repos.
 
@@ -56,7 +56,8 @@ rcan-spec/
 | v1.4 | + §1–§16 dedicated section pages (full content, replaces stubs) | Archive |
 | v1.5 | + VERSION_NEGOTIATION, REPLAY_PREVENTION, CLOCK_SYNC, QOS_DELIVERY, KEY_ROTATION, CONSENT_WIRE, FLEET_BROADCAST, OBSERVER_MODE, PHYSICAL_PRESENCE, FAULT_REPORTING, AUDIT_EXPORT | Archive |
 | v1.6 | + FEDERATED_CONSENT, CONSTRAINED_TRANSPORT, MULTIMODAL_PAYLOADS, IDENTITY_LOA | Archive |
-| v1.6.1 | Patch: HMAC verification fix, LoA enforcement, security hardening | **Current** |
+| v1.6.1 | Patch: HMAC verification fix, LoA enforcement, security hardening | Archive |
+| v3.0 | Major: FRIA compliance, SafetyBenchmark, rcan-py 2.0 SDK alignment | **Current** |
 
 ## Styling Rules
 
@@ -121,11 +122,11 @@ Always run both before committing.
 Updated by CI (or manually):
 ```json
 {
-  "updated": "2026-03-13T08:00:00Z",
-  "spec_version": "1.6.1",
+  "updated": "2026-04-13T00:00:00Z",
+  "spec_version": "3.0",
   "sdks": {
-    "rcan-py": { "version": "0.6.0", "status": "pass", "pypi": "..." },
-    "rcan-ts": { "version": "0.6.0", "status": "pass", "npm": "..." }
+    "rcan-py": { "version": "2.0.0", "status": "pass", "pypi": "..." },
+    "rcan-ts": { "version": "1.3.0", "status": "pass", "npm": "..." }
   }
 }
 ```
