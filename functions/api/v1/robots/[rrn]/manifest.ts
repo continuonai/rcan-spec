@@ -57,13 +57,15 @@ function notImplemented(method: string): Response {
       status: "planned",
       target_release: "robot-md v0.2",
       spec: "https://robotmd.dev/spec/v1",
+      design_draft: "https://robotmd.dev/spec/v0.2-design.md",
       security_model:
         "https://github.com/RobotRegistryFoundation/robot-md/blob/main/SECURITY.md#known-v01-limitations",
       repo: "https://github.com/RobotRegistryFoundation/robot-md",
       note:
         "Manifest storage + signed retrieval ships in ROBOT.md v0.2. " +
         "Until then, publish your ROBOT.md at a URL you control and reference " +
-        "it from the registry's robot record. See the v0.2 design plan in the repo.",
+        "it from the registry's robot record. See /spec/v0.2-design.md on robotmd.dev " +
+        "for the signing + ingestion design (design only; no code yet).",
     }),
     {
       status: 501,
