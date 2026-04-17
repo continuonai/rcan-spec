@@ -59,6 +59,16 @@ Robots today are islands. A Boston Dynamics Spot and a Raspberry Pi rover can't 
 | [rcan-ts](https://github.com/continuonai/rcan-ts) | TypeScript / Node 18+ | `npm install @continuonai/rcan-ts@0.6.0` | 405 |
 | [OpenCastor](https://github.com/craigm26/OpenCastor) | Python (robot runtime) | `pip install opencastor==2026.3.17.1` | 6,459 |
 
+## Companion formats
+
+RCAN defines the *wire* layer (how robots talk). A robot still needs a way to declare *itself* — what it is, what it can do, and what safety envelope it operates under — to any agent that connects to it.
+
+| Format | Purpose | Home |
+|---|---|---|
+| [**ROBOT.md**](https://robotmd.dev) | Single-file robot manifest (YAML frontmatter + markdown prose) — read by any agent harness (Claude Code, ChatGPT, Gemini, Ollama, …) at session start so the planner knows the robot before the first prompt. Uses `rcan_version` in the frontmatter to pin its RCAN target. | [RobotRegistryFoundation/robot-md](https://github.com/RobotRegistryFoundation/robot-md) |
+
+ROBOT.md is independent of RCAN — you can ship one without the other — but the two compose cleanly: a robot with a ROBOT.md that pins `rcan_version: "3.0"` speaks RCAN 3.0 on the wire and declares that fact in its manifest.
+
 ## Conformance Badges
 
 Implementations can declare a conformance level in their `/.well-known/rcan-node.json` manifest:
