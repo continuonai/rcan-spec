@@ -51,20 +51,20 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install @continuonai/rcan-ts
-        run: npm install @continuonai/rcan-ts
+      - name: Install rcan-ts
+        run: npm install rcan-ts
 
       - name: Get version
         id: info
         run: |
-          VERSION=$(npm list @continuonai/rcan-ts --depth=0 2>/dev/null | grep rcan-ts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+          VERSION=$(npm list rcan-ts --depth=0 2>/dev/null | grep rcan-ts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Validate SDK exports (ESM)
         id: test
         run: |
           node --input-type=module << 'ESEOF'
-          import * as rcan from '@continuonai/rcan-ts';
+          import * as rcan from 'rcan-ts';
           const expected = ['validateConfig', 'NodeClient', 'RegistryClient', 'RCANError'];
           expected.forEach(e => {
             if (!rcan[e]) throw new Error('Missing export: ' + e);
@@ -99,7 +99,7 @@ jobs:
               "rcan-ts": {
                 "version": "${{ needs.smoke-ts.outputs.version }}",
                 "status": "${{ needs.smoke-ts.outputs.status || needs.smoke-ts.result }}",
-                "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts"
+                "npm": "https://www.npmjs.com/package/rcan-ts"
               }
             }
           }

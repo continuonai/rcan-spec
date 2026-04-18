@@ -158,7 +158,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <section class="err-section">
     <h2>SDK Error Classes</h2>
 
-    <h3>TypeScript (<code>@continuonai/rcan-ts</code>)</h3>
+    <h3>TypeScript (<code>rcan-ts</code>)</h3>
     <p>All SDK errors extend <code>RCANError</code>, which itself extends <code>Error</code>. Errors carry a <code>code</code> string matching the names above.</p>
 
     <div class="tree">
@@ -202,7 +202,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   RCANNodeNotFoundError,
   RCANNodeTrustError,
   RCANGateError,
-&#125; from '@continuonai/rcan-ts';
+&#125; from 'rcan-ts';
 
 try &#123;
   const robot = await client.resolve('RRN-BD-000000000001');

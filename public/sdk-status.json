@@ -10,7 +10,7 @@
     "rcan-ts": {
       "version": "1.3.0",
       "status": "pass",
-      "npm": "https://www.npmjs.com/package/@continuonai/rcan-ts"
+      "npm": "https://www.npmjs.com/package/rcan-ts"
     }
   }
 }

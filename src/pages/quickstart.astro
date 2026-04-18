@@ -35,16 +35,16 @@ const description = "From zero to your first RCAN message in 5 minutes.";
 
     <div id="tab-typescript" class="sdk-panel hidden rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
       <pre class="text-green-400"># Install</pre>
-      <pre class="text-white">npm install @continuonai/rcan-ts</pre>
+      <pre class="text-white">npm install rcan-ts</pre>
       <pre class="text-text-muted mt-2"># or yarn</pre>
-      <pre class="text-white">yarn add @continuonai/rcan-ts</pre>
+      <pre class="text-white">yarn add rcan-ts</pre>
       <pre class="text-text-muted mt-2"># Import</pre>
-      <pre class="text-white">import &#123; RobotURI, RCANMessage, ConfidenceGate &#125; from '@continuonai/rcan-ts';</pre>
+      <pre class="text-white">import &#123; RobotURI, RCANMessage, ConfidenceGate &#125; from 'rcan-ts';</pre>
     </div>
 
     <div id="tab-curl" class="sdk-panel hidden rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
       <pre class="text-green-400"># CDN (no build step)</pre>
-      <pre class="text-white">&lt;script src="https://unpkg.com/@continuonai/rcan-ts/dist/rcan.iife.js"&gt;&lt;/script&gt;</pre>
+      <pre class="text-white">&lt;script src="https://unpkg.com/rcan-ts/dist/rcan.iife.js"&gt;&lt;/script&gt;</pre>
       <pre class="text-white">&lt;script&gt;const uri = RCAN.RobotURI.parse('rcan://registry.rcan.dev/acme/arm/v1/unit-001');&lt;/script&gt;</pre>
       <pre class="text-text-muted mt-2"># Registry API (curl)</pre>
       <pre class="text-white">curl https://rcan.dev/api/v1/robots \</pre>
@@ -189,7 +189,7 @@ castor register --config myrobot.rcan.yaml`} />
     </div>
 
     <div id="tab-node-typescript" class="node-panel hidden rounded-b-lg rounded-tr-lg border border-white/10 bg-bg-alt/30 p-4 font-mono text-sm overflow-x-auto">
-      <pre class="text-green-400">import &#123; NodeClient &#125; from '@continuonai/rcan-ts';</pre>
+      <pre class="text-green-400">import &#123; NodeClient &#125; from 'rcan-ts';</pre>
       <pre class="text-white mt-2">const client = new NodeClient();</pre>
       <pre class="text-white mt-2"><span class="text-text-muted">// Resolve across federation</span></pre>
       <pre class="text-white">const result = await client.resolve('RRN-BD-000000000001');</pre>
@@ -243,7 +243,7 @@ async def main():
 
 asyncio.run(main())`} />
 
-  <CodeWindow language="typescript" title="TypeScript — §19 INVOKE" code={`import { RCANClient } from '@continuonai/rcan-ts';
+  <CodeWindow language="typescript" title="TypeScript — §19 INVOKE" code={`import { RCANClient } from 'rcan-ts';
 
 const client = new RCANClient('wss://myrobot.local:8765');
 await client.connect();

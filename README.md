@@ -55,8 +55,8 @@ Robots today are islands. A Boston Dynamics Spot and a Raspberry Pi rover can't 
 
 | SDK | Language | Install | Tests |
 |---|---|---|---|
-| [rcan-py](https://github.com/continuonai/rcan-py) | Python 3.10+ | `pip install rcan==0.6.0` | 587 |
-| [rcan-ts](https://github.com/continuonai/rcan-ts) | TypeScript / Node 18+ | `npm install @continuonai/rcan-ts@0.6.0` | 405 |
+| [rcan-py](https://github.com/continuonai/rcan-py) | Python 3.10+ | `pip install rcan` | 754 |
+| [rcan-ts](https://github.com/continuonai/rcan-ts) | TypeScript / Node 18+ | `npm install rcan-ts` | 447 |
 | [OpenCastor](https://github.com/craigm26/OpenCastor) | Python (robot runtime) | `pip install opencastor==2026.3.17.1` | 6,459 |
 
 ## Companion formats
