@@ -1,12 +1,26 @@
 # RCAN Specification
 
-RCAN v2.2 — the open protocol for secure robot-to-robot communication.
+**RCAN v3.0** — the open protocol robots, gateways, and planners speak. Signed envelopes, Level-of-Assurance enforcement, ML-DSA-65 post-quantum crypto, EU AI Act compliance blocks. Think DNS + HTTPS, but for robots.
 
-[![Spec Version](https://img.shields.io/badge/spec-v2.2.0-blue)](https://rcan.dev/spec/)
+[![Spec Version](https://img.shields.io/badge/spec-v3.0-blue)](https://rcan.dev/spec/)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
 [![CI](https://github.com/continuonai/rcan-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/continuonai/rcan-spec/actions)
 
 **[→ Read the spec at rcan.dev/spec/](https://rcan.dev/spec/)**
+
+## Where this fits in the stack
+
+This repo is the **wire-protocol specification** of a small, composable, Apache/MIT-licensed ecosystem. Each layer is independent — adopt one, or all seven.
+
+| Layer | Piece | What it is |
+|---|---|---|
+| **Declaration** | [ROBOT.md](https://github.com/RobotRegistryFoundation/robot-md) | The file a robot ships at its root. YAML frontmatter + markdown prose. Declares identity, capabilities, safety gates. Spec + Python CLI. |
+| **Agent bridge** | [robot-md-mcp](https://github.com/RobotRegistryFoundation/robot-md-mcp) | MCP server that exposes a `ROBOT.md` to Claude Code, Claude Desktop, Cursor, Zed, Gemini CLI — any MCP-aware agent. One `claude mcp add` away. |
+| **Wire protocol** ← *this* | [RCAN](https://rcan.dev/spec/) | How robots, gateways, and planners talk. Signed envelopes, LoA enforcement, PQC crypto, EU AI Act §23–§27 compliance blocks. |
+| **Python SDK** | [rcan-py](https://github.com/continuonai/rcan-py) | `pip install rcan` — RCANMessage, RobotURI, ConfidenceGate, HiTLGate, AuditChain. |
+| **TypeScript SDK** | [rcan-ts](https://github.com/continuonai/rcan-ts) | `npm install rcan-ts` — same API surface for Node + browser. |
+| **Registry** | [Robot Registry Foundation](https://robotregistryfoundation.org) | Permanent RRN identities. Public resolver at `/r/<rrn>`. Like ICANN for robots. |
+| **Reference runtime** | [OpenCastor](https://github.com/craigm26/OpenCastor) | Open-source robot runtime — connects LLM brains to hardware bodies. One implementation of RCAN. |
 
 ## What Problem RCAN Solves
 
