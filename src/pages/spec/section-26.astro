@@ -30,19 +30,16 @@ castor eu-register \\
   --output eu-register-bob-2026.json`;
 
 const fields = [
-  { field: 'schema',                   type: 'string',  req: 'MUST',   desc: 'Always "rcan-eu-register-v1".' },
-  { field: 'generated_at',             type: 'string',  req: 'MUST',   desc: 'ISO-8601 UTC timestamp.' },
-  { field: 'fria_ref',                 type: 'string',  req: 'MUST',   desc: 'Filename of the signed rcan-fria-v1 document included with this submission.' },
-  { field: 'provider.name',            type: 'string',  req: 'MUST',   desc: 'Provider organisation name.' },
-  { field: 'provider.contact',         type: 'string',  req: 'MUST',   desc: 'Provider contact email for notified body queries.' },
-  { field: 'system.rrn',               type: 'string',  req: 'MUST',   desc: 'Robot Registration Number.' },
-  { field: 'system.rrn_uri',           type: 'string',  req: 'SHOULD', desc: 'Structured RRN URI (rrn://org/robot/model/id format).' },
-  { field: 'system.robot_name',        type: 'string',  req: 'MUST',   desc: 'Human-readable robot name.' },
-  { field: 'system.rcan_version',      type: 'string',  req: 'MUST',   desc: 'RCAN protocol version implemented (e.g. "3.0").' },
-  { field: 'system.opencastor_version',type: 'string',  req: 'SHOULD', desc: 'OpenCastor runtime version used to generate this document.' },
-  { field: 'annex_iii_basis',          type: 'string',  req: 'MUST',   desc: 'Annex III classification basis (see §22 for valid values).' },
-  { field: 'conformity_status',        type: 'string',  req: 'MUST',   desc: '"declared" — self-declared conformity assessment per Art. 43.' },
-  { field: 'submission_instructions',  type: 'string',  req: 'MUST',   desc: 'Human-readable instructions for completing the national database submission.' },
+  { field: 'schema',                 type: 'string', req: 'MUST',   desc: 'Always "rcan-eu-register-v1".' },
+  { field: 'generated_at',           type: 'string', req: 'MUST',   desc: 'ISO-8601 UTC timestamp.' },
+  { field: 'fria_ref',               type: 'string', req: 'MUST',   desc: 'Filename of the signed rcan-fria-v1 document included with this submission.' },
+  { field: 'provider.name',          type: 'string', req: 'MUST',   desc: 'Provider organisation name.' },
+  { field: 'provider.contact',       type: 'string', req: 'MUST',   desc: 'Provider contact email for notified body queries.' },
+  { field: 'system.rrn',             type: 'string', req: 'MUST',   desc: 'Robot Registration Number.' },
+  { field: 'system.rcan_version',    type: 'string', req: 'MUST',   desc: 'RCAN protocol version implemented.' },
+  { field: 'annex_iii_basis',        type: 'string', req: 'MUST',   desc: 'Annex III classification basis (see §22 for valid values).' },
+  { field: 'conformity_status',      type: 'string', req: 'MUST',   desc: '"declared" — self-declared conformity assessment per Art. 43.' },
+  { field: 'submission_instructions',type: 'string', req: 'MUST',   desc: 'Human-readable instructions for completing the national database submission.' },
 ];
 ---
 
@@ -109,7 +106,7 @@ const fields = [
                 <td class="p-3 font-mono text-accent text-xs border-b border-border">{f.field}</td>
                 <td class="p-3 text-text-muted text-xs border-b border-border">{f.type}</td>
                 <td class="p-3 border-b border-border">
-                  <span class={`text-xs font-medium ${f.req === 'MUST' ? 'text-green-400' : 'text-text-muted'}`}>{f.req}</span>
+                  <span class="text-xs font-medium text-green-400">{f.req}</span>
                 </td>
                 <td class="p-3 text-text-muted text-xs border-b border-border">{f.desc}</td>
               </tr>
@@ -129,8 +126,8 @@ const fields = [
         <span>&larr;</span>
         <span class="text-sm">&sect;25 Post-Market Monitoring</span>
       </a>
-      <a href="/spec/section-27" class="flex items-center gap-2 text-text-muted hover:text-accent transition-colors">
-        <span class="text-sm">&sect;27 FRIA Protocol</span>
+      <a href="/spec" class="flex items-center gap-2 text-text-muted hover:text-accent transition-colors">
+        <span class="text-sm">Specification Index</span>
         <span>&rarr;</span>
       </a>
     </div>
