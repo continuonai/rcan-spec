@@ -1,9 +1,9 @@
 {
-  "updated": "2026-04-23T02:06:57Z",
+  "updated": "2026-04-23T04:24:15Z",
   "spec_version": "3.0",
   "sdks": {
     "rcan-py": {
-      "version": "2.1.0",
+      "version": "3.0.1",
       "status": "pass",
       "pypi": "https://pypi.org/project/rcan/"
     },
