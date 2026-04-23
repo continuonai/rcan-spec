@@ -1,0 +1,75 @@
+{
+  "format": "rcan-canonical-json-v1",
+  "description": "Byte-level invariants for RCAN canonical JSON serialization. Both rcan-py and rcan-ts MUST emit identical UTF-8 bytes for every case.",
+  "cases": [
+    {
+      "name": "key_ordering",
+      "input": {
+        "b": 1,
+        "a": 2,
+        "c": 3
+      },
+      "expected_bytes_base64": "eyJhIjoyLCJiIjoxLCJjIjozfQ=="
+    },
+    {
+      "name": "nested_objects",
+      "input": {
+        "outer": {
+          "z": 1,
+          "a": 2
+        }
+      },
+      "expected_bytes_base64": "eyJvdXRlciI6eyJhIjoyLCJ6IjoxfX0="
+    },
+    {
+      "name": "unicode_no_escape",
+      "input": {
+        "name": "Café ☕"
+      },
+      "expected_bytes_base64": "eyJuYW1lIjoiQ2Fmw6kg4piVIn0="
+    },
+    {
+      "name": "no_whitespace",
+      "input": {
+        "a": 1,
+        "b": [
+          1,
+          2,
+          3
+        ]
+      },
+      "expected_bytes_base64": "eyJhIjoxLCJiIjpbMSwyLDNdfQ=="
+    },
+    {
+      "name": "empty_and_null",
+      "input": {
+        "a": null,
+        "b": {},
+        "c": []
+      },
+      "expected_bytes_base64": "eyJhIjpudWxsLCJiIjp7fSwiYyI6W119"
+    },
+    {
+      "name": "realistic_registration_body",
+      "input": {
+        "rrn": "RRN-000000000042",
+        "pq_signing_pub": "MIIExzCCBCCgAwIBAgIBATANBgkqhkiG9w0BAQsFAA==",
+        "pq_kid": "abc12345",
+        "rcn_ids": [
+          "RCN-000000000001",
+          "RCN-000000000002"
+        ],
+        "rmn": "RMN-000000000003"
+      },
+      "expected_bytes_base64": "eyJwcV9raWQiOiJhYmMxMjM0NSIsInBxX3NpZ25pbmdfcHViIjoiTUlJRXh6Q0NCQ0NnQXdJQkFnSUJBVEFOQmdrcWhraUc5dzBCQVFzRkFBPT0iLCJyY25faWRzIjpbIlJDTi0wMDAwMDAwMDAwMDEiLCJSQ04tMDAwMDAwMDAwMDAyIl0sInJtbiI6IlJNTi0wMDAwMDAwMDAwMDMiLCJycm4iOiJSUk4tMDAwMDAwMDAwMDQyIn0="
+    }
+  ],
+  "invariants": [
+    "Keys sorted lexicographically at every nesting level",
+    "No whitespace (no spaces, tabs, newlines)",
+    "Non-ASCII Unicode emitted as UTF-8 bytes, NOT \\uXXXX escapes",
+    "Integers rendered without trailing .0",
+    "Empty object rendered as {}, empty array as []",
+    "No trailing newline"
+  ]
+}
