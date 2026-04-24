@@ -3,10 +3,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v3.0.0',
-    date: '2026-04-11',
+    version: 'v3.1.0',
+    date: '2026-04-24',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'breaking', text: '§26 EU Register (rcan-eu-register-v1): add top-level rmn (Robot Model Number) field. Art. 49 registration is per-model, not per-robot; rmn identifies which model the submission registers. system.rrn remains for per-submission provenance only. Per VERSIONING.md: §26 is Experimental tier (introduced in v3.0 13 days ago, zero production consumers at bump time — all ecosystem libraries list but no production code path uses it yet), so breaking change is permitted in MINOR with release notice. Breaks byte-parity with rcan-py ≤ 3.1.1; requires rcan-py 3.2.0 + rcan-ts 3.3.0 to match.' },
+      { type: 'docs', text: '§26 overview clarified: per-model scoping per Art. 49, rmn vs system.rrn distinction.' },
+    ],
+  },
+  {
+    version: 'v3.0.0',
+    date: '2026-04-11',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'breaking', text: 'All RCAN messages must carry a valid ML-DSA-65 or pqc-hybrid-v1 signature in the sig field' },
       { type: 'breaking', text: 'Ed25519-only profiles rejected; pqc-hybrid-v1 or ML-DSA-65-only required' },

@@ -4,7 +4,8 @@ import CodeWindow from '../../components/CodeWindow.astro';
 
 const submissionSchema = `{
   "schema": "rcan-eu-register-v1",
-  "generated_at": "2026-04-11T09:00:00.000Z",
+  "generated_at": "2026-04-24T09:00:00.000Z",
+  "rmn": "RMN-000000000007",
   "fria_ref": "fria-RRN-000000000001-20260411-signed.json",
   "provider": {
     "name": "Example Corp",
@@ -15,7 +16,7 @@ const submissionSchema = `{
     "rrn_uri": "rrn://org/robot/model/id",
     "robot_name": "my-robot",
     "rcan_version": "3.0",
-    "opencastor_version": "2026.4.11.0"
+    "opencastor_version": "2026.4.24.0"
   },
   "annex_iii_basis": "safety_component",
   "conformity_status": "declared",
@@ -32,10 +33,11 @@ castor eu-register \\
 const fields = [
   { field: 'schema',                 type: 'string', req: 'MUST',   desc: 'Always "rcan-eu-register-v1".' },
   { field: 'generated_at',           type: 'string', req: 'MUST',   desc: 'ISO-8601 UTC timestamp.' },
+  { field: 'rmn',                    type: 'string', req: 'MUST',   desc: 'Robot Model Number — the model being registered under Art. 49. Format: RMN-XXXXXXXXXXXX.' },
   { field: 'fria_ref',               type: 'string', req: 'MUST',   desc: 'Filename of the signed rcan-fria-v1 document included with this submission.' },
   { field: 'provider.name',          type: 'string', req: 'MUST',   desc: 'Provider organisation name.' },
   { field: 'provider.contact',       type: 'string', req: 'MUST',   desc: 'Provider contact email for notified body queries.' },
-  { field: 'system.rrn',             type: 'string', req: 'MUST',   desc: 'Robot Registration Number.' },
+  { field: 'system.rrn',             type: 'string', req: 'MUST',   desc: 'Robot Registration Number of the specific robot that produced this submission (provenance).' },
   { field: 'system.rcan_version',    type: 'string', req: 'MUST',   desc: 'RCAN protocol version implemented.' },
   { field: 'annex_iii_basis',        type: 'string', req: 'MUST',   desc: 'Annex III classification basis (see §22 for valid values).' },
   { field: 'conformity_status',      type: 'string', req: 'MUST',   desc: '"declared" — self-declared conformity assessment per Art. 43.' },
@@ -77,6 +79,13 @@ const fields = [
         the EU database administered by the European AI Office before placing the system on the market
         or putting it into service. RCAN §26 defines a submission package that wraps a signed FRIA
         document with the registration metadata required by the database.
+      </p>
+      <p class="text-text-muted leading-relaxed mb-4">
+        Art. 49 registration is scoped <strong>per AI system (per model)</strong>, not per individual
+        deployed robot — a provider with a fleet of the same model registers the model once.
+        The top-level <code class="text-accent">rmn</code> field identifies which model this submission
+        is for; <code class="text-accent">system.rrn</code> records which specific robot produced the
+        submission (for audit/provenance only).
       </p>
       <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-sm text-amber-400">
         <strong>Prerequisite:</strong> A valid signed <code>rcan-fria-v1</code> document is required
