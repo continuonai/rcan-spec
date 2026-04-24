@@ -38,6 +38,38 @@ Specifically:
 3. The provision remains **Stable** (no breaking change) for a minimum of **2 minor versions** or **12 months**, whichever is longer
 4. Removal only occurs in a MAJOR version bump
 
+## Deprecation Precedents
+
+This section records how previous flat→structured field replacements or
+optional-to-required migrations were handled, so future planners can
+apply the same pattern.
+
+### v3.2 — `agent.provider` / `agent.model` → `agent.runtimes[]`
+
+- **Shape before (v1.2 through v3.1):** flat `agent.provider`, `agent.model`, etc. in the `agent:` block.
+- **Shape after (v3.2):** optional `agent.runtimes[]` array carries per-runtime harness + model config.
+- **Handling:** additive MINOR bump. Flat form remains VALID in v3.2; validators SHOULD emit `DeprecationWarning` and SHOULD normalize internally to a single-entry `runtimes[]`. Removal scheduled for v4.0.
+- **Rationale:** multi-runtime declaration enables peer-runtime deployments (robot-md ↔ opencastor) against a single ROBOT.md identity — see spec §8.6 and `opencastor-ops/docs/superpowers/specs/2026-04-23-peer-runtimes.md`.
+
+### v3.1 — §26 EU Register `rmn` addition
+
+- **Shape before (v3.0):** `rcan-eu-register-v1` envelope had no top-level `rmn`; Art. 49 registration was per-robot (`system.rrn`).
+- **Shape after (v3.1):** top-level `rmn` required for per-model routing; `system.rrn` remains for per-submission provenance only.
+- **Handling:** breaking MINOR invoked the Experimental-tier escape hatch: §26 was introduced in v3.0 just 13 days prior, had zero production consumers at bump time (all ecosystem libraries listed but no production code path used it). Breaking change permitted in MINOR with release notice.
+- **Rationale:** per-model scoping is semantically required by EU AI Act Art. 49 (registration is of a system, not of each deployed robot). Discovered via robotregistryfoundation.org D3 planning.
+
+### Pattern summary
+
+When adding a new optional field that replaces a legacy flat pattern:
+1. Ship the new field as optional in MINOR.
+2. Validators emit `DeprecationWarning` on the legacy shape; normalize internally.
+3. Remove the legacy shape in the next MAJOR.
+
+When adding a required field to an Experimental-tier §N with zero production consumers:
+1. Breaking MINOR is permitted per the Experimental-tier escape hatch.
+2. Cascade: update all ecosystem SDKs (rcan-py, rcan-ts, downstream clients) in the same release window.
+3. Call out the escape-hatch invocation explicitly in the changelog entry so the precedent is traceable.
+
 ## Long-Term Support (LTS)
 
 Every MAJOR version is supported with security fixes for a minimum of **3 years** from its initial release date.
