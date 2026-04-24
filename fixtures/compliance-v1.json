@@ -1,7 +1,7 @@
 {
   "format": "rcan-compliance-fixture-v1",
   "description": "Byte-level invariants for RCAN compliance builders (§23-26). Both rcan-py and rcan-ts MUST produce builder outputs whose canonical_json is byte-identical to expected_bytes_base64.",
-  "rcan_py_version": "3.1.1",
+  "rcan_py_version": "3.2.0",
   "cases": [
     {
       "name": "safety_benchmark_minimal",
@@ -372,11 +372,13 @@
           "opencastor_version": "2026.4.23.0"
         },
         "annex_iii_basis": "Annex III §5(b) — critical infrastructure management",
-        "generated_at": "2026-04-23T00:00:00Z"
+        "generated_at": "2026-04-23T00:00:00Z",
+        "rmn": "RMN-000000000007"
       },
       "expected_output": {
         "schema": "rcan-eu-register-v1",
         "generated_at": "2026-04-23T00:00:00Z",
+        "rmn": "RMN-000000000007",
         "fria_ref": "bob-fria-v1.json",
         "provider": {
           "name": "craigm26",
@@ -393,7 +395,7 @@
         "conformity_status": "declared",
         "submission_instructions": "Submit this package to the EU AI Act database at https://ec.europa.eu/digital-strategy/en/policies/european-ai-act. Include the referenced rcan-fria-v1 JSON as an attachment."
       },
-      "expected_bytes_base64": "eyJhbm5leF9paWlfYmFzaXMiOiJBbm5leCBJSUkgwqc1KGIpIOKAlCBjcml0aWNhbCBpbmZyYXN0cnVjdHVyZSBtYW5hZ2VtZW50IiwiY29uZm9ybWl0eV9zdGF0dXMiOiJkZWNsYXJlZCIsImZyaWFfcmVmIjoiYm9iLWZyaWEtdjEuanNvbiIsImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicHJvdmlkZXIiOnsiY29udGFjdCI6ImNyYWlnbTI2QGdtYWlsLmNvbSIsIm5hbWUiOiJjcmFpZ20yNiJ9LCJzY2hlbWEiOiJyY2FuLWV1LXJlZ2lzdGVyLXYxIiwic3VibWlzc2lvbl9pbnN0cnVjdGlvbnMiOiJTdWJtaXQgdGhpcyBwYWNrYWdlIHRvIHRoZSBFVSBBSSBBY3QgZGF0YWJhc2UgYXQgaHR0cHM6Ly9lYy5ldXJvcGEuZXUvZGlnaXRhbC1zdHJhdGVneS9lbi9wb2xpY2llcy9ldXJvcGVhbi1haS1hY3QuIEluY2x1ZGUgdGhlIHJlZmVyZW5jZWQgcmNhbi1mcmlhLXYxIEpTT04gYXMgYW4gYXR0YWNobWVudC4iLCJzeXN0ZW0iOnsib3BlbmNhc3Rvcl92ZXJzaW9uIjoiMjAyNi40LjIzLjAiLCJyY2FuX3ZlcnNpb24iOiIzLjAiLCJyb2JvdF9uYW1lIjoiQm9iIiwicnJuIjoiUlJOLTAwMDAwMDAwMDAwMSIsInJybl91cmkiOiJycm46Ly9jcmFpZ20yNi9yb2JvdC9vcGVuY2FzdG9yLXJwaTUtaGFpbG8tc29hcm0xMDEvYm9iLTAwMSJ9fQ=="
+      "expected_bytes_base64": "eyJhbm5leF9paWlfYmFzaXMiOiJBbm5leCBJSUkgwqc1KGIpIOKAlCBjcml0aWNhbCBpbmZyYXN0cnVjdHVyZSBtYW5hZ2VtZW50IiwiY29uZm9ybWl0eV9zdGF0dXMiOiJkZWNsYXJlZCIsImZyaWFfcmVmIjoiYm9iLWZyaWEtdjEuanNvbiIsImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicHJvdmlkZXIiOnsiY29udGFjdCI6ImNyYWlnbTI2QGdtYWlsLmNvbSIsIm5hbWUiOiJjcmFpZ20yNiJ9LCJybW4iOiJSTU4tMDAwMDAwMDAwMDA3Iiwic2NoZW1hIjoicmNhbi1ldS1yZWdpc3Rlci12MSIsInN1Ym1pc3Npb25faW5zdHJ1Y3Rpb25zIjoiU3VibWl0IHRoaXMgcGFja2FnZSB0byB0aGUgRVUgQUkgQWN0IGRhdGFiYXNlIGF0IGh0dHBzOi8vZWMuZXVyb3BhLmV1L2RpZ2l0YWwtc3RyYXRlZ3kvZW4vcG9saWNpZXMvZXVyb3BlYW4tYWktYWN0LiBJbmNsdWRlIHRoZSByZWZlcmVuY2VkIHJjYW4tZnJpYS12MSBKU09OIGFzIGFuIGF0dGFjaG1lbnQuIiwic3lzdGVtIjp7Im9wZW5jYXN0b3JfdmVyc2lvbiI6IjIwMjYuNC4yMy4wIiwicmNhbl92ZXJzaW9uIjoiMy4wIiwicm9ib3RfbmFtZSI6IkJvYiIsInJybiI6IlJSTi0wMDAwMDAwMDAwMDEiLCJycm5fdXJpIjoicnJuOi8vY3JhaWdtMjYvcm9ib3Qvb3BlbmNhc3Rvci1ycGk1LWhhaWxvLXNvYXJtMTAxL2JvYi0wMDEifX0="
     },
     {
       "name": "eu_register_entry_defaults_provided",
@@ -412,11 +414,13 @@
         "annex_iii_basis": "Annex III §5(b)",
         "generated_at": "2026-04-23T00:00:00Z",
         "conformity_status": "provisional",
-        "submission_instructions": "Custom instructions for testing the override path."
+        "submission_instructions": "Custom instructions for testing the override path.",
+        "rmn": "RMN-000000000007"
       },
       "expected_output": {
         "schema": "rcan-eu-register-v1",
         "generated_at": "2026-04-23T00:00:00Z",
+        "rmn": "RMN-000000000007",
         "fria_ref": "bob-fria-v1.json",
         "provider": {
           "name": "craigm26",
@@ -431,7 +435,7 @@
         "conformity_status": "provisional",
         "submission_instructions": "Custom instructions for testing the override path."
       },
-      "expected_bytes_base64": "eyJhbm5leF9paWlfYmFzaXMiOiJBbm5leCBJSUkgwqc1KGIpIiwiY29uZm9ybWl0eV9zdGF0dXMiOiJwcm92aXNpb25hbCIsImZyaWFfcmVmIjoiYm9iLWZyaWEtdjEuanNvbiIsImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicHJvdmlkZXIiOnsiY29udGFjdCI6ImNyYWlnbTI2QGdtYWlsLmNvbSIsIm5hbWUiOiJjcmFpZ20yNiJ9LCJzY2hlbWEiOiJyY2FuLWV1LXJlZ2lzdGVyLXYxIiwic3VibWlzc2lvbl9pbnN0cnVjdGlvbnMiOiJDdXN0b20gaW5zdHJ1Y3Rpb25zIGZvciB0ZXN0aW5nIHRoZSBvdmVycmlkZSBwYXRoLiIsInN5c3RlbSI6eyJyY2FuX3ZlcnNpb24iOiIzLjAiLCJyb2JvdF9uYW1lIjoiQm9iIiwicnJuIjoiUlJOLTAwMDAwMDAwMDAwMSJ9fQ=="
+      "expected_bytes_base64": "eyJhbm5leF9paWlfYmFzaXMiOiJBbm5leCBJSUkgwqc1KGIpIiwiY29uZm9ybWl0eV9zdGF0dXMiOiJwcm92aXNpb25hbCIsImZyaWFfcmVmIjoiYm9iLWZyaWEtdjEuanNvbiIsImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicHJvdmlkZXIiOnsiY29udGFjdCI6ImNyYWlnbTI2QGdtYWlsLmNvbSIsIm5hbWUiOiJjcmFpZ20yNiJ9LCJybW4iOiJSTU4tMDAwMDAwMDAwMDA3Iiwic2NoZW1hIjoicmNhbi1ldS1yZWdpc3Rlci12MSIsInN1Ym1pc3Npb25faW5zdHJ1Y3Rpb25zIjoiQ3VzdG9tIGluc3RydWN0aW9ucyBmb3IgdGVzdGluZyB0aGUgb3ZlcnJpZGUgcGF0aC4iLCJzeXN0ZW0iOnsicmNhbl92ZXJzaW9uIjoiMy4wIiwicm9ib3RfbmFtZSI6IkJvYiIsInJybiI6IlJSTi0wMDAwMDAwMDAwMDEifX0="
     }
   ]
 }
