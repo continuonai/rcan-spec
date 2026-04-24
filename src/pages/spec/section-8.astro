@@ -79,6 +79,40 @@ const topLevelKeys = [
   { key: 'network',      type: 'object',          desc: 'Telemetry and remote access flags' },
   { key: 'rcan_protocol',type: 'object',          desc: 'Port, capabilities, mDNS, JWT flags' },
 ];
+
+const agentRuntimesConfig = `agent:
+  runtimes:
+    - id: robot-md
+      harness: claude-code
+      default: true
+      models:
+        - provider: anthropic
+          model: claude-sonnet-4-6
+          role: primary
+        - provider: anthropic
+          model: claude-opus-4-7
+          role: planning
+      safety_stop: true
+      latency_budget_ms: 200
+    - id: opencastor
+      harness: castor-default
+      models:
+        - provider: anthropic
+          model: claude-sonnet-4-6
+          role: primary
+        - provider: google
+          model: gemini-er-1.6
+          role: manipulation
+      recipes: [pick-place-basic]
+      safety_stop: true
+      latency_budget_ms: 150`;
+
+const runtimeFields = [
+  { key: 'runtimes[].id',       type: 'string (required)',  desc: 'Runtime identifier. Known: "robot-md", "opencastor". Community-extensible.' },
+  { key: 'runtimes[].harness',  type: 'string (required)',  desc: 'Runtime-specific harness name. Interpretation belongs to the named runtime.' },
+  { key: 'runtimes[].default',  type: 'boolean (optional)', desc: 'If runtimes[] has multiple entries, exactly one MUST be default: true.' },
+  { key: 'runtimes[].models',   type: 'array (optional)',   desc: 'Model declarations. Shape and semantics are runtime-specific.' },
+];
 ---
 
 <DocsLayout title="§8 Robot Config (RCAN File)" description="RCAN §8 — Robot Configuration File. Defines the .rcan.yaml schema, required top-level keys, and optional blocks for AI gates, camera, swarm, and provider fallback.">
@@ -105,6 +139,7 @@ const topLevelKeys = [
       <li><a href="#example"       class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.3</span> Reference Example</a></li>
       <li><a href="#ai-gates"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.4</span> AI Gate Configuration (v1.2)</a></li>
       <li><a href="#optional"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.5</span> Optional Blocks</a></li>
+      <li><a href="#multi-runtime" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.6</span> Multi-Runtime Agent Declaration (v3.2)</a></li>
     </ol>
   </div>
 
@@ -207,6 +242,69 @@ const topLevelKeys = [
         <a href="https://rcan.dev/schema/rcan.schema.json" class="text-accent hover:underline">rcan.dev/schema/rcan.schema.json</a>
       </p>
     </div>
+  </section>
+
+  <hr />
+
+  <section id="multi-runtime">
+    <h2>8.6 Multi-Runtime Agent Declaration (v3.2)</h2>
+    <p>
+      As of v3.2, the <code>agent</code> block accepts an optional <code>runtimes</code>
+      array. Each entry declares one runtime that can boot the robot. This enables
+      peer-runtime deployments where a single ROBOT.md identity is valid under multiple
+      agent harnesses (e.g. <code>robot-md</code> and <code>opencastor</code>) without
+      modifying the manifest or the RRF registry record.
+    </p>
+
+    <div class="not-prose my-6">
+      <CodeWindow code={agentRuntimesConfig} language="yaml" title="agent-runtimes.robot.md" />
+    </div>
+
+    <h3 class="text-lg font-bold mt-6 mb-3">Field Rules</h3>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Key</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Type</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {runtimeFields.map(f => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{f.key}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{f.type}</td>
+              <td class="py-3 text-text-muted text-xs">{f.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="text-sm text-text-muted mt-3">
+      Unknown per-entry fields are preserved (runtime-specific pass-through) — implementations
+      MUST NOT reject entries that carry fields they don't recognize.
+    </p>
+
+    <h3 class="text-lg font-bold mt-6 mb-3">Backward Compatibility</h3>
+    <p>
+      The flat <code>agent.provider</code> / <code>agent.model</code> form (introduced in v1.2)
+      remains valid in v3.2. Validators SHOULD emit a <code>DeprecationWarning</code> when the
+      flat form is encountered and SHOULD normalize it internally to a single-entry
+      <code>runtimes[]</code>. The flat form is scheduled for removal in v4.0.
+    </p>
+
+    <h3 class="text-lg font-bold mt-6 mb-3">Known Runtime IDs</h3>
+    <ul>
+      <li><code>robot-md</code> — prebuilt agent harnesses (Claude Code and peers).
+        <a href="https://pypi.org/project/robot-md/" class="text-accent hover:underline">pypi.org/project/robot-md</a></li>
+      <li><code>opencastor</code> — custom harness with swappable models and recipes.
+        <a href="https://pypi.org/project/opencastor/" class="text-accent hover:underline">pypi.org/project/opencastor</a></li>
+    </ul>
+    <p>
+      Third-party runtimes may define their own ids. See the peer-runtimes listing in
+      the <code>opencastor-ops</code> repository for criteria and current entries.
+    </p>
   </section>
 
   <hr />
