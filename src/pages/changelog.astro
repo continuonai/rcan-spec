@@ -3,10 +3,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const versions = [
   {
-    version: 'v3.1.0',
-    date: '2026-04-24',
+    version: 'v3.2.0',
+    date: '2026-04-23',
     tag: 'Latest',
     tagColor: 'bg-accent/15 text-accent border-accent/30',
+    changes: [
+      { type: 'added', text: '§8.6 Multi-Runtime Agent Declaration: new optional agent.runtimes[] array on ROBOT.md allows a single robot identity to declare multiple supported agent runtimes (e.g. robot-md, opencastor). Each entry carries a required id + harness and optional default/models/runtime-specific fields. Enables peer-runtime deployments without manifest or RRF record mutation when switching runtimes.' },
+      { type: 'added', text: 'VERSIONING.md: new "Deprecation Precedents" section codifying how flat→structured field replacements are handled across MINOR versions.' },
+      { type: 'deprecated', text: 'Flat agent.provider / agent.model form (introduced in v1.2) is soft-deprecated in v3.2. Validators emit DeprecationWarning; internal normalization to single-entry agent.runtimes[]. Removal scheduled for v4.0.' },
+      { type: 'docs', text: '§8.6 lists initial known runtime ids (robot-md, opencastor) and points to opencastor-ops PEER_RUNTIMES registry for the community-extensible third-party listing.' },
+    ],
+  },
+  {
+    version: 'v3.1.0',
+    date: '2026-04-24',
+    tag: 'Stable',
+    tagColor: 'bg-white/5 text-text-muted border-white/10',
     changes: [
       { type: 'breaking', text: '§26 EU Register (rcan-eu-register-v1): add top-level rmn (Robot Model Number) field. Art. 49 registration is per-model, not per-robot; rmn identifies which model the submission registers. system.rrn remains for per-submission provenance only. Per VERSIONING.md: §26 is Experimental tier (introduced in v3.0 13 days ago, zero production consumers at bump time — all ecosystem libraries list but no production code path uses it yet), so breaking change is permitted in MINOR with release notice. Breaks byte-parity with rcan-py ≤ 3.1.1; requires rcan-py 3.2.0 + rcan-ts 3.3.0 to match.' },
       { type: 'docs', text: '§26 overview clarified: per-model scoping per Art. 49, rmn vs system.rrn distinction.' },
