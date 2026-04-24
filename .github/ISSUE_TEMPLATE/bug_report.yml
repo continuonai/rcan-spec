@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for reporting a bug! Before filing, check if this is the right repo — see the
-        [ecosystem CONTRIBUTING doc](https://github.com/craigm26/opencastor-ops/blob/main/CONTRIBUTING.md)
+        [ecosystem CONTRIBUTING doc](https://github.com/craigm26/opencastor-ops/blob/master/CONTRIBUTING.md)
         for a decision tree.
   - type: input
     id: version
