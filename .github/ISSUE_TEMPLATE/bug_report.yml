@@ -1,0 +1,70 @@
+name: Bug report
+description: File a bug report for this repo
+title: "[bug] "
+labels: ["bug", "triage:needs-fix"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Before filing, check if this is the right repo — see the
+        [ecosystem CONTRIBUTING doc](https://github.com/craigm26/opencastor-ops/blob/main/CONTRIBUTING.md)
+        for a decision tree.
+  - type: input
+    id: version
+    attributes:
+      label: Affected version
+      description: "Package version, git SHA, or `robot-md --version` output"
+      placeholder: "e.g. robot-md 1.1.0 or robot-md-mcp@0.3.0"
+    validations:
+      required: true
+  - type: input
+    id: component
+    attributes:
+      label: Affected component
+      description: Which part of this repo is broken?
+      placeholder: "e.g. CLI init, MCP server validate tool, registry resolver"
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Reproducer
+      description: Minimal steps to reproduce. Commands, inputs, expected sequence.
+      placeholder: |
+        1. Run `robot-md init bob --preset so-arm101`
+        2. Observe ...
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Paste errors, tracebacks, or unexpected output.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / diagnostic output
+      description: "Relevant log lines, `robot-md doctor` output, or MCP server stderr. Redact secrets."
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, shell, Python/Node version, any other relevant context.
+      placeholder: |
+        macOS 14.5, zsh, Python 3.11, Node 20.11
+    validations:
+      required: false
