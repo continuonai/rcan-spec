@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for proposing an improvement! Before filing, check the
-        [ecosystem CONTRIBUTING doc](https://github.com/craigm26/opencastor-ops/blob/main/CONTRIBUTING.md)
+        [ecosystem CONTRIBUTING doc](https://github.com/craigm26/opencastor-ops/blob/master/CONTRIBUTING.md)
         to make sure this is the right repo.
   - type: textarea
     id: problem
