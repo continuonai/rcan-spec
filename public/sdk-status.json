@@ -1,14 +1,14 @@
 {
-  "updated": "2026-04-24T05:28:22Z",
+  "updated": "2026-04-24T07:54:26Z",
   "spec_version": "3.0",
   "sdks": {
     "rcan-py": {
-      "version": "3.2.0",
+      "version": "3.3.0",
       "status": "pass",
       "pypi": "https://pypi.org/project/rcan/"
     },
     "rcan-ts": {
-      "version": "3.3.0",
+      "version": "3.4.0",
       "status": "pass",
       "npm": "https://www.npmjs.com/package/rcan-ts"
     }
