@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ecosystem CONTRIBUTING guide
+    url: https://github.com/craigm26/opencastor-ops/blob/main/CONTRIBUTING.md
+    about: "Not sure which repo to file on? Read this first."
+  - name: robotmd.dev/report
+    url: https://robotmd.dev/report
+    about: "Decision-tree landing page for bug reports and feature requests."
+  - name: ROBOT.md spec
+    url: https://robotmd.dev/spec/robot-md-v1.md
+    about: "Spec questions or proposals live with the spec."
