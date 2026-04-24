@@ -1,0 +1,437 @@
+{
+  "format": "rcan-compliance-fixture-v1",
+  "description": "Byte-level invariants for RCAN compliance builders (§23-26). Both rcan-py and rcan-ts MUST produce builder outputs whose canonical_json is byte-identical to expected_bytes_base64.",
+  "rcan_py_version": "3.1.1",
+  "cases": [
+    {
+      "name": "safety_benchmark_minimal",
+      "builder": "build_safety_benchmark",
+      "input": {
+        "iterations": 1,
+        "thresholds": {},
+        "results": {},
+        "mode": "synthetic",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "overall_pass": true
+      },
+      "expected_output": {
+        "schema": "rcan-safety-benchmark-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "mode": "synthetic",
+        "iterations": 1,
+        "thresholds": {},
+        "results": {},
+        "overall_pass": true
+      },
+      "expected_bytes_base64": "eyJnZW5lcmF0ZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsIml0ZXJhdGlvbnMiOjEsIm1vZGUiOiJzeW50aGV0aWMiLCJvdmVyYWxsX3Bhc3MiOnRydWUsInJlc3VsdHMiOnt9LCJzY2hlbWEiOiJyY2FuLXNhZmV0eS1iZW5jaG1hcmstdjEiLCJ0aHJlc2hvbGRzIjp7fX0="
+    },
+    {
+      "name": "safety_benchmark_full",
+      "builder": "build_safety_benchmark",
+      "input": {
+        "iterations": 1000,
+        "thresholds": {
+          "arm_move_p95_ms": 250,
+          "gripper_close_p95_ms": 120
+        },
+        "results": {
+          "arm_move": {
+            "min_ms": 10,
+            "mean_ms": 85,
+            "p95_ms": 240,
+            "p99_ms": 300,
+            "max_ms": 410,
+            "pass": true
+          },
+          "gripper_close": {
+            "min_ms": 5,
+            "mean_ms": 40,
+            "p95_ms": 150,
+            "p99_ms": 180,
+            "max_ms": 200,
+            "pass": false
+          }
+        },
+        "mode": "hardware",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "overall_pass": false
+      },
+      "expected_output": {
+        "schema": "rcan-safety-benchmark-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "mode": "hardware",
+        "iterations": 1000,
+        "thresholds": {
+          "arm_move_p95_ms": 250,
+          "gripper_close_p95_ms": 120
+        },
+        "results": {
+          "arm_move": {
+            "min_ms": 10,
+            "mean_ms": 85,
+            "p95_ms": 240,
+            "p99_ms": 300,
+            "max_ms": 410,
+            "pass": true
+          },
+          "gripper_close": {
+            "min_ms": 5,
+            "mean_ms": 40,
+            "p95_ms": 150,
+            "p99_ms": 180,
+            "max_ms": 200,
+            "pass": false
+          }
+        },
+        "overall_pass": false
+      },
+      "expected_bytes_base64": "eyJnZW5lcmF0ZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsIml0ZXJhdGlvbnMiOjEwMDAsIm1vZGUiOiJoYXJkd2FyZSIsIm92ZXJhbGxfcGFzcyI6ZmFsc2UsInJlc3VsdHMiOnsiYXJtX21vdmUiOnsibWF4X21zIjo0MTAsIm1lYW5fbXMiOjg1LCJtaW5fbXMiOjEwLCJwOTVfbXMiOjI0MCwicDk5X21zIjozMDAsInBhc3MiOnRydWV9LCJncmlwcGVyX2Nsb3NlIjp7Im1heF9tcyI6MjAwLCJtZWFuX21zIjo0MCwibWluX21zIjo1LCJwOTVfbXMiOjE1MCwicDk5X21zIjoxODAsInBhc3MiOmZhbHNlfX0sInNjaGVtYSI6InJjYW4tc2FmZXR5LWJlbmNobWFyay12MSIsInRocmVzaG9sZHMiOnsiYXJtX21vdmVfcDk1X21zIjoyNTAsImdyaXBwZXJfY2xvc2VfcDk1X21zIjoxMjB9fQ=="
+    },
+    {
+      "name": "ifu_minimal",
+      "builder": "build_ifu",
+      "input": {
+        "provider_identity": {
+          "name": "Test Provider",
+          "contact": "test@example.com"
+        },
+        "intended_purpose": {
+          "note": "placeholder"
+        },
+        "capabilities_and_limitations": {
+          "note": "placeholder"
+        },
+        "accuracy_and_performance": {
+          "note": "placeholder"
+        },
+        "human_oversight_measures": {
+          "note": "placeholder"
+        },
+        "known_risks_and_misuse": {
+          "note": "placeholder"
+        },
+        "expected_lifetime": {
+          "note": "placeholder"
+        },
+        "maintenance_requirements": {
+          "note": "placeholder"
+        },
+        "generated_at": "2026-04-23T00:00:00Z"
+      },
+      "expected_output": {
+        "schema": "rcan-ifu-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "art13_coverage": [
+          "provider_identity",
+          "intended_purpose",
+          "capabilities_and_limitations",
+          "accuracy_and_performance",
+          "human_oversight_measures",
+          "known_risks_and_misuse",
+          "expected_lifetime",
+          "maintenance_requirements"
+        ],
+        "provider_identity": {
+          "name": "Test Provider",
+          "contact": "test@example.com"
+        },
+        "intended_purpose": {
+          "note": "placeholder"
+        },
+        "capabilities_and_limitations": {
+          "note": "placeholder"
+        },
+        "accuracy_and_performance": {
+          "note": "placeholder"
+        },
+        "human_oversight_measures": {
+          "note": "placeholder"
+        },
+        "known_risks_and_misuse": {
+          "note": "placeholder"
+        },
+        "expected_lifetime": {
+          "note": "placeholder"
+        },
+        "maintenance_requirements": {
+          "note": "placeholder"
+        }
+      },
+      "expected_bytes_base64": "eyJhY2N1cmFjeV9hbmRfcGVyZm9ybWFuY2UiOnsibm90ZSI6InBsYWNlaG9sZGVyIn0sImFydDEzX2NvdmVyYWdlIjpbInByb3ZpZGVyX2lkZW50aXR5IiwiaW50ZW5kZWRfcHVycG9zZSIsImNhcGFiaWxpdGllc19hbmRfbGltaXRhdGlvbnMiLCJhY2N1cmFjeV9hbmRfcGVyZm9ybWFuY2UiLCJodW1hbl9vdmVyc2lnaHRfbWVhc3VyZXMiLCJrbm93bl9yaXNrc19hbmRfbWlzdXNlIiwiZXhwZWN0ZWRfbGlmZXRpbWUiLCJtYWludGVuYW5jZV9yZXF1aXJlbWVudHMiXSwiY2FwYWJpbGl0aWVzX2FuZF9saW1pdGF0aW9ucyI6eyJub3RlIjoicGxhY2Vob2xkZXIifSwiZXhwZWN0ZWRfbGlmZXRpbWUiOnsibm90ZSI6InBsYWNlaG9sZGVyIn0sImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwiaHVtYW5fb3ZlcnNpZ2h0X21lYXN1cmVzIjp7Im5vdGUiOiJwbGFjZWhvbGRlciJ9LCJpbnRlbmRlZF9wdXJwb3NlIjp7Im5vdGUiOiJwbGFjZWhvbGRlciJ9LCJrbm93bl9yaXNrc19hbmRfbWlzdXNlIjp7Im5vdGUiOiJwbGFjZWhvbGRlciJ9LCJtYWludGVuYW5jZV9yZXF1aXJlbWVudHMiOnsibm90ZSI6InBsYWNlaG9sZGVyIn0sInByb3ZpZGVyX2lkZW50aXR5Ijp7ImNvbnRhY3QiOiJ0ZXN0QGV4YW1wbGUuY29tIiwibmFtZSI6IlRlc3QgUHJvdmlkZXIifSwic2NoZW1hIjoicmNhbi1pZnUtdjEifQ=="
+    },
+    {
+      "name": "ifu_full_unicode",
+      "builder": "build_ifu",
+      "input": {
+        "provider_identity": {
+          "name": "Crème Brûlée Robotics",
+          "contact": "hi@creme.example",
+          "eori": "EU-123"
+        },
+        "intended_purpose": {
+          "summary": "Teleoperated pick-and-place assistance"
+        },
+        "capabilities_and_limitations": {
+          "max_payload_kg": 2.5,
+          "reach_m": 0.6
+        },
+        "accuracy_and_performance": {
+          "position_accuracy_mm": 1.5
+        },
+        "human_oversight_measures": {
+          "hitl_required": true,
+          "fail_safe": "estop_on_force_limit"
+        },
+        "known_risks_and_misuse": {
+          "pinch_points": [
+            "wrist_flex",
+            "gripper"
+          ]
+        },
+        "expected_lifetime": {
+          "years": 5,
+          "cycles": 1000000
+        },
+        "maintenance_requirements": {
+          "lubrication": "quarterly"
+        },
+        "generated_at": "2026-04-23T00:00:00Z"
+      },
+      "expected_output": {
+        "schema": "rcan-ifu-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "art13_coverage": [
+          "provider_identity",
+          "intended_purpose",
+          "capabilities_and_limitations",
+          "accuracy_and_performance",
+          "human_oversight_measures",
+          "known_risks_and_misuse",
+          "expected_lifetime",
+          "maintenance_requirements"
+        ],
+        "provider_identity": {
+          "name": "Crème Brûlée Robotics",
+          "contact": "hi@creme.example",
+          "eori": "EU-123"
+        },
+        "intended_purpose": {
+          "summary": "Teleoperated pick-and-place assistance"
+        },
+        "capabilities_and_limitations": {
+          "max_payload_kg": 2.5,
+          "reach_m": 0.6
+        },
+        "accuracy_and_performance": {
+          "position_accuracy_mm": 1.5
+        },
+        "human_oversight_measures": {
+          "hitl_required": true,
+          "fail_safe": "estop_on_force_limit"
+        },
+        "known_risks_and_misuse": {
+          "pinch_points": [
+            "wrist_flex",
+            "gripper"
+          ]
+        },
+        "expected_lifetime": {
+          "years": 5,
+          "cycles": 1000000
+        },
+        "maintenance_requirements": {
+          "lubrication": "quarterly"
+        }
+      },
+      "expected_bytes_base64": "eyJhY2N1cmFjeV9hbmRfcGVyZm9ybWFuY2UiOnsicG9zaXRpb25fYWNjdXJhY3lfbW0iOjEuNX0sImFydDEzX2NvdmVyYWdlIjpbInByb3ZpZGVyX2lkZW50aXR5IiwiaW50ZW5kZWRfcHVycG9zZSIsImNhcGFiaWxpdGllc19hbmRfbGltaXRhdGlvbnMiLCJhY2N1cmFjeV9hbmRfcGVyZm9ybWFuY2UiLCJodW1hbl9vdmVyc2lnaHRfbWVhc3VyZXMiLCJrbm93bl9yaXNrc19hbmRfbWlzdXNlIiwiZXhwZWN0ZWRfbGlmZXRpbWUiLCJtYWludGVuYW5jZV9yZXF1aXJlbWVudHMiXSwiY2FwYWJpbGl0aWVzX2FuZF9saW1pdGF0aW9ucyI6eyJtYXhfcGF5bG9hZF9rZyI6Mi41LCJyZWFjaF9tIjowLjZ9LCJleHBlY3RlZF9saWZldGltZSI6eyJjeWNsZXMiOjEwMDAwMDAsInllYXJzIjo1fSwiZ2VuZXJhdGVkX2F0IjoiMjAyNi0wNC0yM1QwMDowMDowMFoiLCJodW1hbl9vdmVyc2lnaHRfbWVhc3VyZXMiOnsiZmFpbF9zYWZlIjoiZXN0b3Bfb25fZm9yY2VfbGltaXQiLCJoaXRsX3JlcXVpcmVkIjp0cnVlfSwiaW50ZW5kZWRfcHVycG9zZSI6eyJzdW1tYXJ5IjoiVGVsZW9wZXJhdGVkIHBpY2stYW5kLXBsYWNlIGFzc2lzdGFuY2UifSwia25vd25fcmlza3NfYW5kX21pc3VzZSI6eyJwaW5jaF9wb2ludHMiOlsid3Jpc3RfZmxleCIsImdyaXBwZXIiXX0sIm1haW50ZW5hbmNlX3JlcXVpcmVtZW50cyI6eyJsdWJyaWNhdGlvbiI6InF1YXJ0ZXJseSJ9LCJwcm92aWRlcl9pZGVudGl0eSI6eyJjb250YWN0IjoiaGlAY3JlbWUuZXhhbXBsZSIsImVvcmkiOiJFVS0xMjMiLCJuYW1lIjoiQ3LDqG1lIEJyw7tsw6llIFJvYm90aWNzIn0sInNjaGVtYSI6InJjYW4taWZ1LXYxIn0="
+    },
+    {
+      "name": "incident_report_zero",
+      "builder": "build_incident_report",
+      "input": {
+        "rrn": "RRN-000000000001",
+        "incidents": [],
+        "generated_at": "2026-04-23T00:00:00Z"
+      },
+      "expected_output": {
+        "schema": "rcan-incidents-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "rrn": "RRN-000000000001",
+        "total_incidents": 0,
+        "incidents_by_severity": {
+          "life_health": 0,
+          "other": 0
+        },
+        "reporting_deadlines": {
+          "life_health": "15 days from incident timestamp",
+          "other": "90 days from incident timestamp"
+        },
+        "art72_note": "Providers must report serious incidents to the relevant national authority within the applicable deadline per EU AI Act Art. 72.",
+        "incidents": []
+      },
+      "expected_bytes_base64": "eyJhcnQ3Ml9ub3RlIjoiUHJvdmlkZXJzIG11c3QgcmVwb3J0IHNlcmlvdXMgaW5jaWRlbnRzIHRvIHRoZSByZWxldmFudCBuYXRpb25hbCBhdXRob3JpdHkgd2l0aGluIHRoZSBhcHBsaWNhYmxlIGRlYWRsaW5lIHBlciBFVSBBSSBBY3QgQXJ0LiA3Mi4iLCJnZW5lcmF0ZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsImluY2lkZW50cyI6W10sImluY2lkZW50c19ieV9zZXZlcml0eSI6eyJsaWZlX2hlYWx0aCI6MCwib3RoZXIiOjB9LCJyZXBvcnRpbmdfZGVhZGxpbmVzIjp7ImxpZmVfaGVhbHRoIjoiMTUgZGF5cyBmcm9tIGluY2lkZW50IHRpbWVzdGFtcCIsIm90aGVyIjoiOTAgZGF5cyBmcm9tIGluY2lkZW50IHRpbWVzdGFtcCJ9LCJycm4iOiJSUk4tMDAwMDAwMDAwMDAxIiwic2NoZW1hIjoicmNhbi1pbmNpZGVudHMtdjEiLCJ0b3RhbF9pbmNpZGVudHMiOjB9"
+    },
+    {
+      "name": "incident_report_mixed_with_unknown",
+      "builder": "build_incident_report",
+      "input": {
+        "rrn": "RRN-000000000001",
+        "incidents": [
+          {
+            "incident_id": "I-001",
+            "severity": "life_health",
+            "description": "wrist stalled during pick",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          },
+          {
+            "incident_id": "I-002",
+            "severity": "other",
+            "description": "calibration drift",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          },
+          {
+            "incident_id": "I-003",
+            "severity": "life_health",
+            "description": "gripper over-torque",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          },
+          {
+            "incident_id": "I-004",
+            "severity": "low",
+            "description": "unknown severity — should be ignored",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          }
+        ],
+        "generated_at": "2026-04-23T00:00:00Z"
+      },
+      "expected_output": {
+        "schema": "rcan-incidents-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "rrn": "RRN-000000000001",
+        "total_incidents": 4,
+        "incidents_by_severity": {
+          "life_health": 2,
+          "other": 1
+        },
+        "reporting_deadlines": {
+          "life_health": "15 days from incident timestamp",
+          "other": "90 days from incident timestamp"
+        },
+        "art72_note": "Providers must report serious incidents to the relevant national authority within the applicable deadline per EU AI Act Art. 72.",
+        "incidents": [
+          {
+            "incident_id": "I-001",
+            "severity": "life_health",
+            "description": "wrist stalled during pick",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          },
+          {
+            "incident_id": "I-002",
+            "severity": "other",
+            "description": "calibration drift",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          },
+          {
+            "incident_id": "I-003",
+            "severity": "life_health",
+            "description": "gripper over-torque",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          },
+          {
+            "incident_id": "I-004",
+            "severity": "low",
+            "description": "unknown severity — should be ignored",
+            "occurred_at": "2026-04-23T00:00:00Z",
+            "reported_at": "2026-04-23T00:00:00Z"
+          }
+        ]
+      },
+      "expected_bytes_base64": "eyJhcnQ3Ml9ub3RlIjoiUHJvdmlkZXJzIG11c3QgcmVwb3J0IHNlcmlvdXMgaW5jaWRlbnRzIHRvIHRoZSByZWxldmFudCBuYXRpb25hbCBhdXRob3JpdHkgd2l0aGluIHRoZSBhcHBsaWNhYmxlIGRlYWRsaW5lIHBlciBFVSBBSSBBY3QgQXJ0LiA3Mi4iLCJnZW5lcmF0ZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsImluY2lkZW50cyI6W3siZGVzY3JpcHRpb24iOiJ3cmlzdCBzdGFsbGVkIGR1cmluZyBwaWNrIiwiaW5jaWRlbnRfaWQiOiJJLTAwMSIsIm9jY3VycmVkX2F0IjoiMjAyNi0wNC0yM1QwMDowMDowMFoiLCJyZXBvcnRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwic2V2ZXJpdHkiOiJsaWZlX2hlYWx0aCJ9LHsiZGVzY3JpcHRpb24iOiJjYWxpYnJhdGlvbiBkcmlmdCIsImluY2lkZW50X2lkIjoiSS0wMDIiLCJvY2N1cnJlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicmVwb3J0ZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsInNldmVyaXR5Ijoib3RoZXIifSx7ImRlc2NyaXB0aW9uIjoiZ3JpcHBlciBvdmVyLXRvcnF1ZSIsImluY2lkZW50X2lkIjoiSS0wMDMiLCJvY2N1cnJlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicmVwb3J0ZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsInNldmVyaXR5IjoibGlmZV9oZWFsdGgifSx7ImRlc2NyaXB0aW9uIjoidW5rbm93biBzZXZlcml0eSDigJQgc2hvdWxkIGJlIGlnbm9yZWQiLCJpbmNpZGVudF9pZCI6IkktMDA0Iiwib2NjdXJyZWRfYXQiOiIyMDI2LTA0LTIzVDAwOjAwOjAwWiIsInJlcG9ydGVkX2F0IjoiMjAyNi0wNC0yM1QwMDowMDowMFoiLCJzZXZlcml0eSI6ImxvdyJ9XSwiaW5jaWRlbnRzX2J5X3NldmVyaXR5Ijp7ImxpZmVfaGVhbHRoIjoyLCJvdGhlciI6MX0sInJlcG9ydGluZ19kZWFkbGluZXMiOnsibGlmZV9oZWFsdGgiOiIxNSBkYXlzIGZyb20gaW5jaWRlbnQgdGltZXN0YW1wIiwib3RoZXIiOiI5MCBkYXlzIGZyb20gaW5jaWRlbnQgdGltZXN0YW1wIn0sInJybiI6IlJSTi0wMDAwMDAwMDAwMDEiLCJzY2hlbWEiOiJyY2FuLWluY2lkZW50cy12MSIsInRvdGFsX2luY2lkZW50cyI6NH0="
+    },
+    {
+      "name": "eu_register_entry_defaults_omitted",
+      "builder": "build_eu_register_entry",
+      "input": {
+        "fria_ref": "bob-fria-v1.json",
+        "provider": {
+          "name": "craigm26",
+          "contact": "craigm26@gmail.com"
+        },
+        "system": {
+          "rrn": "RRN-000000000001",
+          "rrn_uri": "rrn://craigm26/robot/opencastor-rpi5-hailo-soarm101/bob-001",
+          "robot_name": "Bob",
+          "rcan_version": "3.0",
+          "opencastor_version": "2026.4.23.0"
+        },
+        "annex_iii_basis": "Annex III §5(b) — critical infrastructure management",
+        "generated_at": "2026-04-23T00:00:00Z"
+      },
+      "expected_output": {
+        "schema": "rcan-eu-register-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "fria_ref": "bob-fria-v1.json",
+        "provider": {
+          "name": "craigm26",
+          "contact": "craigm26@gmail.com"
+        },
+        "system": {
+          "rrn": "RRN-000000000001",
+          "rrn_uri": "rrn://craigm26/robot/opencastor-rpi5-hailo-soarm101/bob-001",
+          "robot_name": "Bob",
+          "rcan_version": "3.0",
+          "opencastor_version": "2026.4.23.0"
+        },
+        "annex_iii_basis": "Annex III §5(b) — critical infrastructure management",
+        "conformity_status": "declared",
+        "submission_instructions": "Submit this package to the EU AI Act database at https://ec.europa.eu/digital-strategy/en/policies/european-ai-act. Include the referenced rcan-fria-v1 JSON as an attachment."
+      },
+      "expected_bytes_base64": "eyJhbm5leF9paWlfYmFzaXMiOiJBbm5leCBJSUkgwqc1KGIpIOKAlCBjcml0aWNhbCBpbmZyYXN0cnVjdHVyZSBtYW5hZ2VtZW50IiwiY29uZm9ybWl0eV9zdGF0dXMiOiJkZWNsYXJlZCIsImZyaWFfcmVmIjoiYm9iLWZyaWEtdjEuanNvbiIsImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicHJvdmlkZXIiOnsiY29udGFjdCI6ImNyYWlnbTI2QGdtYWlsLmNvbSIsIm5hbWUiOiJjcmFpZ20yNiJ9LCJzY2hlbWEiOiJyY2FuLWV1LXJlZ2lzdGVyLXYxIiwic3VibWlzc2lvbl9pbnN0cnVjdGlvbnMiOiJTdWJtaXQgdGhpcyBwYWNrYWdlIHRvIHRoZSBFVSBBSSBBY3QgZGF0YWJhc2UgYXQgaHR0cHM6Ly9lYy5ldXJvcGEuZXUvZGlnaXRhbC1zdHJhdGVneS9lbi9wb2xpY2llcy9ldXJvcGVhbi1haS1hY3QuIEluY2x1ZGUgdGhlIHJlZmVyZW5jZWQgcmNhbi1mcmlhLXYxIEpTT04gYXMgYW4gYXR0YWNobWVudC4iLCJzeXN0ZW0iOnsib3BlbmNhc3Rvcl92ZXJzaW9uIjoiMjAyNi40LjIzLjAiLCJyY2FuX3ZlcnNpb24iOiIzLjAiLCJyb2JvdF9uYW1lIjoiQm9iIiwicnJuIjoiUlJOLTAwMDAwMDAwMDAwMSIsInJybl91cmkiOiJycm46Ly9jcmFpZ20yNi9yb2JvdC9vcGVuY2FzdG9yLXJwaTUtaGFpbG8tc29hcm0xMDEvYm9iLTAwMSJ9fQ=="
+    },
+    {
+      "name": "eu_register_entry_defaults_provided",
+      "builder": "build_eu_register_entry",
+      "input": {
+        "fria_ref": "bob-fria-v1.json",
+        "provider": {
+          "name": "craigm26",
+          "contact": "craigm26@gmail.com"
+        },
+        "system": {
+          "rrn": "RRN-000000000001",
+          "robot_name": "Bob",
+          "rcan_version": "3.0"
+        },
+        "annex_iii_basis": "Annex III §5(b)",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "conformity_status": "provisional",
+        "submission_instructions": "Custom instructions for testing the override path."
+      },
+      "expected_output": {
+        "schema": "rcan-eu-register-v1",
+        "generated_at": "2026-04-23T00:00:00Z",
+        "fria_ref": "bob-fria-v1.json",
+        "provider": {
+          "name": "craigm26",
+          "contact": "craigm26@gmail.com"
+        },
+        "system": {
+          "rrn": "RRN-000000000001",
+          "robot_name": "Bob",
+          "rcan_version": "3.0"
+        },
+        "annex_iii_basis": "Annex III §5(b)",
+        "conformity_status": "provisional",
+        "submission_instructions": "Custom instructions for testing the override path."
+      },
+      "expected_bytes_base64": "eyJhbm5leF9paWlfYmFzaXMiOiJBbm5leCBJSUkgwqc1KGIpIiwiY29uZm9ybWl0eV9zdGF0dXMiOiJwcm92aXNpb25hbCIsImZyaWFfcmVmIjoiYm9iLWZyaWEtdjEuanNvbiIsImdlbmVyYXRlZF9hdCI6IjIwMjYtMDQtMjNUMDA6MDA6MDBaIiwicHJvdmlkZXIiOnsiY29udGFjdCI6ImNyYWlnbTI2QGdtYWlsLmNvbSIsIm5hbWUiOiJjcmFpZ20yNiJ9LCJzY2hlbWEiOiJyY2FuLWV1LXJlZ2lzdGVyLXYxIiwic3VibWlzc2lvbl9pbnN0cnVjdGlvbnMiOiJDdXN0b20gaW5zdHJ1Y3Rpb25zIGZvciB0ZXN0aW5nIHRoZSBvdmVycmlkZSBwYXRoLiIsInN5c3RlbSI6eyJyY2FuX3ZlcnNpb24iOiIzLjAiLCJyb2JvdF9uYW1lIjoiQm9iIiwicnJuIjoiUlJOLTAwMDAwMDAwMDAwMSJ9fQ=="
+    }
+  ]
+}
