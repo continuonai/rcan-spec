@@ -257,10 +257,10 @@ const runtimeFields = [
     </p>
 
     <div class="not-prose my-6">
-      <CodeWindow code={agentRuntimesConfig} language="yaml" title="agent-runtimes.robot.md" />
+      <CodeWindow code={agentRuntimesConfig} language="yaml" title="ROBOT.md frontmatter (v3.2)" />
     </div>
 
-    <h3 class="text-lg font-bold mt-6 mb-3">Field Rules</h3>
+    <h3>Field Rules</h3>
     <div class="not-prose overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
@@ -283,10 +283,13 @@ const runtimeFields = [
     </div>
     <p class="text-sm text-text-muted mt-3">
       Unknown per-entry fields are preserved (runtime-specific pass-through) — implementations
-      MUST NOT reject entries that carry fields they don't recognize.
+      MUST NOT reject entries that carry fields they don't recognize. Common agent-level keys
+      (<code>safety_stop</code>, <code>latency_budget_ms</code>, and similar) MAY appear inside
+      a <code>runtimes[]</code> entry to override the top-level <code>agent</code> defaults for
+      that runtime only.
     </p>
 
-    <h3 class="text-lg font-bold mt-6 mb-3">Backward Compatibility</h3>
+    <h3>Backward Compatibility</h3>
     <p>
       The flat <code>agent.provider</code> / <code>agent.model</code> form (introduced in v1.2)
       remains valid in v3.2. Validators SHOULD emit a <code>DeprecationWarning</code> when the
@@ -294,7 +297,7 @@ const runtimeFields = [
       <code>runtimes[]</code>. The flat form is scheduled for removal in v4.0.
     </p>
 
-    <h3 class="text-lg font-bold mt-6 mb-3">Known Runtime IDs</h3>
+    <h3>Known Runtime IDs</h3>
     <ul>
       <li><code>robot-md</code> — prebuilt agent harnesses (Claude Code and peers).
         <a href="https://pypi.org/project/robot-md/" class="text-accent hover:underline">pypi.org/project/robot-md</a></li>
