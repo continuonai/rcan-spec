@@ -24,7 +24,7 @@
     {
       "name": "unicode_no_escape",
       "input": {
-        "name": "Café ☕"
+        "name": "Caf\u00e9 \u2615"
       },
       "expected_bytes_base64": "eyJuYW1lIjoiQ2Fmw6kg4piVIn0="
     },
@@ -62,13 +62,78 @@
         "rmn": "RMN-000000000003"
       },
       "expected_bytes_base64": "eyJwcV9raWQiOiJhYmMxMjM0NSIsInBxX3NpZ25pbmdfcHViIjoiTUlJRXh6Q0NCQ0NnQXdJQkFnSUJBVEFOQmdrcWhraUc5dzBCQVFzRkFBPT0iLCJyY25faWRzIjpbIlJDTi0wMDAwMDAwMDAwMDEiLCJSQ04tMDAwMDAwMDAwMDAyIl0sInJtbiI6IlJNTi0wMDAwMDAwMDAwMDMiLCJycm4iOiJSUk4tMDAwMDAwMDAwMDQyIn0="
+    },
+    {
+      "name": "whole_float_normalized_to_int",
+      "description": "Cross-language parity: whole-number floats (e.g. 50.0) MUST canonicalize as integers (50). JS's JSON.parse loses int/float distinction (50.0 is parsed as 50), so rcan-ts naturally emits no .0; rcan-py MUST normalize whole-number floats to int before serializing to match.",
+      "input": {
+        "x": 50.0
+      },
+      "expected_bytes_base64": "eyJ4Ijo1MH0="
+    },
+    {
+      "name": "whole_float_negative_and_zero",
+      "description": "Negative whole, 0.0, and -0.0 all normalize to the bare integer (no -0).",
+      "input": {
+        "a": -50.0,
+        "b": 0.0,
+        "c": -0.0
+      },
+      "expected_bytes_base64": "eyJhIjotNTAsImIiOjAsImMiOjB9"
+    },
+    {
+      "name": "whole_float_large_within_safe_int",
+      "description": "Large whole-number float within JS Number.MAX_SAFE_INTEGER (2**53 = 9007199254740992). 1e15 parses as 1000000000000000.0 in Python and 1000000000000000 in JS; both MUST emit the bare integer.",
+      "input": {
+        "x": 1000000000000000.0
+      },
+      "expected_bytes_base64": "eyJ4IjoxMDAwMDAwMDAwMDAwMDAwfQ=="
+    },
+    {
+      "name": "mixed_whole_and_decimal_floats",
+      "description": "Whole-floats normalize to int, non-whole floats keep their fractional representation.",
+      "input": {
+        "a": 1.0,
+        "b": 1.5,
+        "c": 2.0,
+        "d": 0.0028
+      },
+      "expected_bytes_base64": "eyJhIjoxLCJiIjoxLjUsImMiOjIsImQiOjAuMDAyOH0="
+    },
+    {
+      "name": "whole_float_in_nested_array_of_dicts",
+      "description": "Whole-float normalization recurses through arrays and nested dicts (mirrors the safety-benchmark thresholds shape).",
+      "input": {
+        "results": [
+          {
+            "p95_ms": 50.0,
+            "p99_ms": 12.5
+          },
+          {
+            "p95_ms": 5.0,
+            "p99_ms": 0.0041
+          }
+        ]
+      },
+      "expected_bytes_base64": "eyJyZXN1bHRzIjpbeyJwOTVfbXMiOjUwLCJwOTlfbXMiOjEyLjV9LHsicDk1X21zIjo1LCJwOTlfbXMiOjAuMDA0MX1dfQ=="
+    },
+    {
+      "name": "bool_not_coerced_to_int",
+      "description": "Booleans MUST stay as true/false even though Python isinstance(True, int) is True (bool is a subclass of int, not float \u2014 so the normalize-whole-float branch must guard against incidentally normalizing booleans).",
+      "input": {
+        "a": true,
+        "b": false,
+        "c": 1,
+        "d": 0
+      },
+      "expected_bytes_base64": "eyJhIjp0cnVlLCJiIjpmYWxzZSwiYyI6MSwiZCI6MH0="
     }
   ],
   "invariants": [
     "Keys sorted lexicographically at every nesting level",
     "No whitespace (no spaces, tabs, newlines)",
     "Non-ASCII Unicode emitted as UTF-8 bytes, NOT \\uXXXX escapes",
-    "Integers rendered without trailing .0",
+    "Whole-number floats normalized to integers (50.0 emits as 50, not 50.0) \u2014 JS's JSON.parse loses the int/float distinction, so cross-language parity requires Python emitters to also drop trailing .0 from whole-number floats. Recurses through arrays and nested dicts.",
     "Empty object rendered as {}, empty array as []",
     "No trailing newline"
   ]
