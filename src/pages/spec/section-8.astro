@@ -113,6 +113,17 @@ const runtimeFields = [
   { key: 'runtimes[].default',  type: 'boolean (optional)', desc: 'If runtimes[] has multiple entries, exactly one MUST be default: true.' },
   { key: 'runtimes[].models',   type: 'array (optional)',   desc: 'Model declarations. Shape and semantics are runtime-specific.' },
 ];
+
+const voiceConfig = `voice:
+  aliases: [bobby, hey-bob]   # extra wake words beyond \`name\`
+  language: en-US             # BCP-47, default "en-US"
+  tts_voice: en_US-amy-low    # Piper voice id, advisory hint`;
+
+const voiceFields = [
+  { key: 'voice.aliases',   type: 'array<string> (optional)', desc: 'Extra wake-word aliases beyond the robot\'s `name`. Matched case-insensitively after Unicode-NFKC normalization. Empty array means "no extras"; omitted means the same.' },
+  { key: 'voice.language',  type: 'string (optional)',        desc: 'BCP-47 language tag for spoken interaction. Default "en-US". Validators SHOULD warn (not reject) on malformed tags.' },
+  { key: 'voice.tts_voice', type: 'string (optional)',        desc: 'Advisory TTS voice id (e.g. Piper voice). Hosts MAY ignore or substitute. Not part of cryptographic identity — never affects RRN, signing, or compliance artifacts.' },
+];
 ---
 
 <DocsLayout title="§8 Robot Config (RCAN File)" description="RCAN §8 — Robot Configuration File. Defines the .rcan.yaml schema, required top-level keys, and optional blocks for AI gates, camera, swarm, and provider fallback.">
@@ -140,6 +151,7 @@ const runtimeFields = [
       <li><a href="#ai-gates"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.4</span> AI Gate Configuration (v1.2)</a></li>
       <li><a href="#optional"      class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.5</span> Optional Blocks</a></li>
       <li><a href="#multi-runtime" class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.6</span> Multi-Runtime Agent Declaration (v3.2)</a></li>
+      <li><a href="#voice"         class="hover:text-accent flex items-center gap-2"><span class="text-accent/50">8.7</span> Voice Block (v3.3, optional)</a></li>
     </ol>
   </div>
 
@@ -307,6 +319,71 @@ const runtimeFields = [
     <p>
       Third-party runtimes may define their own ids. See the peer-runtimes listing in
       the <code>opencastor-ops</code> repository for criteria and current entries.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="voice">
+    <h2>8.7 Voice Block (v3.3, optional)</h2>
+    <p>
+      As of v3.3, ROBOT.md MAY declare a top-level <code>voice</code> block that travels with
+      the robot's manifest. Pendant implementations and other voice-aware hosts read it to
+      discover wake-word aliases beyond the robot's <code>name</code>, the spoken language,
+      and an advisory TTS voice id. The block is optional and additive — robots that omit
+      it MUST still function under hosts that respect <code>name</code> as the primary wake
+      word.
+    </p>
+
+    <div class="not-prose my-6">
+      <CodeWindow code={voiceConfig} language="yaml" title="ROBOT.md frontmatter (v3.3)" />
+    </div>
+
+    <h3>Field Rules</h3>
+    <div class="not-prose overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Key</th>
+            <th class="text-left py-3 pr-4 text-text-muted font-medium">Type</th>
+            <th class="text-left py-3 text-text-muted font-medium">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {voiceFields.map(f => (
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-4 font-mono text-accent text-xs">{f.key}</td>
+              <td class="py-3 pr-4 font-mono text-xs text-text-muted">{f.type}</td>
+              <td class="py-3 text-text-muted text-xs">{f.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Normalization</h3>
+    <p>
+      Hosts MUST normalize each entry in <code>voice.aliases</code> and the robot's
+      <code>name</code> via Unicode NFKC + case-fold before wake-word matching. Hosts MAY
+      additionally strip ASCII punctuation. The spec does not define a canonical alias
+      string for cryptographic comparison — wake matching is fuzzy by nature.
+    </p>
+
+    <h3>Validation</h3>
+    <p>
+      Validators SHOULD emit a <em>warning</em> (not a rejection) when:
+    </p>
+    <ul>
+      <li><code>voice.language</code> is malformed under BCP-47.</li>
+      <li><code>voice.aliases</code> contains the robot's own <code>name</code> (redundant — already a wake word).</li>
+      <li><code>voice.aliases</code> contains entries that NFKC-collapse to the same string.</li>
+    </ul>
+
+    <h3>Out of Scope</h3>
+    <p>
+      <code>voice.tts_voice</code> is an advisory hint only. It is NOT part of the canonical
+      manifest pre-image for any RCAN signing, RRN derivation, or §22-26 compliance artifact.
+      Hosts that don't recognize the voice id MUST fall back to a default voice without error.
     </p>
   </section>
 
