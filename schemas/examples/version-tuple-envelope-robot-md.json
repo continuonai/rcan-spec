@@ -1,0 +1,10 @@
+{
+  "ran": "RAN-000000000002",
+  "alg": ["ML-DSA-65", "Ed25519"],
+  "pq_kid": "deadbeef",
+  "kid": "cafebabe",
+  "payload": "eyJkZXBlbmRzX29uIjp7Im1hbmlmZXN0X3NwZWNfdmVyc2lvbiI6Ij09MS41LjAiLCJwcm90b2NvbF92ZXJzaW9uIjoiPj0zLjIuMCJ9LCJmaWVsZCI6ImNsaV92ZXJzaW9uIiwibWF0cml4X3ZlcnNpb24iOiIxLjAiLCJwcm9qZWN0Ijoicm9ib3QtbWQiLCJyZWxlYXNlZF9hdCI6IjIwMjYtMDUtMDFUMTc6NDI6MTFaIiwidmFsdWUiOiIxLjUuMCJ9",
+  "signature_mldsa65": "AAAAplaceholderShape",
+  "signature_ed25519": "BBBBplaceholderShape",
+  "signed_at": "2026-05-01T17:42:15Z"
+}
