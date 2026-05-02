@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rcan.dev/schemas/version-tuple-envelope.json",
+  "title": "RCAN Compatibility Matrix — version tuple ENVELOPE (hybrid-signed wrapper)",
+  "description": "Signed wrapper around a version-tuple payload. Per RCAN v3.2 Decision 3 (pqc-hybrid-v1, PQ-required-classical-optional): signature_mldsa65 is REQUIRED; signature_ed25519 is OPTIONAL but if present must verify and must be paired with `kid`.",
+  "type": "object",
+  "required": ["ran", "alg", "pq_kid", "payload", "signature_mldsa65", "signed_at"],
+  "additionalProperties": false,
+  "properties": {
+    "ran": {
+      "type": "string",
+      "description": "RAN of the signing authority. Resolves to /v2/authorities/<ran> for public-key lookup.",
+      "pattern": "^RAN-[0-9]{12}$"
+    },
+    "alg": {
+      "type": "array",
+      "description": "Signature algorithms present, in order. Index 0 is always ML-DSA-65 (required); index 1 is Ed25519 if signature_ed25519 is present.",
+      "items": { "type": "string", "enum": ["ML-DSA-65", "Ed25519"] },
+      "minItems": 1,
+      "maxItems": 2,
+      "prefixItems": [
+        { "const": "ML-DSA-65" }
+      ]
+    },
+    "pq_kid": {
+      "type": "string",
+      "description": "ML-DSA-65 key id, derived as sha256(pq_pub)[:8].hex(). Must match pq_kid stored on /v2/authorities/<ran>.",
+      "pattern": "^[0-9a-f]{8,}$"
+    },
+    "kid": {
+      "type": "string",
+      "description": "Optional Ed25519 key id. Only present when signature_ed25519 is present.",
+      "pattern": "^[0-9a-f]{8,}$"
+    },
+    "payload": {
+      "type": "string",
+      "description": "Base64-encoded canonical-JSON of the inner version-tuple payload (sorted keys, no whitespace, UTF-8).",
+      "contentEncoding": "base64"
+    },
+    "signature_mldsa65": {
+      "type": "string",
+      "description": "Base64-encoded ML-DSA-65 signature over the b64-decoded payload bytes. Verified against /v2/authorities/<ran>.pq_signing_pub.",
+      "contentEncoding": "base64"
+    },
+    "signature_ed25519": {
+      "type": "string",
+      "description": "Optional. Base64-encoded Ed25519 signature over the same b64-decoded payload bytes. Verified against /v2/authorities/<ran>.signing_pub. If present, MUST verify; absent is OK.",
+      "contentEncoding": "base64"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp of when the envelope was signed."
+    }
+  },
+  "dependentRequired": {
+    "signature_ed25519": ["kid"]
+  }
+}

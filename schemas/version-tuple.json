@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rcan.dev/schemas/version-tuple.json",
+  "title": "RCAN Compatibility Matrix — version tuple PAYLOAD (single project assertion)",
+  "description": "Inner payload of a per-project signed assertion. Wrapped by version-tuple-envelope.json. Aggregated daily into the compatibility matrix at /v2/compatibility-matrix.",
+  "type": "object",
+  "required": ["project", "matrix_version", "field", "value", "depends_on", "released_at"],
+  "additionalProperties": false,
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Stable project slug, e.g. 'robot-md', 'rcan-py', 'opencastor'. Resolves to a RAN via opencastor-ops/config/repos.json.",
+      "pattern": "^[a-z][a-z0-9-]+$"
+    },
+    "matrix_version": {
+      "type": "string",
+      "description": "Version of the matrix schema this tuple targets.",
+      "const": "1.0"
+    },
+    "field": {
+      "type": "string",
+      "description": "Which row in the canonical tuple this assertion populates.",
+      "enum": [
+        "manifest_spec_version",
+        "cli_version",
+        "mcp_bridge_version",
+        "gateway_version",
+        "protocol_version",
+        "sdk_version_py",
+        "sdk_version_ts",
+        "registry_api_version",
+        "runtime_version",
+        "certification_suite_version"
+      ]
+    },
+    "value": {
+      "type": "string",
+      "description": "Asserted value. Semver for code projects; profile string for protocol/cert."
+    },
+    "depends_on": {
+      "type": "object",
+      "description": "Range constraints this release expects of other rows.",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(==|>=|<=|>|<|~|\\^)?[0-9]+\\.[0-9]+\\.[0-9]+$"
+      },
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "pattern": "^(==|>=|<=|>|<|~|\\^)?[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC timestamp."
+    }
+  }
+}
