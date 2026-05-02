@@ -25,7 +25,9 @@ Drop `ed25519_signing_key` and `ed25519_kid`. Envelope ships PQ-only; verifiers 
 
 ## Output
 
-`version-tuple-envelope.json` attached to the release. Aggregated daily by `opencastor-ops/monitor/version_matrix.py` after PQ verification (and classical if present) against `/v2/authorities/<ran>`.
+For each call, attaches `version-tuple-envelope-<field>.json` to the GitHub release (e.g. `version-tuple-envelope-cli_version.json` for a `cli_version` assertion). Aggregated daily by `opencastor-ops/monitor/version_matrix.py` after PQ verification (and classical if present) against `/v2/authorities/<ran>`.
+
+A project that asserts multiple fields (e.g. `cli_version` + `manifest_spec_version`) calls the action once per field; each call produces its own file.
 
 Schemas:
 - Payload: `schemas/version-tuple.json`
