@@ -1,0 +1,98 @@
+name: Emit version-tuple envelope
+description: |
+  Build a version-tuple payload, hybrid-sign it (ML-DSA-65 required + optional
+  Ed25519), wrap as an envelope, and attach to a GitHub release.
+  Per Plan 1 of the OpenCastor ecosystem direction (2026-05-04).
+inputs:
+  project:
+    description: "Project slug (e.g. robot-md, rcan-py). Resolves to a RAN via opencastor-ops/config/repos.json."
+    required: true
+  ran:
+    description: "RAN of the signing authority (e.g. RAN-000000000002). Verifiers fetch /v2/authorities/<ran> to resolve keys."
+    required: true
+  field:
+    description: "Which canonical-tuple row this asserts (e.g. cli_version)."
+    required: true
+  value:
+    description: "Asserted value (semver for code projects)."
+    required: true
+  depends_on:
+    description: "JSON object of range constraints (e.g. '{\"protocol_version\":\">=3.2.0\"}')."
+    required: true
+  pq_signing_key:
+    description: "ML-DSA-65 raw private key bytes, base64-encoded (pass via secret). REQUIRED."
+    required: true
+  pq_kid:
+    description: "ML-DSA kid (sha256(pq_pub)[:8].hex()). REQUIRED."
+    required: true
+  ed25519_signing_key:
+    description: "Ed25519 PEM private key (pass via secret). OPTIONAL — if absent, envelope ships PQ-only."
+    required: false
+    default: ""
+  ed25519_kid:
+    description: "Ed25519 kid. REQUIRED when ed25519_signing_key is provided; ignored otherwise."
+    required: false
+    default: ""
+  release_tag:
+    description: "GitHub release tag to attach the artifact to."
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Set BUILD_DATE
+      shell: bash
+      run: echo "BUILD_DATE_RFC3339=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+    - name: Materialize signing keys
+      shell: bash
+      run: |
+        umask 077
+        echo '${{ inputs.pq_signing_key }}' | base64 -d > "$RUNNER_TEMP/pq.priv.bin"
+        if [ -n '${{ inputs.ed25519_signing_key }}' ]; then
+          printf '%s\n' "${{ inputs.ed25519_signing_key }}" > "$RUNNER_TEMP/ed.priv.pem"
+        fi
+    - name: Install signing deps
+      shell: bash
+      run: pip install cryptography dilithium-py
+    - name: Build payload
+      shell: bash
+      run: |
+        python3 - <<'PYEOF'
+        import json, os, pathlib
+        depends = json.loads(os.environ["DEPENDS_ON"])
+        payload = {
+            "project": os.environ["PROJECT"],
+            "matrix_version": "1.0",
+            "field": os.environ["FIELD"],
+            "value": os.environ["VALUE"],
+            "depends_on": depends,
+            "released_at": os.environ["BUILD_DATE_RFC3339"],
+        }
+        pathlib.Path(os.environ["RUNNER_TEMP"], "payload.json").write_text(json.dumps(payload))
+        PYEOF
+      env:
+        PROJECT: ${{ inputs.project }}
+        FIELD: ${{ inputs.field }}
+        VALUE: ${{ inputs.value }}
+        DEPENDS_ON: ${{ inputs.depends_on }}
+    - name: Sign envelope
+      shell: bash
+      run: |
+        ED_ARGS=""
+        if [ -f "$RUNNER_TEMP/ed.priv.pem" ]; then
+          ED_ARGS="--ed-key $RUNNER_TEMP/ed.priv.pem --ed-kid ${{ inputs.ed25519_kid }}"
+        fi
+        python3 ${{ github.action_path }}/sign_envelope.py \
+          --payload "$RUNNER_TEMP/payload.json" \
+          --ran    "${{ inputs.ran }}" \
+          --pq-key "$RUNNER_TEMP/pq.priv.bin" \
+          --pq-kid "${{ inputs.pq_kid }}" \
+          $ED_ARGS \
+          --out    "$RUNNER_TEMP/version-tuple-envelope.json"
+    - name: Attach to release
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release upload "${{ inputs.release_tag }}" \
+          "$RUNNER_TEMP/version-tuple-envelope.json" \
+          --clobber
