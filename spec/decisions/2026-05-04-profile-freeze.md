@@ -12,22 +12,35 @@
 
 ## Decision 2 — Message-type enum
 
-**Decision:** Authoritative enum lives in `spec/§5/message-types.md`. The set is: `INVOKE | INVOKE_RESULT | TELEMETRY | COMMITMENT | SAFE_STOP | ESTOP_PREEMPT | HEARTBEAT | KEY_ROTATE | REGISTRY_RESOLVE | REGISTRY_REGISTER`. SDK enums must round-trip-test against this list; CI fails if drift.
+**Decision:** Authoritative enum lives in `src/pages/spec/section-5.astro`. The set is: `INVOKE | INVOKE_RESULT | TELEMETRY | COMMITMENT | SAFE_STOP | ESTOP_PREEMPT | HEARTBEAT | KEY_ROTATE | REGISTRY_RESOLVE | REGISTRY_REGISTER`. SDK enums must round-trip-test against this list; CI fails if drift.
 
 **Rationale:** Eliminates the rcan-py vs rcan-ts vs spec divergence flagged by the deep research report.
 
+A pure-markdown mirror at `spec/sections/5-message-types.md` is a follow-up issue — when created, the Astro page imports from it as the source of truth.
+
 ## Decision 3 — Crypto profile
 
-**Decision:** `crypto_profile = hybrid-ed25519-mldsa65-2026` for v3.2 freeze. Every entity identity record (RRN/RCN/RMN/RHN/RAN) carries both `signing_pub` (Ed25519, raw public key bytes base64-encoded — matches rcan-ts convention) and `pq_signing_pub` (ML-DSA-65, raw base64). Every signed envelope (matrix, version-tuple, attestation) carries both `signature_ed25519` and `signature_mldsa65`. A verifier accepts when at least one signature verifies against the corresponding registered public key.
+**Decision:** Adopt the existing `pqc-hybrid-v1` profile (defined in v2.3, hardened in v3.0) as the v3.2 freeze, with one v3.2-level refinement to verifier policy:
 
-**Rationale:** Empirical reality (2026-05-01 RRF probe): the deployed registry already uses ML-DSA-65 for entity identity (e.g. `RMN-000000000004` exposes `pq_signing_pub` of ~600 chars). Locking Ed25519-only would either contradict deployed RRF or force a registry-side downgrade. Hybrid satisfies both: classic for back-compat with verifiers that don't have liboqs/quantcrypt yet, post-quantum for the long arc the RCAN spec is committing to (per spec §3 charter promising public-key infrastructure that outlives the company). Cost is ~2KB extra per entity record + ~3KB per signature envelope, which is negligible.
+- **Entity identity records** (RRN/RCN/RMN/RHN/RAN): `pq_signing_pub` (ML-DSA-65, raw bytes base64-encoded — NIST FIPS 204) is REQUIRED. `signing_pub` (Ed25519, raw bytes base64-encoded) is OPTIONAL but RECOMMENDED during the migration window.
+- **Signed envelopes** (matrix aggregates, version tuples, attestations, INVOKE/COMMITMENT messages): `signature_mldsa65` is REQUIRED. `signature_ed25519` is OPTIONAL.
+- **Verifier policy (v3.2):** Verifier MUST verify `signature_mldsa65` against `pq_signing_pub`; reject if absent or invalid. If `signature_ed25519` is present, verifier MUST also verify it against `signing_pub`; reject if invalid. A signed envelope carrying ONLY `signature_mldsa65` is accepted; a signed envelope carrying ONLY `signature_ed25519` is rejected.
+- **Registration rituals** (RAN/RCN/RMN/RRN/RHN POST endpoints): unchanged. Registration §2.2 still requires BOTH sig fields (`sig.ed25519`, `sig.ml_dsa`, `sig.ed25519_pub`) and verifies both. Registration is a stricter trust event than runtime envelope verification.
+
+**Rationale:**
+
+- Aligns with the v2.3+v3.0 normative spec (Ed25519-only sunset, ML-DSA-65 mandatory at L2+) rather than inventing a parallel "verify-either" policy.
+- Empirical: deployed RRF entity records (e.g., `RMN-000000000004`) already carry only `pq_signing_pub` for the post-quantum field. Existing `verifyBody` (rcan-ts) is verify-both at registration time. Runtime verification of signed envelopes (where this decision applies) was previously unspecified — v3.2 fills that gap with PQ-required-classical-optional.
+- Defense-in-depth posture during the transition window: an envelope MAY carry both signatures so verifiers without ML-DSA-65 support (legacy v2.x verifiers) can fall back to Ed25519 verification through the `signature_ed25519` field. This is forward-compat for them, not a verify-either weakening for v3.2 verifiers (who still treat ML-DSA-65 as the trust root).
+- Ed25519 sunset path: v3.2 keeps classical optional. A future minor (v3.3 or v3.4) may drop classical entirely once verifiers have migrated.
 
 **Implementation pointers:**
-- Python signers: `cryptography` (Ed25519) + `quantcrypt` (ML-DSA-65, pure Python, easy install).
-- Cloudflare Workers / RRF: `@noble/post-quantum` for ML-DSA-65; native `crypto.subtle` for Ed25519.
-- Schema: every signed envelope (`version-tuple.schema.json`, matrix payload, attestation payload) exposes dual signature fields.
-- Verification policy: at least one signature must verify; both verifying is preferred and recorded in the verification result for downstream observability.
-- New namespace: RAN (Robot Authority Number) covers non-robot, non-component, non-model identities (aggregators, release-signing tools, attestation services, policy authorities). Endpoints: `/v2/authorities/<ran>`, `/v2/authorities`, `/v2/authorities/register`. Defined in RRF PR #78 (merge tracker).
+
+- Python signers: `cryptography` (Ed25519) + `quantcrypt` (ML-DSA-65, pure Python).
+- TypeScript / Cloudflare Workers: `@noble/post-quantum` for ML-DSA-65; native `crypto.subtle` for Ed25519.
+- Schema: every signed envelope (`version-tuple.schema.json`, matrix payload, attestation payload) declares `signature_mldsa65` REQUIRED, `signature_ed25519` OPTIONAL. Schema validators emit a warning (not an error) when `signature_ed25519` is absent so producers can audit their migration progress.
+- Verification policy is enforced in `rcan-py` and `rcan-ts` SDK helpers — do NOT replicate the policy across each consumer. SDKs return a structured result `{ verified: true, pq_ok: true, classic_ok: true | false | "absent" }` so observability tooling can track classical signature attrition over time.
+- New namespace: RAN (Robot Authority Number) covers non-robot, non-component, non-model identities (aggregators, release-signing tools, attestation services, policy authorities). Endpoints: `/v2/authorities/<ran>`, `/v2/authorities`, `/v2/authorities/register`. Defined in RRF PR #78.
 
 ## Decision 4 — JSON Schema draft
 
