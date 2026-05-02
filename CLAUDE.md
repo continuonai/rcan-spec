@@ -6,7 +6,7 @@
 
 The official specification for the RCAN (Robot Communication and Autonomy Network) protocol. Published at **rcan.dev** via Cloudflare Pages. Astro-based static site.
 
-**Current version**: v3.0 | **Repo**: continuonai/rcan-spec | **Branch**: master
+**Current version**: v3.2 | **Repo**: continuonai/rcan-spec | **Branch**: master
 
 Version format: `vMAJOR.MINOR.PATCH` — this is the primary compliance reference for all ecosystem repos.
 
@@ -57,7 +57,8 @@ rcan-spec/
 | v1.5 | + VERSION_NEGOTIATION, REPLAY_PREVENTION, CLOCK_SYNC, QOS_DELIVERY, KEY_ROTATION, CONSENT_WIRE, FLEET_BROADCAST, OBSERVER_MODE, PHYSICAL_PRESENCE, FAULT_REPORTING, AUDIT_EXPORT | Archive |
 | v1.6 | + FEDERATED_CONSENT, CONSTRAINED_TRANSPORT, MULTIMODAL_PAYLOADS, IDENTITY_LOA | Archive |
 | v1.6.1 | Patch: HMAC verification fix, LoA enforcement, security hardening | Archive |
-| v3.0 | Major: FRIA compliance, SafetyBenchmark, rcan-py 2.0 SDK alignment | **Current** |
+| v3.0 | Major: FRIA compliance, SafetyBenchmark, rcan-py 2.0 SDK alignment | Archive |
+| v3.2 | Multi-runtime agent declaration (agent.runtimes[]), profile freeze decisions, hybrid-ed25519-mldsa65-2026 crypto profile | **Current** |
 
 ## Styling Rules
 
