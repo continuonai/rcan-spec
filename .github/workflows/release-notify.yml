@@ -11,7 +11,7 @@ on:
         required: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   notify-sdks:
@@ -26,6 +26,29 @@ jobs:
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Ensure GitHub release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${{ steps.tag.outputs.tag }}" >/dev/null 2>&1; then
+            gh release create "${{ steps.tag.outputs.tag }}" \
+              --title "RCAN Spec ${{ steps.tag.outputs.tag }}" \
+              --generate-notes
+          fi
+
+      - uses: ./.github/actions/emit-version-tuple
+        with:
+          project: rcan-spec
+          ran: ${{ secrets.RCAN_SPEC_RELEASE_RAN }}
+          field: protocol_version
+          value: ${{ steps.tag.outputs.version }}
+          depends_on: '{}'
+          pq_signing_key: ${{ secrets.RCAN_SPEC_RELEASE_PQ_PRIV }}
+          pq_kid: ${{ secrets.RCAN_SPEC_RELEASE_KID }}
+          ed25519_signing_key: ${{ secrets.RCAN_SPEC_RELEASE_PRIV }}
+          ed25519_kid: ${{ secrets.RCAN_SPEC_RELEASE_KID }}
+          release_tag: ${{ steps.tag.outputs.tag }}
 
       - name: File rcan-py update issue
         continue-on-error: true
