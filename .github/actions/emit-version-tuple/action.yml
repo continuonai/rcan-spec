@@ -81,18 +81,20 @@ runs:
         if [ -f "$RUNNER_TEMP/ed.priv.pem" ]; then
           ED_ARGS="--ed-key $RUNNER_TEMP/ed.priv.pem --ed-kid ${{ inputs.ed25519_kid }}"
         fi
+        ENV_FILE="$RUNNER_TEMP/version-tuple-envelope-${{ inputs.field }}.json"
         python3 ${{ github.action_path }}/sign_envelope.py \
           --payload "$RUNNER_TEMP/payload.json" \
           --ran    "${{ inputs.ran }}" \
           --pq-key "$RUNNER_TEMP/pq.priv.bin" \
           --pq-kid "${{ inputs.pq_kid }}" \
           $ED_ARGS \
-          --out    "$RUNNER_TEMP/version-tuple-envelope.json"
+          --out    "$ENV_FILE"
+        echo "ENV_FILE=$ENV_FILE" >> "$GITHUB_ENV"
     - name: Attach to release
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
         gh release upload "${{ inputs.release_tag }}" \
-          "$RUNNER_TEMP/version-tuple-envelope.json" \
+          "$ENV_FILE" \
           --clobber
