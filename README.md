@@ -1,8 +1,8 @@
 # RCAN Specification
 
-**RCAN v3.0** — the open protocol robots, gateways, and planners speak. Signed envelopes, Level-of-Assurance enforcement, ML-DSA-65 post-quantum crypto, EU AI Act compliance blocks. Think DNS + HTTPS, but for robots.
+**Current canonical version:** see [`rcan.dev/compatibility`](https://rcan.dev/compatibility) (live matrix, signed daily by the OpenCastor compatibility-matrix aggregator — RAN registered at robotregistryfoundation.org).
 
-[![Spec Version](https://img.shields.io/badge/spec-v3.0-blue)](https://rcan.dev/spec/)
+[![Spec Version](https://img.shields.io/badge/spec-v3.2-blue)](https://rcan.dev/spec/)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
 [![CI](https://github.com/continuonai/rcan-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/continuonai/rcan-spec/actions)
 
