@@ -9,11 +9,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <article class="doc-article">
     <h1>Message Type Reference</h1>
-    <p class="lead">The <a href="/spec/">RCAN protocol</a> defines a canonical set of message types covering discovery, control, safety, invocation, registry operations, consent, fleet, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour. See the <a href="/compatibility">live compatibility matrix</a> for the canonical message-type table for each revision.</p>
+    <p class="lead">The <a href="https://docs.rcan.dev/spec/">RCAN protocol</a> defines a canonical set of message types covering discovery, control, safety, invocation, registry operations, consent, fleet, and EU AI Act compliance. All messages share a common envelope; the <code>type</code> field selects semantics and routing behaviour. See the <a href="/compatibility">live compatibility matrix</a> for the canonical message-type table for each revision.</p>
 
     <section id="v15-changes">
       <div class="callout callout-info">
-        <strong>MessageType Canonicalization</strong> — Earlier <a href="/spec/">RCAN protocol</a> drafts had a mismatch between the spec's integer table and the rcan-py SDK. Subsequent revisions establish a single canonical table. The previous "spec" numbering (DISCOVER=1, STATUS=2…) is retired; implementations that hardcoded integers must migrate to named enum constants. See the <a href="#migration">migration note</a> below.
+        <strong>MessageType Canonicalization</strong> — Earlier <a href="https://docs.rcan.dev/spec/">RCAN protocol</a> drafts had a mismatch between the spec's integer table and the rcan-py SDK. Subsequent revisions establish a single canonical table. The previous "spec" numbering (DISCOVER=1, STATUS=2…) is retired; implementations that hardcoded integers must migrate to named enum constants. See the <a href="#migration">migration note</a> below.
       </div>
     </section>
 

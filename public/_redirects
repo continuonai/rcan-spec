@@ -1,0 +1,75 @@
+# Plan 6 migration — RCAN spec prose moved to docs.rcan.dev
+
+# Spec landing
+/spec                         https://docs.rcan.dev/spec/                  301
+/spec/                        https://docs.rcan.dev/spec/                  301
+
+# Spec sections 1-27 (with-and-without trailing slash + .md variant)
+/spec/section-1               https://docs.rcan.dev/spec/section-1/        301
+/spec/section-1/              https://docs.rcan.dev/spec/section-1/        301
+/spec/section-2               https://docs.rcan.dev/spec/section-2/        301
+/spec/section-2/              https://docs.rcan.dev/spec/section-2/        301
+/spec/section-3               https://docs.rcan.dev/spec/section-3/        301
+/spec/section-3/              https://docs.rcan.dev/spec/section-3/        301
+/spec/section-4               https://docs.rcan.dev/spec/section-4/        301
+/spec/section-4/              https://docs.rcan.dev/spec/section-4/        301
+/spec/section-5               https://docs.rcan.dev/spec/section-5/        301
+/spec/section-5/              https://docs.rcan.dev/spec/section-5/        301
+/spec/section-6               https://docs.rcan.dev/spec/section-6/        301
+/spec/section-6/              https://docs.rcan.dev/spec/section-6/        301
+/spec/section-7               https://docs.rcan.dev/spec/section-7/        301
+/spec/section-7/              https://docs.rcan.dev/spec/section-7/        301
+/spec/section-8               https://docs.rcan.dev/spec/section-8/        301
+/spec/section-8/              https://docs.rcan.dev/spec/section-8/        301
+/spec/section-9               https://docs.rcan.dev/spec/section-9/        301
+/spec/section-9/              https://docs.rcan.dev/spec/section-9/        301
+/spec/section-10              https://docs.rcan.dev/spec/section-10/       301
+/spec/section-10/             https://docs.rcan.dev/spec/section-10/       301
+/spec/section-11              https://docs.rcan.dev/spec/section-11/       301
+/spec/section-11/             https://docs.rcan.dev/spec/section-11/       301
+/spec/section-12              https://docs.rcan.dev/spec/section-12/       301
+/spec/section-12/             https://docs.rcan.dev/spec/section-12/       301
+/spec/section-13              https://docs.rcan.dev/spec/section-13/       301
+/spec/section-13/             https://docs.rcan.dev/spec/section-13/       301
+/spec/section-14              https://docs.rcan.dev/spec/section-14/       301
+/spec/section-14/             https://docs.rcan.dev/spec/section-14/       301
+/spec/section-15              https://docs.rcan.dev/spec/section-15/       301
+/spec/section-15/             https://docs.rcan.dev/spec/section-15/       301
+/spec/section-16              https://docs.rcan.dev/spec/section-16/       301
+/spec/section-16/             https://docs.rcan.dev/spec/section-16/       301
+/spec/section-17              https://docs.rcan.dev/spec/section-17/       301
+/spec/section-17/             https://docs.rcan.dev/spec/section-17/       301
+/spec/section-18              https://docs.rcan.dev/spec/section-18/       301
+/spec/section-18/             https://docs.rcan.dev/spec/section-18/       301
+/spec/section-19              https://docs.rcan.dev/spec/section-19/       301
+/spec/section-19/             https://docs.rcan.dev/spec/section-19/       301
+/spec/section-20              https://docs.rcan.dev/spec/section-20/       301
+/spec/section-20/             https://docs.rcan.dev/spec/section-20/       301
+/spec/section-21              https://docs.rcan.dev/spec/section-21/       301
+/spec/section-21/             https://docs.rcan.dev/spec/section-21/       301
+/spec/section-22              https://docs.rcan.dev/spec/section-22/       301
+/spec/section-22/             https://docs.rcan.dev/spec/section-22/       301
+/spec/section-23              https://docs.rcan.dev/spec/section-23/       301
+/spec/section-23/             https://docs.rcan.dev/spec/section-23/       301
+/spec/section-24              https://docs.rcan.dev/spec/section-24/       301
+/spec/section-24/             https://docs.rcan.dev/spec/section-24/       301
+/spec/section-25              https://docs.rcan.dev/spec/section-25/       301
+/spec/section-25/             https://docs.rcan.dev/spec/section-25/       301
+/spec/section-26              https://docs.rcan.dev/spec/section-26/       301
+/spec/section-26/             https://docs.rcan.dev/spec/section-26/       301
+/spec/section-27              https://docs.rcan.dev/spec/section-27/       301
+/spec/section-27/             https://docs.rcan.dev/spec/section-27/       301
+
+# Auxiliary spec pages (now top-level on docs.rcan.dev under /spec/)
+/spec/appendix-b              https://docs.rcan.dev/spec/appendix-b/       301
+/spec/appendix-b/             https://docs.rcan.dev/spec/appendix-b/       301
+/spec/authority               https://docs.rcan.dev/spec/authority/        301
+/spec/authority/              https://docs.rcan.dev/spec/authority/        301
+/spec/competitions            https://docs.rcan.dev/spec/competitions/     301
+/spec/competitions/           https://docs.rcan.dev/spec/competitions/     301
+/spec/credits                 https://docs.rcan.dev/spec/credits/          301
+/spec/credits/                https://docs.rcan.dev/spec/credits/          301
+/spec/firmware                https://docs.rcan.dev/spec/firmware/         301
+/spec/firmware/               https://docs.rcan.dev/spec/firmware/         301
+/spec/sbom                    https://docs.rcan.dev/spec/sbom/             301
+/spec/sbom/                   https://docs.rcan.dev/spec/sbom/             301

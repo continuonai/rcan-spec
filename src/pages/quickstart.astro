@@ -117,7 +117,7 @@ if gate.allows(confidence):
 else:
     print(f"Blocked: confidence {confidence} < threshold {gate.threshold}")`} />
 
-  <p>For high-stakes actions, add a <code>HiTLGate</code> to require explicit human approval. See <a href="/spec/#section-16">§16 AI Accountability</a>.</p>
+  <p>For high-stakes actions, add a <code>HiTLGate</code> to require explicit human approval. See <a href="https://docs.rcan.dev/spec/section-16/">§16 AI Accountability</a>.</p>
 
   <!-- Step 4 -->
   <h2 id="audit-chain">
@@ -263,7 +263,7 @@ await client.cancelInvoke(invocation.msgId);`} />
     <p class="text-text-muted leading-relaxed">
       <strong class="text-white">Wire values:</strong> <code class="text-accent">INVOKE = 11</code>,
       <code class="text-accent">INVOKE_RESULT = 12</code>, <code class="text-accent">INVOKE_CANCEL = 15</code>.
-      See <a href="/spec/section-19/" class="text-accent hover:underline">§19 full spec</a> for error codes,
+      See <a href="https://docs.rcan.dev/spec/section-19/" class="text-accent hover:underline">§19 full spec</a> for error codes,
       cancellation semantics, and the Capability Advertisement integration.
     </p>
   </div>
@@ -299,7 +299,7 @@ async with RCANClient("wss://myrobot.local:8765") as client:
     <p class="text-text-muted leading-relaxed">
       <strong class="text-white">Extensible:</strong> The registry follows an open-world model — you can add
       custom fields alongside standard ones. Standard fields use the canonical names defined in
-      <a href="/spec/section-20/" class="text-accent hover:underline">§20</a> so dashboards and
+      <a href="https://docs.rcan.dev/spec/section-20/" class="text-accent hover:underline">§20</a> so dashboards and
       monitoring tools can process them without configuration.
     </p>
   </div>
