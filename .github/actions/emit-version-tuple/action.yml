@@ -97,4 +97,5 @@ runs:
       run: |
         gh release upload "${{ inputs.release_tag }}" \
           "$ENV_FILE" \
-          --clobber
+          --clobber \
+          --repo "${{ github.repository }}"
