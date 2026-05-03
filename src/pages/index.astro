@@ -101,6 +101,24 @@ const tsBadge = sdkBadge('rcan-ts');
     </div>
   </section>
 
+  <section class="max-w-5xl mx-auto py-24 border-b border-white/5 px-6">
+    <div class="text-center mb-12">
+      <p class="text-sm font-mono uppercase tracking-widest text-accent mb-4">Six layers, one job each</p>
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">Where RCAN sits</h2>
+      <p class="text-xl text-text-muted max-w-2xl mx-auto">
+        RCAN is Layer 5 — the wire protocol. It does not enforce. It does not run. It specifies.
+      </p>
+    </div>
+    <ol class="space-y-3 text-sm text-text-muted max-w-3xl mx-auto">
+      <li><strong class="text-white">Layer 1 — Declaration.</strong> ROBOT.md, robot-md CLI, robot-md-mcp (Advisory).</li>
+      <li><strong class="text-white">Layer 2 — Agent runtime.</strong> Claude Code, Codex, Gemini, any MCP host.</li>
+      <li><strong class="text-white">Layer 3 — Gateway / Enforcement.</strong> robot-md-gateway. Mandatory exclusive path.</li>
+      <li><strong class="text-white">Layer 4 — Robot-facing runtime.</strong> OpenCastor and other RCAN runtimes.</li>
+      <li><strong class="text-white">Layer 5 — Protocol.</strong> RCAN spec + SDKs. <em>This site.</em></li>
+      <li><strong class="text-white">Layer 6 — Registry.</strong> Robot Registry Foundation.</li>
+    </ol>
+  </section>
+
   <section class="py-24 border-b border-white/5">
     <div class="max-w-7xl mx-auto">
       <h2 class="text-3xl md:text-4xl font-bold mb-4 text-center">Protocol Features</h2>
@@ -178,7 +196,7 @@ const tsBadge = sdkBadge('rcan-ts');
           <div class="w-12 h-12 mb-6 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-2xl">🏛️</div>
           <h3 class="text-xl font-bold mb-3 group-hover:text-accent transition-colors">Governments & Regulators</h3>
           <p class="text-text-muted text-sm leading-relaxed">
-            An open specification under independent governance, with a built-in AI accountability layer and SBOM-equipped reference implementation — designed for regulatory review and adoption.
+            Audit an open specification under independent governance, with a built-in AI accountability layer and signed audit chain. Productized runtimes (e.g., OpenCastor, robot-md) ship as Layer 4 with SBOM and conformance reports — useful inputs for regulatory and procurement review.
           </p>
         </div>
       </div>
@@ -441,5 +459,14 @@ if gate.allows(confidence):
         Open specification · CC BY 4.0 · No vendor lock-in · <a href="/changelog/" class="underline hover:text-text-muted/80 transition-colors">Changelog</a>
       </p>
     </div>
+  </section>
+
+  <section class="max-w-3xl mx-auto py-12 px-6">
+    <!-- BEGIN: ecosystem certification disclaimer (canonical, derived from spec §10) -->
+    <blockquote class="border-l-4 border-accent/30 pl-6 text-text-muted">
+      <strong class="text-white">Conformance is not certification.</strong><br />
+      Conformance to RCAN tracks (L1–L4 protocol, Gateway Authority, HIL Runtime Safety) is <em>self-asserted via signed bundles</em> and <em>independently replayable from those bundles</em>. Conformance is not certification. Certification requires audit by a qualified third-party body, which is intentionally out-of-scope for the foundation in 2026.
+    </blockquote>
+    <!-- END: ecosystem certification disclaimer -->
   </section>
 </BaseLayout>

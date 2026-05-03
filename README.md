@@ -2,11 +2,17 @@
 
 **Current canonical version:** see [`rcan.dev/compatibility`](https://rcan.dev/compatibility) (live matrix, signed daily by the OpenCastor compatibility-matrix aggregator — RAN registered at robotregistryfoundation.org).
 
-[![Spec Version](https://img.shields.io/badge/spec-v3.2-blue)](https://rcan.dev/spec/)
+[![Spec](https://img.shields.io/badge/spec-live%20matrix-blue)](https://rcan.dev/compatibility)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
 [![CI](https://github.com/continuonai/rcan-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/continuonai/rcan-spec/actions)
 
-**[→ Read the spec at rcan.dev/spec/](https://rcan.dev/spec/)**
+**[→ Read the spec at rcan.dev/spec/](https://rcan.dev/spec/) · [→ Live compatibility matrix](https://rcan.dev/compatibility)**
+
+<!-- BEGIN: ecosystem certification disclaimer (canonical, derived from spec §10) -->
+> **Conformance is not certification.**
+>
+> Conformance to RCAN tracks (L1–L4 protocol, Gateway Authority, HIL Runtime Safety) is *self-asserted via signed bundles* and *independently replayable from those bundles*. Conformance is not certification. Certification requires audit by a qualified third-party body, which is intentionally out-of-scope for the foundation in 2026.
+<!-- END: ecosystem certification disclaimer -->
 
 ## Where this fits in the stack
 
@@ -20,7 +26,7 @@ This repo is the **wire-protocol specification** of a small, composable, Apache/
 | **Python SDK** | [rcan-py](https://github.com/continuonai/rcan-py) | `pip install rcan` — RCANMessage, RobotURI, ConfidenceGate, HiTLGate, AuditChain. |
 | **TypeScript SDK** | [rcan-ts](https://github.com/continuonai/rcan-ts) | `npm install rcan-ts` — same API surface for Node + browser. |
 | **Registry** | [Robot Registry Foundation](https://robotregistryfoundation.org) | Permanent RRN identities. Public resolver at `/r/<rrn>`. Like ICANN for robots. |
-| **Reference runtime** | [OpenCastor](https://github.com/craigm26/OpenCastor) | Open-source robot runtime — connects LLM brains to hardware bodies. One implementation of RCAN. |
+| **Productized runtime (Layer 4)** | [OpenCastor](https://github.com/craigm26/OpenCastor) | Open-source productized RCAN runtime — connects LLM brains to hardware bodies. One implementation of RCAN. |
 
 ## What Problem RCAN Solves
 
@@ -71,7 +77,7 @@ Robots today are islands. A Boston Dynamics Spot and a Raspberry Pi rover can't 
 |---|---|---|---|
 | [rcan-py](https://github.com/continuonai/rcan-py) | Python 3.10+ | `pip install rcan` | 754 |
 | [rcan-ts](https://github.com/continuonai/rcan-ts) | TypeScript / Node 18+ | `npm install rcan-ts` | 447 |
-| [OpenCastor](https://github.com/craigm26/OpenCastor) | Python (robot runtime) | `pip install opencastor==2026.3.17.1` | 6,459 |
+| [OpenCastor](https://github.com/craigm26/OpenCastor) | Python (robot runtime) | `pip install opencastor` | 6,459 |
 
 ## Companion formats
 
@@ -81,7 +87,7 @@ RCAN defines the *wire* layer (how robots talk). A robot still needs a way to de
 |---|---|---|
 | [**ROBOT.md**](https://robotmd.dev) | Single-file robot manifest (YAML frontmatter + markdown prose) — read by any agent harness (Claude Code, ChatGPT, Gemini, Ollama, …) at session start so the planner knows the robot before the first prompt. Uses `rcan_version` in the frontmatter to pin its RCAN target. | [RobotRegistryFoundation/robot-md](https://github.com/RobotRegistryFoundation/robot-md) |
 
-ROBOT.md is independent of RCAN — you can ship one without the other — but the two compose cleanly: a robot with a ROBOT.md that pins `rcan_version: "3.0"` speaks RCAN 3.0 on the wire and declares that fact in its manifest.
+ROBOT.md is independent of RCAN — you can ship one without the other — but the two compose cleanly: a robot with a ROBOT.md that pins `rcan_version` speaks the [RCAN protocol](https://rcan.dev/spec/) on the wire at the pinned version and declares that fact in its manifest.
 
 ## Conformance Badges
 
@@ -98,16 +104,9 @@ Conformance tests live in the [`tests/`](tests/) directory and run against a ref
 
 ## Spec Versioning
 
-RCAN follows a **major.minor** policy. The spec is versioned independently of any SDK.
+RCAN follows a **major.minor** policy. The spec is versioned independently of any SDK. Minor bumps add fields and message types; they never remove or rename existing ones — newer SDKs can read older messages.
 
-| Spec | SDKs | Backward compatible? |
-|---|---|---|
-| v1.6 | rcan-py 0.6, rcan-ts 0.6, OpenCastor 2026.4 | ✅ Yes |
-| v1.5 | rcan-py 0.5, rcan-ts 0.5 | ✅ Yes |
-| v1.4 | rcan-py 0.4, rcan-ts 0.4 | ✅ Yes |
-| v1.0–1.3 | Legacy | ✅ Yes (message envelope backward compat) |
-
-Minor bumps add fields and message types; they never remove or rename existing ones. A v1.6 SDK can read v1.0 messages.
+For active spec/SDK pairings, see the [live compatibility matrix](https://rcan.dev/compatibility). Full version history at [rcan.dev/changelog](https://rcan.dev/changelog).
 
 ## Contributing to the Spec
 
@@ -124,15 +123,17 @@ Open issues and proposals at [github.com/continuonai/rcan-spec/issues](https://g
 
 ## Ecosystem
 
-| Package | Version | Purpose |
-|---|---|---|
-| **rcan-spec** (this) | v1.6.0 | Protocol specification |
-| [rcan-py](https://github.com/continuonai/rcan-py) | v0.6.0 | Python SDK |
-| [rcan-ts](https://github.com/continuonai/rcan-ts) | v0.6.0 | TypeScript SDK |
-| [OpenCastor](https://github.com/craigm26/OpenCastor) | v2026.3.17.1 | Robot runtime (reference impl) |
-| [RRF](https://robotregistryfoundation.org) | v1.6.0 | Robot identity registry |
-| [Fleet UI](https://app.opencastor.com) | live | Web fleet dashboard |
-| [Docs](https://docs.opencastor.com) | live | Runtime reference, RCAN, API |
+| Package | Purpose |
+|---|---|
+| **rcan-spec** (this) | Protocol specification |
+| [rcan-py](https://github.com/continuonai/rcan-py) | Python SDK |
+| [rcan-ts](https://github.com/continuonai/rcan-ts) | TypeScript SDK |
+| [OpenCastor](https://github.com/craigm26/OpenCastor) | Productized robot runtime (Layer 4) |
+| [RRF](https://robotregistryfoundation.org) | Robot identity registry |
+| [Fleet UI](https://app.opencastor.com) | Web fleet dashboard |
+| [Docs](https://docs.opencastor.com) | Runtime reference, RCAN, API |
+
+Current versions for all packages: see the [live compatibility matrix](https://rcan.dev/compatibility).
 
 ## License
 
