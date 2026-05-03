@@ -2,11 +2,17 @@
 
 **Current canonical version:** see [`rcan.dev/compatibility`](https://rcan.dev/compatibility) (live matrix, signed daily by the OpenCastor compatibility-matrix aggregator — RAN registered at robotregistryfoundation.org).
 
-[![Spec Version](https://img.shields.io/badge/spec-v3.2-blue)](https://rcan.dev/spec/)
+[![Spec](https://img.shields.io/badge/spec-live%20matrix-blue)](https://rcan.dev/compatibility)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-green)](https://creativecommons.org/licenses/by/4.0/)
 [![CI](https://github.com/continuonai/rcan-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/continuonai/rcan-spec/actions)
 
-**[→ Read the spec at rcan.dev/spec/](https://rcan.dev/spec/)**
+**[→ Read the spec at rcan.dev/spec/](https://rcan.dev/spec/) · [→ Live compatibility matrix](https://rcan.dev/compatibility)**
+
+<!-- BEGIN: ecosystem certification disclaimer (canonical, derived from spec §10) -->
+> **Conformance is not certification.**
+>
+> Conformance to RCAN tracks (L1–L4 protocol, Gateway Authority, HIL Runtime Safety) is *self-asserted via signed bundles* and *independently replayable from those bundles*. Conformance is not certification. Certification requires audit by a qualified third-party body, which is intentionally out-of-scope for the foundation in 2026.
+<!-- END: ecosystem certification disclaimer -->
 
 ## Where this fits in the stack
 
@@ -81,7 +87,7 @@ RCAN defines the *wire* layer (how robots talk). A robot still needs a way to de
 |---|---|---|
 | [**ROBOT.md**](https://robotmd.dev) | Single-file robot manifest (YAML frontmatter + markdown prose) — read by any agent harness (Claude Code, ChatGPT, Gemini, Ollama, …) at session start so the planner knows the robot before the first prompt. Uses `rcan_version` in the frontmatter to pin its RCAN target. | [RobotRegistryFoundation/robot-md](https://github.com/RobotRegistryFoundation/robot-md) |
 
-ROBOT.md is independent of RCAN — you can ship one without the other — but the two compose cleanly: a robot with a ROBOT.md that pins `rcan_version: "3.0"` speaks RCAN 3.0 on the wire and declares that fact in its manifest.
+ROBOT.md is independent of RCAN — you can ship one without the other — but the two compose cleanly: a robot with a ROBOT.md that pins `rcan_version` speaks the [RCAN protocol](https://rcan.dev/spec/) on the wire at the pinned version and declares that fact in its manifest.
 
 ## Conformance Badges
 
