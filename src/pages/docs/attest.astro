@@ -6,7 +6,7 @@ const keygenExample = `# Generate ML-DSA-65 key pair (FIPS 204)
 castor keygen --pq
 
 # Output:
-# ✓ ML-DSA-65 key generated (FIPS 204, RCAN v2.2)
+# ✓ ML-DSA-65 key generated (FIPS 204)
 #   private: ~/.opencastor/pq_signing.key  (4032 bytes)
 #   public:  ~/.opencastor/pq_signing.pub  (1952 bytes)
 #   key_id:  7c21bf58`;
@@ -39,7 +39,7 @@ const manifestSchema = `{
   ]
 }`;
 
-const apiExample = `# Gateway endpoints (RCAN v2.2)
+const apiExample = `# Gateway endpoints
 GET  /api/attest          → manifest metadata + signature prefix
 POST /api/attest/verify   → live ML-DSA-65 signature verification
 GET  /api/sbom            → SBOM metadata (serial, components, ref)
@@ -48,14 +48,15 @@ GET  /api/conformance     → v2.1/v2.2 L5 compliance report`;
 ---
 
 <DocsLayout
-  title="Firmware Attestation — RCAN v2.2"
-  description="ML-DSA-65 firmware attestation and SBOM supply chain verification for RCAN v2.2 robots."
+  title="Firmware Attestation — RCAN Protocol"
+  description="ML-DSA-65 firmware attestation and SBOM supply chain verification for RCAN protocol robots."
 >
   <h1>Firmware Attestation</h1>
   <p class="lead">
-    RCAN v2.2 requires all robots to publish a signed firmware manifest and CycloneDX SBOM
+    The <a href="/spec/">RCAN protocol</a> requires all robots to publish a signed firmware manifest and CycloneDX SBOM
     to the Robot Registry Foundation (RRF). Signatures use <strong>ML-DSA-65 (NIST FIPS 204)</strong> —
-    Ed25519 is deprecated and removed.
+    Ed25519 is deprecated and removed. See the <a href="/compatibility">live compatibility matrix</a> for the
+    protocol revision currently in force.
   </p>
 
   <div class="rcan-callout rcan-callout--info">
@@ -91,7 +92,7 @@ GET  /api/conformance     → v2.1/v2.2 L5 compliance report`;
 
   <h2>5. Conformance</h2>
   <p>
-    Run <code>castor conformance</code> to see your full RCAN v2.1/v2.2 L5 compliance report inline.
+    Run <code>castor conformance</code> to see your full <a href="/spec/">RCAN protocol</a> L5 compliance report inline.
     A robot must pass all 7 checks to be <strong>compliant</strong>:
   </p>
   <ul>
@@ -99,14 +100,14 @@ GET  /api/conformance     → v2.1/v2.2 L5 compliance report`;
     <li><code>rcan_v21.sbom_attestation</code> — SBOM published to RRF</li>
     <li><code>rcan_v21.authority_handler</code> — EU AI Act Art. 16(j)</li>
     <li><code>rcan_v21.audit_chain_retention</code> — ≥ 3650 days</li>
-    <li><code>rcan_v21.rcan_version</code> — version 2.1 or 2.2</li>
+    <li><code>rcan_v21.rcan_version</code> — RCAN protocol version required (see the <a href="/compatibility" class="text-accent hover:underline">live compatibility matrix</a>)</li>
     <li><code>rcan_v22.pq_signing_key</code> — ML-DSA-65 key present</li>
     <li><code>rcan_v22.firmware_pq_sig</code> — manifest has ML-DSA-65 signature</li>
   </ul>
 
   <h2>Reference</h2>
   <ul>
-    <li><a href="/spec/v2.2#section-11">RCAN spec §11 — Firmware Attestation</a></li>
+    <li><a href="/spec/section-11/">RCAN spec §11 — Firmware Attestation</a></li>
     <li><a href="/docs/sbom">SBOM Guide</a></li>
     <li><a href="https://csrc.nist.gov/pubs/fips/204/final">NIST FIPS 204 (ML-DSA)</a></li>
   </ul>
