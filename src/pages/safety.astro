@@ -82,7 +82,7 @@ entries:
       In systems where incorrect decisions have physical consequences, safety constraints must be structural — not filters applied after generation. RCAN enforces safety at the protocol layer: before dispatch, at the transport boundary, in the audit record.
     </p>
     <div class="flex flex-wrap gap-3 mt-8">
-      <a href="/spec/" class="px-4 py-2 bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg hover:bg-accent/20 transition-colors">Read the spec →</a>
+      <a href="https://docs.rcan.dev/spec/" class="px-4 py-2 bg-accent/10 border border-accent/20 text-accent text-sm rounded-lg hover:bg-accent/20 transition-colors">Read the spec →</a>
       <a href="/compliance/frameworks" class="px-4 py-2 bg-white/5 border border-white/10 text-text-muted text-sm rounded-lg hover:bg-white/10 transition-colors">Regulatory coverage →</a>
       <a href="/conformance/" class="px-4 py-2 bg-white/5 border border-white/10 text-text-muted text-sm rounded-lg hover:bg-white/10 transition-colors">Conformance levels →</a>
     </div>
@@ -160,7 +160,7 @@ entries:
       <h2 class="text-2xl font-bold">Post-quantum identity (ML-DSA-65)</h2>
     </div>
     <p class="text-text-muted leading-relaxed mb-4">
-      The <a href="/spec/" class="text-accent hover:underline">RCAN protocol</a> binds each Robot Registry Number (RRN) to an ML-DSA-65 public key (CRYSTALS-Dilithium, NIST FIPS 204, standardised August 2024). Every RCAN message is signed with the robot's identity key. Verification requires only the robot's public key — no central server, no network connectivity.
+      The <a href="https://docs.rcan.dev/spec/" class="text-accent hover:underline">RCAN protocol</a> binds each Robot Registry Number (RRN) to an ML-DSA-65 public key (CRYSTALS-Dilithium, NIST FIPS 204, standardised August 2024). Every RCAN message is signed with the robot's identity key. Verification requires only the robot's public key — no central server, no network connectivity.
     </p>
     <p class="text-text-muted leading-relaxed mb-4">
       ML-DSA-65 provides security against quantum adversaries. Classical HMAC-SHA256 is used for per-record chaining within audit sessions (fast, symmetric); ML-DSA-65 is used for per-message attribution (asymmetric, forward-secure, quantum-resistant). The combination is appropriate for systems with lifetimes measured in years operating in environments where key material may be exposed to future quantum attack.
