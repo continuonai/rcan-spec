@@ -9,7 +9,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <article class="doc-article">
     <h1>§5.4 — Multi-Modal Payloads <span class="badge-new">v1.6</span></h1>
-    <p class="lead">RCAN v1.5 message payloads were JSON-only. This meant binary data (images, audio, video) had to be transported outside the RCAN trust boundary — breaking the signed-message audit trail. v1.6 adds a <code>media_chunks[]</code> field to the message envelope so binary data is hashed and bound to the Ed25519 signature.</p>
+    <p class="lead">Earlier <a href="/spec/">RCAN protocol</a> drafts had JSON-only message payloads. This meant binary data (images, audio, video) had to be transported outside the RCAN trust boundary — breaking the signed-message audit trail. Subsequent revisions add a <code>media_chunks[]</code> field to the message envelope so binary data is hashed and bound to the Ed25519 signature.</p>
 
     <div class="callout callout-info">
       <strong>Audit trail integrity:</strong> The signed RCAN message proves <em>what data was sent</em> via the <code>hash_sha256</code> on each chunk. The actual bytes may be stored separately (reference mode) or inline (base64 mode). Either way, the hash in the commitment record is tamper-evident.
@@ -204,10 +204,10 @@ HTTP 403  signature invalid</code></pre>
     </section>
 
     <section>
-      <h2>TRAINING_DATA — JSON-Only Deprecated in v1.6</h2>
+      <h2>TRAINING_DATA — JSON-Only Deprecated</h2>
 
       <div class="callout callout-warn">
-        <strong>Deprecation notice:</strong> In RCAN v1.6, sending a <code>TRAINING_DATA</code> (type 10) message with image, video, or audio data encoded inside the JSON <code>payload</code> field (e.g., as a base64 string within the payload dict) is <strong>deprecated</strong>. From v1.6, all image/video/audio training data MUST be delivered via <code>media_chunks[]</code>.
+        <strong>Deprecation notice:</strong> In the current <a href="/spec/">RCAN protocol</a>, sending a <code>TRAINING_DATA</code> (type 10) message with image, video, or audio data encoded inside the JSON <code>payload</code> field (e.g., as a base64 string within the payload dict) is <strong>deprecated</strong>. All image/video/audio training data MUST be delivered via <code>media_chunks[]</code>.
       </div>
 
       <h3>Why?</h3>

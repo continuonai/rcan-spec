@@ -9,7 +9,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <article class="doc-article">
     <h1>§8.6 — Key Lifecycle and Rotation <span class="badge-new">v1.5</span></h1>
-    <p class="lead">RCAN v1.4 used a single, non-expiring signing key per operator. v1.5 adds JWKS-based key management with expiry, rotation, and a grace period so production fleets can rotate keys without dropping active sessions.</p>
+    <p class="lead">Earlier <a href="/spec/">RCAN protocol</a> drafts used a single, non-expiring signing key per operator. Subsequent revisions add JWKS-based key management with expiry, rotation, and a grace period so production fleets can rotate keys without dropping active sessions.</p>
 
     <section>
       <h2>JWKS Endpoint</h2>

@@ -9,7 +9,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   <article class="doc-article">
     <h1>§19 — Constrained Transport Encoding <span class="badge-new">v1.6</span></h1>
-    <p class="lead">RCAN v1.0–v1.5 was entirely HTTP-based. A standard RCAN message with JWT and Ed25519 signature is 400–800 bytes — impossible over LoRa (255 bytes/frame), tight over BLE (251 byte MTU), and wasteful over constrained cellular. v1.6 defines three transport encodings plus BLE fragmentation rules.</p>
+    <p class="lead">Earlier <a href="/spec/">RCAN protocol</a> drafts were entirely HTTP-based. A standard RCAN message with JWT and Ed25519 signature is 400–800 bytes — impossible over LoRa (255 bytes/frame), tight over BLE (251 byte MTU), and wasteful over constrained cellular. Subsequent revisions define three transport encodings plus BLE fragmentation rules.</p>
 
     <div class="callout callout-safety">
       <strong>Protocol 66 Invariant — ESTOP always fits:</strong> The RCAN-Minimal 32-byte format is designed so ESTOP always fits in a single LoRa frame at SF12. ESTOP is the only command supported in RCAN-Minimal. Any implementation that cannot send ESTOP in a single frame MUST fall back to a higher encoding tier.

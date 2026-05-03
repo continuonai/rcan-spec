@@ -160,7 +160,7 @@ entries:
       <h2 class="text-2xl font-bold">Post-quantum identity (ML-DSA-65)</h2>
     </div>
     <p class="text-text-muted leading-relaxed mb-4">
-      RCAN v1.6+ binds each Robot Registry Number (RRN) to an ML-DSA-65 public key (CRYSTALS-Dilithium, NIST FIPS 204, standardised August 2024). Every RCAN message is signed with the robot's identity key. Verification requires only the robot's public key — no central server, no network connectivity.
+      The <a href="/spec/" class="text-accent hover:underline">RCAN protocol</a> binds each Robot Registry Number (RRN) to an ML-DSA-65 public key (CRYSTALS-Dilithium, NIST FIPS 204, standardised August 2024). Every RCAN message is signed with the robot's identity key. Verification requires only the robot's public key — no central server, no network connectivity.
     </p>
     <p class="text-text-muted leading-relaxed mb-4">
       ML-DSA-65 provides security against quantum adversaries. Classical HMAC-SHA256 is used for per-record chaining within audit sessions (fast, symmetric); ML-DSA-65 is used for per-message attribution (asymmetric, forward-secure, quantum-resistant). The combination is appropriate for systems with lifetimes measured in years operating in environments where key material may be exposed to future quantum attack.
