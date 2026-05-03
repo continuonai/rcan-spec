@@ -148,6 +148,36 @@ describe("Envelope — RAN format", () => {
   });
 });
 
+// ── Envelope kid format (hex + namespaced) ────────────────────────────────────
+
+describe("Envelope — kid format", () => {
+  it("accepts aggregator-style hex pq_kid + kid", () => {
+    const e = { ...ENVELOPE_EX, pq_kid: "8e2d0b5f", kid: "ede25091" };
+    expect(errorsFor(ENVELOPE_SCHEMA, e)).toEqual([]);
+  });
+
+  it("accepts release-signing-namespaced pq_kid + kid (urlsafe-b64 with hyphen/underscore)", () => {
+    const e = {
+      ...ENVELOPE_EX,
+      pq_kid: "rcan-spec-release-signing-xqn_7unHwK8",
+      kid: "rrf-release-signing-yA-1o1B27vU",
+    };
+    expect(errorsFor(ENVELOPE_SCHEMA, e)).toEqual([]);
+  });
+
+  it("rejects pq_kid with disallowed characters (spaces, slashes)", () => {
+    const e = { ...ENVELOPE_EX, pq_kid: "kid with spaces" };
+    const errors = errorsFor(ENVELOPE_SCHEMA, e);
+    expect(errors.some((er) => er.includes("pq_kid"))).toBe(true);
+  });
+
+  it("rejects pq_kid shorter than 8 characters", () => {
+    const e = { ...ENVELOPE_EX, pq_kid: "short" };
+    const errors = errorsFor(ENVELOPE_SCHEMA, e);
+    expect(errors.some((er) => er.includes("pq_kid"))).toBe(true);
+  });
+});
+
 // ── Envelope alg array constraints ───────────────────────────────────────────
 
 describe("Envelope — alg array", () => {

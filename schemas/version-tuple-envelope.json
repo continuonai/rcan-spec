@@ -24,13 +24,13 @@
     },
     "pq_kid": {
       "type": "string",
-      "description": "ML-DSA-65 key id, derived as sha256(pq_pub)[:8].hex(). Must match pq_kid stored on /v2/authorities/<ran>.",
-      "pattern": "^[0-9a-f]{8,}$"
+      "description": "ML-DSA-65 key id. Aggregator-style derives as sha256(pq_pub)[:8].hex() (e.g. '8e2d0b5f'); release-signing-namespaced style is '<slug>-release-signing-<urlsafe-b64>' (e.g. 'rcan-spec-release-signing-xqn_7unHwK8') per opencastor-ops register_release_signing_ran.py. Must match pq_kid stored on /v2/authorities/<ran>.",
+      "pattern": "^[A-Za-z0-9_-]{8,}$"
     },
     "kid": {
       "type": "string",
-      "description": "Optional Ed25519 key id. Only present when signature_ed25519 is present.",
-      "pattern": "^[0-9a-f]{8,}$"
+      "description": "Optional Ed25519 key id. Only present when signature_ed25519 is present. Same character class as pq_kid.",
+      "pattern": "^[A-Za-z0-9_-]{8,}$"
     },
     "payload": {
       "type": "string",
